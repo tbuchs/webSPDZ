@@ -62,7 +62,6 @@ Programs/Public-Input/*
 *.a
 *.static
 *.d
-local/
 *.map
 *.gch
 
