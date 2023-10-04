@@ -28,7 +28,9 @@ USE_GF2N_LONG = 1
 # ADX is used to optimize big integer additions
 # delete the second line to compile for a platform that supports everything
 ARCH = -mtune=native -msse4.1 -msse4.2 -maes -mpclmul -mavx -mavx2 -mbmi2 -madx
-ARCH = -march=native
+ARCH = -msse -msse2 -msse4.1 -msse4.2 -maes -mpclmul -mavx -msimd128
+# ARCH = -msse -msse2 -msse4.1 -msse4.2 -mavx -msimd128
+# ARCH = -march=native
 
 MACHINE := $(shell uname -m)
 ARM := $(shell uname -m | grep x86; echo $$?)
@@ -64,7 +66,8 @@ endif
 USE_KOS = 0
 
 # allow to set compiler in CONFIG.mine
-CXX = clang++
+# CXX = clang++
+CXX = emcc
 
 # use CONFIG.mine to overwrite DIR settings
 -include CONFIG.mine
