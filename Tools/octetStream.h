@@ -156,27 +156,31 @@ class octetStream
   void store(unsigned int a) { store_int(a, 4); }
   /// Append 4-byte integer
   void store(int a);
+  /// Append 4-byte integer
+  void store(unsigned long a) { store_int(a, 4); }
   /// Read 4-byte integer
   void get(unsigned int& a) { a = get_int(4); }
   /// Read 4-byte integer
   void get(int& a);
+  /// Read 4-byte integer
+  void get(unsigned long& a) { a = get_int(4); }
 
   /// Append 8-byte integer
-  void store(size_t a) { store_int(a, 8); }
+  void store(uint64_t a) { store_int(a, 8); }
   /// Read 8-byte integer
-  void get(size_t& a) { a = get_int(8); }
+  void get(uint64_t& a) { a = get_int(8); }
 
   /// Append integer of ``n_bytes`` bytes
-  void store_int(size_t a, int n_bytes);
+  void store_int(uint64_t a, int n_bytes);
   /// Read integer of ``n_bytes`` bytes
-  size_t get_int(int n_bytes);
+  uint64_t get_int(int n_bytes);
 
   /// Append integer of ``N_BYTES`` bytes
   template<int N_BYTES>
-  void store_int(size_t a);
+  void store_int(uint64_t a);
   /// Read integer of ``N_BYTES`` bytes
   template<int N_BYTES>
-  size_t get_int();
+  uint64_t get_int();
 
   void store_bit(char a);
   char get_bit();
@@ -347,18 +351,18 @@ inline void octetStream::consume(octet* x,const size_t l)
   avx_memcpy(x, consume(l), l * sizeof(octet));
 }
 
-inline void octetStream::store_int(size_t l, int n_bytes)
+inline void octetStream::store_int(uint64_t l, int n_bytes)
 {
   encode_length(append(n_bytes), l, n_bytes);
 }
 
-inline size_t octetStream::get_int(int n_bytes)
+inline uint64_t octetStream::get_int(int n_bytes)
 {
   return decode_length(consume(n_bytes), n_bytes);
 }
 
 template<int N_BYTES>
-inline void octetStream::store_int(size_t l)
+inline void octetStream::store_int(uint64_t l)
 {
   assert(N_BYTES <= 8);
   uint64_t tmp = htole64(l);
@@ -366,10 +370,10 @@ inline void octetStream::store_int(size_t l)
 }
 
 template<int N_BYTES>
-inline size_t octetStream::get_int()
+inline uint64_t octetStream::get_int()
 {
   assert(N_BYTES <= 8);
-  size_t tmp = 0;
+  uint64_t tmp = 0;
   memcpy(&tmp, consume(N_BYTES), N_BYTES);
   return le64toh(tmp);
 }

@@ -11,9 +11,13 @@
 #include "Tools/int.h"
 #include "Tools/intrinsics.h"
 
+#ifdef EMSCRIPTEN
+#include <xmmintrin.h>
+#endif
+
 union square64
 {
-    __m256i quadrows[16];
+    //__m256i quadrows[16];
     __m128i doublerows[32];
     int64_t rows[64];
     int32_t halfrows[128][2];

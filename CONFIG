@@ -28,8 +28,7 @@ USE_GF2N_LONG = 1
 # ADX is used to optimize big integer additions
 # delete the second line to compile for a platform that supports everything
 ARCH = -mtune=native -msse4.1 -msse4.2 -maes -mpclmul -mavx -mavx2 -mbmi2 -madx
-ARCH = -msse -msse2 -msse4.1 -msse4.2 -maes -mpclmul -mavx -msimd128
-# ARCH = -msse -msse2 -msse4.1 -msse4.2 -mavx -msimd128
+ARCH = -msse -msse2 -msse4.1 -msse4.2 -mavx -msimd128 # -march=corei7 -maes -mpclmul
 # ARCH = -march=native
 
 MACHINE := $(shell uname -m)
@@ -108,7 +107,7 @@ else
 BOOST = -lboost_thread $(MY_BOOST)
 endif
 
-CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE) -std=c++11 -Werror
+CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE) #-Werror
 CFLAGS += $(BREW_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 LD = $(CXX)

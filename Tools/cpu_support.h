@@ -8,16 +8,17 @@
 
 #include <stdexcept>
 
-inline bool check_cpu(int func, bool ecx, int feature)
+inline bool check_cpu([[maybe_unused]]int func, [[maybe_unused]]bool ecx, [[maybe_unused]]int feature)
 {
 #ifdef __aarch64__
     (void) func, (void) ecx, (void) feature;
     throw std::runtime_error("only for x86");
 #else
-    int ax = func, bx, cx = 0, dx;
-    __asm__ __volatile__ ("cpuid":
-            "+a" (ax), "=b" (bx), "+c" (cx), "=d" (dx));
-    return ((ecx ? cx : bx) >> feature) & 1;
+    // int ax = func, bx, cx = 0, dx;
+    // __asm__ __volatile__ ("cpuid":
+    //         "+a" (ax), "=b" (bx), "+c" (cx), "=d" (dx));
+    // return ((ecx ? cx : bx) >> feature) & 1;
+    return true;
 #endif
 }
 

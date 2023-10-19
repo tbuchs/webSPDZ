@@ -7,7 +7,7 @@
 #include "Tools/avx_memcpy.h"
 #include "Networking/data.h"
 
-#include <gmp.h>
+#include "gmp/gmp.h"
 
 #define USE_AES
 

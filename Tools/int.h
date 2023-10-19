@@ -12,6 +12,8 @@ typedef unsigned char octet;
 // Assumes word is a 64 bit value
 #ifdef WIN32
   typedef unsigned __int64 word;
+#elif EMSCRIPTEN
+  typedef unsigned long long word;
 #else
   typedef unsigned long word;
 #endif

@@ -6,7 +6,7 @@
 #ifndef MATH_Z2K_H_
 #define MATH_Z2K_H_
 
-#include <gmpxx.h>
+#include "gmp/gmpxx.h"
 #include <string>
 using namespace std;
 

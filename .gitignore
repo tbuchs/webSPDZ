@@ -55,11 +55,9 @@ Programs/Public-Input/*
 *.exe
 *.x
 *.o
-*.so
 *.pyc
 *.bc
 *.sch
-*.a
 *.static
 *.d
 *.map

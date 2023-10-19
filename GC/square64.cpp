@@ -12,41 +12,45 @@
 #include <assert.h>
 using namespace std;
 
-union matrix32x8
-{
-    __m256i whole;
-    octet rows[32];
-
-    matrix32x8(const __m256i& x = _mm256_setzero_si256()) : whole(x) {}
-
-    matrix32x8(square64& input, int x, int y)
-    {
-        for (int l = 0; l < 32; l++)
-            rows[l] = input.bytes[32*x+l][y];
-    }
-
-    void transpose(square64& output, int x, int y)
-    {
-#if defined(__AVX2__) || !defined(__x86_64__)
-        if (cpu_has_avx2())
-        {
-            for (int j = 0; j < 8; j++)
-            {
-                int row = _mm256_movemask_epi8(whole);
-                whole = _mm256_slli_epi64(whole, 1);
-
-                // _mm_movemask_epi8 uses most significant bit, hence +7-j
-                output.halfrows[8*x+7-j][y] = row;
-            }
-        }
-        else
+#ifdef EMSCRIPTEN
+#include <emmintrin.h>
 #endif
-        {
-            (void) output, (void) x, (void) y;
-            throw runtime_error("need AVX2 support");
-        }
-    }
-};
+
+// union matrix32x8
+// {
+//     __m256i whole;
+//     octet rows[32];
+
+//     matrix32x8(const __m256i& x = _mm256_setzero_si256()) : whole(x) {}
+
+//     matrix32x8(square64& input, int x, int y)
+//     {
+//         for (int l = 0; l < 32; l++)
+//             rows[l] = input.bytes[32*x+l][y];
+//     }
+
+//     void transpose(square64& output, int x, int y)
+//     {
+// #if defined(__AVX2__) || !defined(__x86_64__)
+//         if (cpu_has_avx2())
+//         {
+//             for (int j = 0; j < 8; j++)
+//             {
+//                 int row = _mm256_movemask_epi8(whole);
+//                 whole = _mm256_slli_epi64(whole, 1);
+
+//                 // _mm_movemask_epi8 uses most significant bit, hence +7-j
+//                 output.halfrows[8*x+7-j][y] = row;
+//             }
+//         }
+//         else
+// #endif
+//         {
+//             (void) output, (void) x, (void) y;
+//             throw runtime_error("need AVX2 support");
+//         }
+//     }
+// };
 
 #ifdef DEBUG_TRANS
 ostream& operator<<(ostream& os, const __m256i& x)
@@ -59,40 +63,40 @@ ostream& operator<<(ostream& os, const __m256i& x)
 #endif
 
 
-#define ZIP_CASE(I, LOWS, HIGHS, A, B) \
-case I: \
-    LOWS = _mm256_unpacklo_epi##I(A, B); \
-    HIGHS = _mm256_unpackhi_epi##I(A, B); \
-    break;
+// #define ZIP_CASE(I, LOWS, HIGHS, A, B) \
+// case I: \
+//     LOWS = _mm256_unpacklo_epi##I(A, B); \
+//     HIGHS = _mm256_unpackhi_epi##I(A, B); \
+//     break;
 
-void zip(int chunk_size, __m256i& lows, __m256i& highs,
-        const __m256i& a, const __m256i& b)
-{
-#if defined(__AVX2__) || !defined(__x86_64__)
-    if (cpu_has_avx2())
-    {
-        switch (chunk_size)
-        {
-        ZIP_CASE(8, lows, highs, a, b);
-        ZIP_CASE(16, lows, highs, a, b);
-        ZIP_CASE(32, lows, highs, a, b);
-        ZIP_CASE(64, lows, highs, a, b);
-        case 128:
-            lows = a;
-            highs = b;
-            swap(((__m128i*)&lows)[1], ((__m128i*)&highs)[0]);
-            break;
-        default:
-            throw invalid_argument("not supported");
-        }
-    }
-    else
-#endif
-    {
-        (void) chunk_size, (void) lows, (void) highs, (void) a, (void) b;
-        throw runtime_error("need AVX2 support");
-    }
-}
+// void zip(int chunk_size, __m256i& lows, __m256i& highs,
+//         const __m256i& a, const __m256i& b)
+// {
+// #if defined(__AVX2__) || !defined(__x86_64__)
+//     if (cpu_has_avx2())
+//     {
+//         switch (chunk_size)
+//         {
+//         ZIP_CASE(8, lows, highs, a, b);
+//         ZIP_CASE(16, lows, highs, a, b);
+//         ZIP_CASE(32, lows, highs, a, b);
+//         ZIP_CASE(64, lows, highs, a, b);
+//         case 128:
+//             lows = a;
+//             highs = b;
+//             swap(((__m128i*)&lows)[1], ((__m128i*)&highs)[0]);
+//             break;
+//         default:
+//             throw invalid_argument("not supported");
+//         }
+//     }
+//     else
+// #endif
+//     {
+//         (void) chunk_size, (void) lows, (void) highs, (void) a, (void) b;
+//         throw runtime_error("need AVX2 support");
+//     }
+// }
 
 void square64::transpose(int n_rows, int n_cols)
 {
@@ -114,8 +118,7 @@ void square64::transpose(int n_rows, int n_cols)
     for (int i = 0; i < n_cols; i++)
         rows[i] = _mm_cvtsi128_si64(tmp2.rows[i]);
     return;
-#endif
-
+#else
     square64 tmp = *this;
     *this = {};
 
@@ -217,6 +220,7 @@ void square64::transpose(int n_rows, int n_cols)
 #ifdef DEBUG_TRANS
     cout << "after transpose" << endl;
     print();
+#endif
 #endif
 }
 

@@ -12,6 +12,10 @@
 #include <vector>
 #include <iostream>
 
+#ifdef EMSCRIPTEN
+#include <xmmintrin.h>
+#endif
+
 using namespace std;
 
 class BitVector;

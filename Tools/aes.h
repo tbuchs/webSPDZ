@@ -5,6 +5,12 @@
 #include "cpu_support.h"
 #include "intrinsics.h"
 
+
+#ifdef EMSCRIPTEN
+#include <emmintrin.h>
+#undef __AES__
+#endif
+
 typedef unsigned int  uint;
 
 #define AES_BLK_SIZE 16
@@ -53,7 +59,7 @@ __attribute__((optimize("unroll-loops")))
 #endif
 inline __m128i aes_128_encrypt(__m128i in, const octet* key)
 {
-#if defined(__AES__) || !defined(__x86_64__)
+#if defined(__AES__) //|| !defined(__x86_64__)
     if (cpu_has_aes())
     {
         __m128i& tmp = in;
@@ -86,7 +92,7 @@ __attribute__((optimize("unroll-loops")))
 #endif
 inline void ecb_aes_128_encrypt(__m128i* out, const __m128i* in, const octet* key)
 {
-#if defined(__AES__) || !defined(__x86_64__)
+#if defined(__AES__) //|| !defined(__x86_64__)
     if (cpu_has_aes())
     {
         __m128i tmp[N];

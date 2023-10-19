@@ -40,7 +40,7 @@ see https://www.gnu.org/licenses/.  */
 #if ! defined (__GMP_WITHIN_CONFIGURE)
 #define __GMP_HAVE_HOST_CPU_FAMILY_power   0
 #define __GMP_HAVE_HOST_CPU_FAMILY_powerpc 0
-#define GMP_LIMB_BITS                      32
+#define GMP_LIMB_BITS                      64
 #define GMP_NAIL_BITS                      0
 #endif
 #define GMP_NUMB_BITS     (GMP_LIMB_BITS - GMP_NAIL_BITS)
@@ -57,7 +57,7 @@ see https://www.gnu.org/licenses/.  */
 
 /* Instantiated by configure. */
 #if ! defined (__GMP_WITHIN_CONFIGURE)
-/* #undef _LONG_LONG_LIMB */
+#define _LONG_LONG_LIMB 1
 #define __GMP_LIBGMP_DLL  0
 #endif
 
@@ -2323,7 +2323,7 @@ enum
 };
 
 /* Define CC and CFLAGS which were used to build this version of GMP */
-#define __GMP_CC "/usr/share/emsdk/upstream/emscripten/emcc"
+#define __GMP_CC "gcc"
 #define __GMP_CFLAGS "-O2 -pedantic"
 
 /* Major version number is the value of __GNU_MP__ too, above. */

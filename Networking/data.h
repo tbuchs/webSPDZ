@@ -17,6 +17,9 @@
 #include <endian.h>
 #endif
 
+#ifdef EMSCRIPTEN
+#include <endian.h>
+#endif
 
 inline void short_memcpy(void* out, void* in, size_t n_bytes)
 {
@@ -30,7 +33,7 @@ inline void short_memcpy(void* out, void* in, size_t n_bytes)
     }
 }
 
-inline void encode_length(octet *buff, size_t len, size_t n_bytes)
+inline void encode_length(octet *buff, uint64_t len, size_t n_bytes)
 {
     if (n_bytes > 8)
         throw invalid_length("length field cannot be more than 64 bits");
@@ -46,7 +49,7 @@ inline void encode_length(octet *buff, size_t len, size_t n_bytes)
     short_memcpy(buff, (void*)&tmp, n_bytes);
 }
 
-inline size_t decode_length(octet *buff, size_t n_bytes)
+inline uint64_t decode_length(octet *buff, uint64_t n_bytes)
 {
     if (n_bytes > 8)
         throw invalid_length("length field cannot be more than 64 bits");

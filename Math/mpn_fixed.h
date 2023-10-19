@@ -6,7 +6,7 @@
 #ifndef MATH_MPN_FIXED_H_
 #define MATH_MPN_FIXED_H_
 
-#include <gmp.h>
+#include "gmp/gmp.h"
 #include <string.h>
 #include <assert.h>
 
@@ -87,10 +87,10 @@ inline void mpn_add_fixed_n<4>(mp_limb_t* res, const mp_limb_t* x, const mp_limb
 #endif
 
 #ifdef __clang__
-inline char clang_add_carry(char carryin, unsigned long x, unsigned long y, unsigned long& res)
+inline char clang_add_carry(char carryin, unsigned long long x, unsigned long long y, unsigned long long& res)
 {
-	unsigned long carryout;
-	res = __builtin_addcl(x, y, carryin, &carryout);
+	unsigned long long carryout;
+	res = __builtin_addcll(x, y, carryin, &carryout);
 	return carryout;
 }
 #endif
