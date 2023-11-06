@@ -18,13 +18,11 @@
 #include <boost/assert/source_location.hpp>
 #include <boost/config.hpp>
 #include <boost/config/workaround.hpp>
-#include <boost/cstdint.hpp>
 #include <cstddef>
 #include <type_traits>
 #include <exception>
-#include <initializer_list>
 #include <utility>
-#include <functional> // std::hash
+#include <typeindex> // std::hash
 #include <iosfwd>
 #include <cstdint>
 #include <cerrno>
@@ -920,6 +918,11 @@ template<class... T> struct variant_base_impl<true, true, T...>
 
         this->emplace_impl<J, U>( std::is_nothrow_constructible<U, A&&...>(), std::forward<A>(a)... );
     }
+
+    static constexpr bool uses_double_storage() noexcept
+    {
+        return false;
+    }
 };
 
 // trivially destructible, double buffered
@@ -977,6 +980,11 @@ template<class... T> struct variant_base_impl<true, false, T...>
         st_[ i2 ].emplace( mp11::mp_size_t<J>(), std::forward<A>(a)... );
 
         ix_ = J * 2 + i2;
+    }
+
+    static constexpr bool uses_double_storage() noexcept
+    {
+        return true;
     }
 };
 
@@ -1067,6 +1075,11 @@ template<class... T> struct variant_base_impl<false, true, T...>
 
         st_.emplace( mp11::mp_size_t<J>(), std::move(tmp) );
         ix_ = J;
+    }
+
+    static constexpr bool uses_double_storage() noexcept
+    {
+        return false;
     }
 };
 
@@ -1192,6 +1205,11 @@ template<class... T> struct variant_base_impl<false, false, T...>
         _destroy();
 
         ix_ = J * 2 + i2;
+    }
+
+    static constexpr bool uses_double_storage() noexcept
+    {
+        return true;
     }
 };
 
@@ -1702,6 +1720,8 @@ public:
     }
 
     using variant_base::index;
+
+    using variant_base::uses_double_storage;
 
     // swap
 
@@ -2297,8 +2317,8 @@ namespace detail
 
 inline std::size_t hash_value_impl_( mp11::mp_true, std::size_t index, std::size_t value )
 {
-    boost::ulong_long_type hv = ( boost::ulong_long_type( 0xCBF29CE4 ) << 32 ) + 0x84222325;
-    boost::ulong_long_type const prime = ( boost::ulong_long_type( 0x00000100 ) << 32 ) + 0x000001B3;
+    unsigned long long hv = 0xCBF29CE484222325ull;
+    unsigned long long const prime = 0x100000001B3ull;
 
     hv ^= index;
     hv *= prime;
@@ -2475,16 +2495,16 @@ template<class V> struct tag_invoke_L2
     boost::json::value const& v;
     typename boost::json::result_for<V, boost::json::value>::type& r;
 
-    template<class I> void operator()( I i ) const
+    template<class I> void operator()( I /*i*/ ) const
     {
         if( !r )
         {
-            using Ti = mp11::mp_at_c<V, i>;
+            using Ti = mp11::mp_at_c<V, I::value>;
             auto r2 = boost::json::try_value_to<Ti>( v );
 
             if( r2 )
             {
-                r.emplace( in_place_index_t<i>{}, std::move( *r2 ) );
+                r.emplace( in_place_index_t<I::value>{}, std::move( *r2 ) );
             }
         }
     }

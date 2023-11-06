@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Antony Polukhin
+// Copyright (c) 2016-2023 Antony Polukhin
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -79,6 +79,45 @@ constexpr T&& get_impl(base_from_member<N, T>&& t) noexcept {
 }
 
 
+template <class T, std::size_t N>
+constexpr T& get_by_type_impl(base_from_member<N, T>& t) noexcept {
+    // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+    return t.value;
+}
+
+template <class T, std::size_t N>
+constexpr const T& get_by_type_impl(const base_from_member<N, T>& t) noexcept {
+    // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+    return t.value;
+}
+
+template <class T, std::size_t N>
+constexpr volatile T& get_by_type_impl(volatile base_from_member<N, T>& t) noexcept {
+    // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+    return t.value;
+}
+
+template <class T, std::size_t N>
+constexpr const volatile T& get_by_type_impl(const volatile base_from_member<N, T>& t) noexcept {
+    // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+    return t.value;
+}
+
+template <class T, std::size_t N>
+constexpr T&& get_by_type_impl(base_from_member<N, T>&& t) noexcept {
+    // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+    return std::forward<T>(t.value);
+}
+
+template <class T, std::size_t N>
+constexpr const T&& get_by_type_impl(const base_from_member<N, T>&& t) noexcept {
+    // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+    return std::forward<T>(t.value);
+}
+
+
+
+
 template <class ...Values>
 struct tuple: tuple_base<
     detail::index_sequence_for<Values...>,
@@ -88,6 +127,9 @@ struct tuple: tuple_base<
         detail::index_sequence_for<Values...>,
         Values...
     >::tuple_base;
+
+    constexpr static std::size_t size() noexcept { return sizeof...(Values); }
+    constexpr static bool empty() noexcept { return size() == 0; }
 };
 
 
@@ -126,6 +168,10 @@ using tuple_element = std::remove_reference< decltype(
         ::boost::pfr::detail::sequence_tuple::get<I>( std::declval<T>() )
     ) >;
 
+template <class... Args>
+constexpr auto make_sequence_tuple(Args... args) noexcept {
+    return ::boost::pfr::detail::sequence_tuple::tuple<Args...>{ args... };
+}
 
 }}}} // namespace boost::pfr::detail::sequence_tuple
 

@@ -72,7 +72,7 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
   ifstream inpf;
   inpf.open(fname);
   if (inpf.fail()) { throw file_error("Missing '" + fname + "'. Did you compile '" + progname + "'?"); }
-
+  // JS_ASM(console.log())
   int nprogs;
   inpf >> nthreads;
   inpf >> nprogs;

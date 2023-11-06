@@ -1,7 +1,6 @@
-
 // Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
 // Copyright (C) 2005-2011 Daniel James.
-// Copyright (C) 2022 Christian Mazakas
+// Copyright (C) 2022-2023 Christian Mazakas
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
@@ -15,10 +14,12 @@
 #pragma once
 #endif
 
+#include <boost/unordered/detail/requires_cxx11.hpp>
 #include <boost/core/explicit_operator_bool.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/move/move.hpp>
 #include <boost/unordered/detail/set.hpp>
+#include <boost/unordered/detail/serialize_fca_container.hpp>
 #include <boost/unordered/detail/type_traits.hpp>
 
 #if !defined(BOOST_NO_CXX11_HDR_INITIALIZER_LIST)
@@ -390,6 +391,15 @@ namespace boost {
         return this->emplace(boost::move(x));
       }
 
+      template <class Key>
+      typename boost::enable_if_c<
+        detail::transparent_non_iterable<Key, unordered_set>::value,
+        std::pair<iterator, bool> >::type
+      insert(BOOST_FWD_REF(Key) k)
+      {
+        return table_.try_emplace_unique(boost::forward<Key>(k));
+      }
+
       iterator insert(const_iterator hint, value_type const& x)
       {
         return this->emplace_hint(hint, x);
@@ -398,6 +408,15 @@ namespace boost {
       iterator insert(const_iterator hint, BOOST_UNORDERED_RV_REF(value_type) x)
       {
         return this->emplace_hint(hint, boost::move(x));
+      }
+
+      template <class Key>
+      typename boost::enable_if_c<
+        detail::transparent_non_iterable<Key, unordered_set>::value,
+        iterator>::type
+      insert(const_iterator hint, BOOST_FWD_REF(Key) k)
+      {
+        return table_.try_emplace_hint_unique(hint, boost::forward<Key>(k));
       }
 
       template <class InputIt> void insert(InputIt, InputIt);
@@ -571,6 +590,14 @@ namespace boost {
         return table_.hash_to_bucket(table_.hash(k));
       }
 
+      template <class Key>
+      typename boost::enable_if_c<detail::are_transparent<Key, H, P>::value,
+        size_type>::type
+      bucket(BOOST_FWD_REF(Key) k) const
+      {
+        return table_.hash_to_bucket(table_.hash(boost::forward<Key>(k)));
+      }
+
       local_iterator begin(size_type n)
       {
         return local_iterator(table_.begin(n));
@@ -613,6 +640,13 @@ namespace boost {
         <T, H, P, A>(unordered_set const&, unordered_set const&);
 #endif
     }; // class template unordered_set
+
+    template <class Archive, class K, class H, class P, class A>
+    void serialize(
+      Archive & ar,unordered_set<K, H, P, A>& c,unsigned int version)
+    {
+      detail::serialize_fca_container(ar, c, version);
+    }
 
 #if BOOST_UNORDERED_TEMPLATE_DEDUCTION_GUIDES
 
@@ -1212,6 +1246,14 @@ namespace boost {
         return table_.hash_to_bucket(table_.hash(k));
       }
 
+      template <class Key>
+      typename boost::enable_if_c<detail::are_transparent<Key, H, P>::value,
+        size_type>::type
+      bucket(BOOST_FWD_REF(Key) k) const
+      {
+        return table_.hash_to_bucket(table_.hash(boost::forward<Key>(k)));
+      }
+
       local_iterator begin(size_type n)
       {
         return local_iterator(table_.begin(n));
@@ -1254,6 +1296,13 @@ namespace boost {
         <T, H, P, A>(unordered_multiset const&, unordered_multiset const&);
 #endif
     }; // class template unordered_multiset
+
+    template <class Archive, class K, class H, class P, class A>
+    void serialize(
+      Archive & ar,unordered_multiset<K, H, P, A>& c,unsigned int version)
+    {
+      detail::serialize_fca_container(ar, c, version);
+    }
 
 #if BOOST_UNORDERED_TEMPLATE_DEDUCTION_GUIDES
 
@@ -2278,9 +2327,9 @@ namespace boost {
           alloc_ == n.alloc_);
         if (value_allocator_traits::propagate_on_container_swap::value ||
             !alloc_.has_value() || !n.alloc_.has_value()) {
-          boost::swap(alloc_, n.alloc_);
+          boost::core::invoke_swap(alloc_, n.alloc_);
         }
-        boost::swap(ptr_, n.ptr_);
+        boost::core::invoke_swap(ptr_, n.ptr_);
       }
     };
 
@@ -2327,11 +2376,26 @@ namespace boost {
     void swap(
       insert_return_type_set<Iter, NodeType>& x, insert_return_type_set<Iter, NodeType>& y)
     {
-      boost::swap(x.node, y.node);
-      boost::swap(x.inserted, y.inserted);
-      boost::swap(x.position, y.position);
+      boost::core::invoke_swap(x.node, y.node);
+      boost::core::invoke_swap(x.inserted, y.inserted);
+      boost::core::invoke_swap(x.position, y.position);
     }
   } // namespace unordered
+
+  namespace serialization {
+    template <class K, class H, class P, class A>
+    struct version<boost::unordered_set<K, H, P, A> >
+    {
+      BOOST_STATIC_CONSTANT(int, value = 1);
+    };
+
+    template <class K, class H, class P, class A>
+    struct version<boost::unordered_multiset<K, H, P, A> >
+    {
+      BOOST_STATIC_CONSTANT(int, value = 1);
+    };
+  } // namespace serialization
+
 } // namespace boost
 
 #if defined(BOOST_MSVC)

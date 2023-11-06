@@ -1,6 +1,6 @@
 // Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
 // Copyright (C) 2005-2016 Daniel James
-// Copyright (C) 2022 Joaquin M Lopez Munoz.
+// Copyright (C) 2022-2023 Joaquin M Lopez Munoz.
 // Copyright (C) 2022 Christian Mazakas
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -17,8 +17,10 @@
 #include <boost/assert.hpp>
 #include <boost/core/allocator_traits.hpp>
 #include <boost/core/bit.hpp>
+#include <boost/core/invoke_swap.hpp>
 #include <boost/core/no_exceptions_support.hpp>
 #include <boost/core/pointer_traits.hpp>
+#include <boost/core/serialization.hpp>
 #include <boost/limits.hpp>
 #include <boost/move/move.hpp>
 #include <boost/preprocessor/arithmetic/inc.hpp>
@@ -29,7 +31,6 @@
 #include <boost/preprocessor/repetition/repeat_from_to.hpp>
 #include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/seq/size.hpp>
-#include <boost/swap.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/type_traits/add_lvalue_reference.hpp>
@@ -47,6 +48,7 @@
 #include <boost/type_traits/make_void.hpp>
 #include <boost/type_traits/remove_const.hpp>
 #include <boost/unordered/detail/fca.hpp>
+#include <boost/unordered/detail/serialize_tracked_address.hpp>
 #include <boost/unordered/detail/type_traits.hpp>
 #include <boost/unordered/detail/fwd.hpp>
 #include <boost/utility/addressof.hpp>
@@ -58,92 +60,6 @@
 
 #if !defined(BOOST_NO_CXX11_HDR_TYPE_TRAITS)
 #include <type_traits>
-#endif
-
-////////////////////////////////////////////////////////////////////////////////
-// Configuration
-//
-// Unless documented elsewhere these configuration macros should be considered
-// an implementation detail, I'll try not to break them, but you never know.
-
-// Use Sun C++ workarounds
-// I'm not sure which versions of the compiler require these workarounds, so
-// I'm just using them of everything older than the current test compilers
-// (as of May 2017).
-
-#if !defined(BOOST_UNORDERED_SUN_WORKAROUNDS1)
-#if BOOST_COMP_SUNPRO && BOOST_COMP_SUNPRO < BOOST_VERSION_NUMBER(5, 20, 0)
-#define BOOST_UNORDERED_SUN_WORKAROUNDS1 1
-#else
-#define BOOST_UNORDERED_SUN_WORKAROUNDS1 0
-#endif
-#endif
-
-// BOOST_UNORDERED_EMPLACE_LIMIT = The maximum number of parameters in
-// emplace (not including things like hints). Don't set it to a lower value, as
-// that might break something.
-
-#if !defined BOOST_UNORDERED_EMPLACE_LIMIT
-#define BOOST_UNORDERED_EMPLACE_LIMIT 10
-#endif
-
-// BOOST_UNORDERED_TUPLE_ARGS
-//
-// Maximum number of std::tuple members to support, or 0 if std::tuple
-// isn't avaiable. More are supported when full C++11 is used.
-
-// Already defined, so do nothing
-#if defined(BOOST_UNORDERED_TUPLE_ARGS)
-
-// Assume if we have C++11 tuple it's properly variadic,
-// and just use a max number of 10 arguments.
-#elif !defined(BOOST_NO_CXX11_HDR_TUPLE)
-#define BOOST_UNORDERED_TUPLE_ARGS 10
-
-// Visual C++ has a decent enough tuple for piecewise construction,
-// so use that if available, using _VARIADIC_MAX for the maximum
-// number of parameters. Note that this comes after the check
-// for a full C++11 tuple.
-#elif defined(BOOST_MSVC)
-#if !BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT
-#define BOOST_UNORDERED_TUPLE_ARGS 0
-#elif defined(_VARIADIC_MAX)
-#define BOOST_UNORDERED_TUPLE_ARGS _VARIADIC_MAX
-#else
-#define BOOST_UNORDERED_TUPLE_ARGS 5
-#endif
-
-// Assume that we don't have std::tuple
-#else
-#define BOOST_UNORDERED_TUPLE_ARGS 0
-#endif
-
-#if BOOST_UNORDERED_TUPLE_ARGS
-#include <tuple>
-#endif
-
-// BOOST_UNORDERED_CXX11_CONSTRUCTION
-//
-// Use C++11 construction, requires variadic arguments, good construct support
-// in allocator_traits and piecewise construction of std::pair
-// Otherwise allocators aren't used for construction/destruction
-
-#if BOOST_UNORDERED_HAVE_PIECEWISE_CONSTRUCT &&                                \
-  !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES) && BOOST_UNORDERED_TUPLE_ARGS
-#if BOOST_COMP_SUNPRO && BOOST_LIB_STD_GNU
-// Sun C++ std::pair piecewise construction doesn't seem to be exception safe.
-// (At least for Sun C++ 12.5 using libstdc++).
-#define BOOST_UNORDERED_CXX11_CONSTRUCTION 0
-#elif BOOST_COMP_GNUC && BOOST_COMP_GNUC < BOOST_VERSION_NUMBER(4, 7, 0)
-// Piecewise construction in GCC 4.6 doesn't work for uncopyable types.
-#define BOOST_UNORDERED_CXX11_CONSTRUCTION 0
-#elif !defined(BOOST_NO_CXX11_ALLOCATOR)
-#define BOOST_UNORDERED_CXX11_CONSTRUCTION 1
-#endif
-#endif
-
-#if !defined(BOOST_UNORDERED_CXX11_CONSTRUCTION)
-#define BOOST_UNORDERED_CXX11_CONSTRUCTION 0
 #endif
 
 #if BOOST_UNORDERED_CXX11_CONSTRUCTION
@@ -344,8 +260,8 @@ namespace boost {
 
         void swap(compressed& x)
         {
-          boost::swap(first(), x.first());
-          boost::swap(second(), x.second());
+          boost::core::invoke_swap(first(), x.first());
+          boost::core::invoke_swap(second(), x.second());
         }
 
       private:
@@ -728,7 +644,7 @@ namespace boost {
               move(x);
             }
           } else if (has_value_) {
-            boost::swap(value_.value(), x.value_.value());
+            boost::core::invoke_swap(value_.value(), x.value_.value());
           }
         }
 
@@ -1477,7 +1393,22 @@ namespace boost {
         }
 
 #endif
-      }
+
+        template <typename T, typename Alloc, typename Key>
+        inline typename boost::allocator_pointer<Alloc>::type
+        construct_node_from_key(T*, Alloc& alloc, BOOST_FWD_REF(Key) k)
+        {
+          return construct_node(alloc, boost::forward<Key>(k));
+        }
+
+        template <typename T, typename V, typename Alloc, typename Key>
+        inline typename boost::allocator_pointer<Alloc>::type
+        construct_node_from_key(
+          std::pair<T const, V>*, Alloc& alloc, BOOST_FWD_REF(Key) k)
+        {
+          return construct_node_pair(alloc, boost::forward<Key>(k));
+        }
+      } // namespace func
     }
   }
 }
@@ -1695,7 +1626,7 @@ namespace boost {
           typedef std::ptrdiff_t difference_type;
           typedef std::forward_iterator_tag iterator_category;
 
-          iterator() : p(), itb(){};
+          iterator() : p(), itb(){}
 
           reference operator*() const BOOST_NOEXCEPT { return dereference(); }
           pointer operator->() const BOOST_NOEXCEPT
@@ -1774,6 +1705,25 @@ namespace boost {
               p = (++itb)->next;
             }
           }
+
+          template<typename Archive>
+          friend void serialization_track(Archive& ar, const iterator& x)
+          {
+            if(x.p){
+              track_address(ar, x.p);
+              serialization_track(ar, x.itb);
+            }
+          }
+
+          friend class boost::serialization::access;
+
+          template<typename Archive>
+          void serialize(Archive& ar,unsigned int)
+          {
+            if(!p) itb = bucket_iterator();
+            serialize_tracked_address(ar, p);
+            ar & core::make_nvp("bucket_iterator", itb);
+          }
         };
 
         template <class Node, class Bucket> class c_iterator
@@ -1786,7 +1736,7 @@ namespace boost {
           typedef std::ptrdiff_t difference_type;
           typedef std::forward_iterator_tag iterator_category;
 
-          c_iterator() : p(), itb(){};
+          c_iterator() : p(), itb(){}
           c_iterator(iterator<Node, Bucket> it) : p(it.p), itb(it.itb) {}
 
           reference operator*() const BOOST_NOEXCEPT { return dereference(); }
@@ -1863,6 +1813,25 @@ namespace boost {
             if (!p) {
               p = (++itb)->next;
             }
+          }
+
+          template<typename Archive>
+          friend void serialization_track(Archive& ar, const c_iterator& x)
+          {
+            if(x.p){
+              track_address(ar, x.p);
+              serialization_track(ar, x.itb);
+            }
+          }
+
+          friend class boost::serialization::access;
+
+          template<typename Archive>
+          void serialize(Archive& ar,unsigned int)
+          {
+            if(!p) itb = bucket_iterator();
+            serialize_tracked_address(ar, p);
+            ar & core::make_nvp("bucket_iterator", itb);
           }
         };
       } // namespace iterator_detail
@@ -2120,7 +2089,7 @@ namespace boost {
           x.switch_functions();
 
           buckets_.swap(x.buckets_);
-          boost::swap(size_, x.size_);
+          boost::core::invoke_swap(size_, x.size_);
           std::swap(mlf_, x.mlf_);
           std::swap(max_load_, x.max_load_);
         }
@@ -2129,7 +2098,7 @@ namespace boost {
         void swap(table& x, true_type)
         {
           buckets_.swap(x.buckets_);
-          boost::swap(size_, x.size_);
+          boost::core::invoke_swap(size_, x.size_);
           std::swap(mlf_, x.mlf_);
           std::swap(max_load_, x.max_load_);
           this->current_functions().swap(x.current_functions());
@@ -2640,8 +2609,10 @@ namespace boost {
           } else {
             node_allocator_type alloc = node_alloc();
 
-            node_tmp tmp(
-              detail::func::construct_node_pair(alloc, boost::forward<Key>(k)),
+            value_type* dispatch = BOOST_NULLPTR;
+
+            node_tmp tmp(detail::func::construct_node_from_key(
+                           dispatch, alloc, boost::forward<Key>(k)),
               alloc);
 
             if (size_ + 1 > max_load_) {
@@ -2660,7 +2631,7 @@ namespace boost {
         template <typename Key>
         iterator try_emplace_hint_unique(c_iterator hint, BOOST_FWD_REF(Key) k)
         {
-          if (hint.p && this->key_eq()(hint->first, k)) {
+          if (hint.p && this->key_eq()(extractor::extract(*hint), k)) {
             return iterator(hint.p, hint.itb);
           } else {
             return try_emplace_unique(k).first;
@@ -3462,7 +3433,7 @@ namespace boost {
             }
           }
           buckets_.unlink_empty_buckets();
-          BOOST_RETHROW;
+          BOOST_RETHROW
         }
         BOOST_CATCH_END
 

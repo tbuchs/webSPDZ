@@ -127,7 +127,7 @@ ifeq ($(ARM), 1)
 $(patsubst %.cpp,%.o,$(wildcard */*.cpp)): deps/simde/simde
 endif
 
-shamir: shamir-party.x malicious-shamir-party.x atlas-party.x galois-degree.x
+shamir: malicious-shamir-party.x # shamir-party.x malicious-shamir-party.x atlas-party.x galois-degree.x
 
 sy: sy-rep-field-party.x sy-rep-ring-party.x sy-shamir-party.x
 
@@ -141,7 +141,7 @@ CFLAGS += -fPIC
 LDLIBS += -Wl,-rpath -Wl,$(CURDIR)
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
-	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
+	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) #TODO: -sMAIN_MODULE ? or -shared? or -sSIDE_MODULE?
 
 $(FHEOFFLINE): $(FHEOBJS) $(SHAREDLIB)
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
@@ -206,7 +206,7 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB)
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB) -o $@.html
 
 %-ecdsa-party.x: ECDSA/%-ecdsa-party.o ECDSA/P256Element.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
@@ -360,4 +360,4 @@ clean-deps:
 	-rm -rf local/lib/liblibOTe.* deps/libOTe/out
 
 clean: clean-deps
-	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x *.so
+	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x *.so */*.tmp

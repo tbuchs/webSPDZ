@@ -149,6 +149,7 @@ close() noexcept
         error_code ec;
         socket.close(ec);
     }
+#if !defined(BOOST_NO_EXCEPTIONS)
     try
     {
         timer.cancel();
@@ -156,6 +157,9 @@ close() noexcept
     catch(...)
     {
     }
+#else
+    timer.cancel();
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -889,7 +893,7 @@ template<
     class EndpointSequence,
     BOOST_ASIO_COMPLETION_TOKEN_FOR(void(error_code, typename Protocol::endpoint)) RangeConnectHandler,
     class>
-BOOST_ASIO_INITFN_RESULT_TYPE(RangeConnectHandler,void(error_code, typename Protocol::endpoint))
+BOOST_ASIO_INITFN_AUTO_RESULT_TYPE(RangeConnectHandler,void(error_code, typename Protocol::endpoint))
 basic_stream<Protocol, Executor, RatePolicy>::
 async_connect(
     EndpointSequence const& endpoints,
@@ -911,7 +915,7 @@ template<
     class ConnectCondition,
     BOOST_ASIO_COMPLETION_TOKEN_FOR(void(error_code, typename Protocol::endpoint)) RangeConnectHandler,
     class>
-BOOST_ASIO_INITFN_RESULT_TYPE(RangeConnectHandler,void (error_code, typename Protocol::endpoint))
+BOOST_ASIO_INITFN_AUTO_RESULT_TYPE(RangeConnectHandler,void (error_code, typename Protocol::endpoint))
 basic_stream<Protocol, Executor, RatePolicy>::
 async_connect(
     EndpointSequence const& endpoints,
@@ -932,7 +936,7 @@ template<class Protocol, class Executor, class RatePolicy>
 template<
     class Iterator,
     BOOST_ASIO_COMPLETION_TOKEN_FOR(void(error_code, Iterator)) IteratorConnectHandler>
-BOOST_ASIO_INITFN_RESULT_TYPE(IteratorConnectHandler,void (error_code, Iterator))
+BOOST_ASIO_INITFN_AUTO_RESULT_TYPE(IteratorConnectHandler,void (error_code, Iterator))
 basic_stream<Protocol, Executor, RatePolicy>::
 async_connect(
     Iterator begin, Iterator end,
@@ -953,7 +957,7 @@ template<
     class Iterator,
     class ConnectCondition,
     BOOST_ASIO_COMPLETION_TOKEN_FOR(void(error_code, Iterator)) IteratorConnectHandler>
-BOOST_ASIO_INITFN_RESULT_TYPE(IteratorConnectHandler,void (error_code, Iterator))
+BOOST_ASIO_INITFN_AUTO_RESULT_TYPE(IteratorConnectHandler,void (error_code, Iterator))
 basic_stream<Protocol, Executor, RatePolicy>::
 async_connect(
     Iterator begin, Iterator end,
