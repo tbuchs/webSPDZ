@@ -38,11 +38,12 @@ void receive(T& socket, size_t& a, size_t len);
 
 inline size_t send_non_blocking(int socket, octet* msg, size_t len)
 {
-  int j = send(socket,msg,len,MSG_DONTWAIT);
+  int j = send(socket,msg,len,0);
   if (j < 0)
     {
       if (errno != EINTR and errno != EAGAIN and errno != EWOULDBLOCK)
-        { error("Send error - 1 ");  }
+        { cerr << "send_non_blocking: " << strerror(errno) << endl;
+          error("Send error - 1 ");  }
       else
         return 0;
     }
@@ -54,17 +55,17 @@ inline void send(int socket,octet *msg,size_t len)
   size_t i = 0;
   long wait = 1;
   while (i < len)
+  {
+    size_t j = send_non_blocking(socket, msg + i, len - i);
+    i += j;
+    if (i > 0)
+      wait = 1;
+    else
     {
-      size_t j = send_non_blocking(socket, msg + i, len - i);
-      i += j;
-      if (i > 0)
-	wait = 1;
-      else
-	{
-	  usleep(wait);
-	  wait *= 2;
-	}
+      usleep(wait);
+      wait *= 2;
     }
+  }
 }
 
 template<class T>

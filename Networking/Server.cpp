@@ -94,6 +94,7 @@ Server::Server(int argc,char **argv)
 Server::Server(int nmachines, int PortnumBase) :
     nmachines(nmachines), PortnumBase(PortnumBase), server_socket(0)
 {
+  cerr << "Server::Server(" << nmachines << ", " << PortnumBase << ")" << endl;
 }
 
 Server::~Server()
@@ -104,6 +105,7 @@ Server::~Server()
 
 void Server::start()
 {
+  cerr << "Server::start()" << endl;
   int i;
 
   names.resize(nmachines);
@@ -121,13 +123,13 @@ void Server::start()
   // set up connections
   for (i=0; i<nmachines; i++)
     {
-#ifdef DEBUG_NETWORKING
+//#ifdef DEBUG_NETWORKING
       cerr << "Waiting for player " << i << endl;
-#endif
+//#endif
       socket_num[i] = server.get_connection_socket("P" + to_string(i));
-#ifdef DEBUG_NETWORKING
+//#ifdef DEBUG_NETWORKING
       cerr << "Connected to player " << i << endl;
-#endif
+//#endif
     }
 
   // get names
@@ -164,10 +166,10 @@ void* Server::start_in_thread(void* server)
 Server* Server::start_networking(Names& N, int my_num, int nplayers,
         string hostname, int portnum, int my_port)
 {
-#ifdef DEBUG_NETWORKING
+// #ifdef DEBUG_NETWORKING
   cerr << "Starting networking for " << my_num << "/" << nplayers
       << " with server on " << hostname << ":" << (portnum) << endl;
-#endif
+// #endif
   assert(my_num >= 0);
   assert(my_num < nplayers);
   Server* server = 0;
@@ -178,6 +180,7 @@ Server* Server::start_networking(Names& N, int my_num, int nplayers,
           server = new Server(nplayers, portnum));
       bool default_port = my_port == Names::DEFAULT_PORT or my_port == portnum;
       N.init(my_num, portnum, my_port, hostname.c_str(), not default_port);
+      std::cerr << "Player: " << my_num << " at port " << portnum << "my_port " << my_port << "init" << std::endl;
       pthread_join(thread, 0);
       if (default_port)
         N.set_server(server->get_socket());

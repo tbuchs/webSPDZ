@@ -66,13 +66,18 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
 {
   this->progname = progname;
   string fname = "Programs/Schedules/" + progname + ".sch";
+  cerr << "Opening file " << fname << endl;
 #ifdef DEBUG_FILES
   cerr << "Opening file " << fname << endl;
 #endif
   ifstream inpf;
   inpf.open(fname);
-  if (inpf.fail()) { throw file_error("Missing '" + fname + "'. Did you compile '" + progname + "'?"); }
-  // JS_ASM(console.log())
+  if(inpf.fail())
+  {
+    // Print system error message
+    std::perror("Error: ");
+    throw file_error("Missing '" + fname + "'. Did you compile '" + progname + "'?");
+  }
   int nprogs;
   inpf >> nthreads;
   inpf >> nprogs;

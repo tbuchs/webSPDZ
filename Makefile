@@ -138,19 +138,20 @@ $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER
 	$(AR) -csr $@ $^
 
 CFLAGS += -fPIC
-LDLIBS += -Wl,-rpath -Wl,$(CURDIR)
+LDLIBS += -I $(CURDIR)
+LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS -sUSE_PTHREADS -sPROXY_TO_PTHREAD -sALLOW_MEMORY_GROWTH -sWEBSOCKET_URL='ws://' -sSOCKET_DEBUG # -sWEBSOCKET_SUBPROTOCOL='binary' -sSOCKET_DEBUG=1
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
-	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) #TODO: -sMAIN_MODULE ? or -shared? or -sSIDE_MODULE?
+	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS) #TODO: -sMAIN_MODULE ? or -shared? or -sSIDE_MODULE?
 
 $(FHEOFFLINE): $(FHEOBJS) $(SHAREDLIB)
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
 
 static/%.x: Machines/%.o $(LIBRELEASE) $(LIBSIMPLEOT) local/lib/libcryptoTools.a local/lib/liblibOTe.a
-	$(CXX) -o $@ $(CFLAGS) $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(LIBRELEASE) -llibOTe -lcryptoTools $(LIBSIMPLEOT) $(BOOST) $(LDLIBS) -Wl,-Bdynamic -ldl
+	$(CXX) -o $@ $(CFLAGS) $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(LIBRELEASE) -llibOTe -lcryptoTools $(LIBSIMPLEOT) $(LDLIBS) $(LDFLAGS) -Wl,-Bdynamic -ldl
 
 static/%.x: ECDSA/%.o ECDSA/P256Element.o $(VMOBJS) $(OT) $(LIBSIMPLEOT)
-	$(CXX) $(CFLAGS) -o $@ $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(BOOST) $(LDLIBS) -Wl,-Bdynamic -ldl
+	$(CXX) $(CFLAGS) -o $@ $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(LDFLAGS) $(LDLIBS) -Wl,-Bdynamic -ldl
 
 static-dir:
 	@ mkdir static 2> /dev/null; true
@@ -168,10 +169,10 @@ ot-offline.x: $(OT) $(LIBSIMPLEOT) Machines/TripleMachine.o
 gc-emulate.x: $(VM) GC/FakeSecret.o GC/square64.o
 
 bmr-%.x: $(BMR) $(VM) Machines/bmr-%.cpp $(LIBSIMPLEOT)
-	$(CXX) -o $@ $(CFLAGS) $^ $(BOOST) $(LDLIBS)
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDFLAGS) $(LDLIBS)
 
 %-bmr-party.x: Machines/%-bmr-party.o $(BMR) $(SHAREDLIB) $(MINI_OT)
-	$(CXX) -o $@ $(CFLAGS) $^ $(BOOST) $(LDLIBS)
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDFLAGS) $(LDLIBS)
 
 bmr-clean:
 	-rm BMR/*.o BMR/*/*.o GC/*.o
@@ -206,7 +207,7 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB) -o $@.html
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) $(SHAREDLIB) -o $(subst .x,,$@).html --preload-file Programs --preload-file Player-Data --preload-file ip-file
 
 %-ecdsa-party.x: ECDSA/%-ecdsa-party.o ECDSA/P256Element.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
@@ -360,4 +361,4 @@ clean-deps:
 	-rm -rf local/lib/liblibOTe.* deps/libOTe/out
 
 clean: clean-deps
-	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x *.so */*.tmp
+	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x libSPDZ.so */*.tmp

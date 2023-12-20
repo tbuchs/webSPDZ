@@ -12,16 +12,22 @@
 #include <utility>
 #include <assert.h>
 
+#ifdef EMSCRIPTEN
+  #include <emscripten.h>
+#endif
+
 using namespace std;
 
 void Names::init(int player, int pnb, int my_port, const char* servername,
     bool setup_socket)
 {
+  cerr << "Names::init(" << player << ", " << my_port << ", " << servername << ", " << setup_socket << ")" << endl;
   player_no=player;
   portnum_base=pnb;
   setup_names(servername, my_port);
   if (setup_socket)
     setup_server();
+  cerr << "Names::init(done)" << endl;
 }
 
 Names::Names(int player, int nplayers, const string& servername, int pnb,
@@ -79,11 +85,11 @@ void Names::init(int player, int pnb, const string& filename, int nplayers_wante
   }
   if (nplayers_wanted > 0 and nplayers_wanted != nplayers)
     throw runtime_error("not enough hosts in " + filename);
-#ifdef DEBUG_NETWORKING
+//#ifdef DEBUG_NETWORKING
   cerr << "Got list of " << nplayers << " players from file: " << endl;
   for (unsigned int i = 0; i < names.size(); i++)
     cerr << "    " << names[i] << ":" << ports[i] << endl;
-#endif
+//#endif
   setup_server();
 }
 
@@ -122,16 +128,18 @@ void Names::setup_ports()
 
 void Names::setup_names(const char *servername, int my_port)
 {
+  cerr << "Names::setup_names("")" << endl;
   if (my_port == DEFAULT_PORT)
     my_port = default_port(player_no);
 
   int socket_num;
   int pn = portnum_base;
   set_up_client_socket(socket_num, servername, pn);
+  cerr << "Sending: " << octetStream("P" + to_string(player_no)).str() << endl;
   octetStream("P" + to_string(player_no)).Send(socket_num);
-#ifdef DEBUG_NETWORKING
+//#ifdef DEBUG_NETWORKING
   cerr << "Sent " << player_no << " to " << servername << ":" << pn << endl;
-#endif
+//#endif
 
   // Send my name
   sockaddr_in address;
@@ -140,10 +148,10 @@ void Names::setup_names(const char *servername, int my_port)
   char* my_name = inet_ntoa(address.sin_addr);
   octetStream(my_name).Send(socket_num);
   send(socket_num,(octet*)&my_port,4);
-#ifdef DEBUG_NETWORKING
+//#ifdef DEBUG_NETWORKING
   fprintf(stderr, "My Name = %s\n",my_name);
   cerr << "My number = " << player_no << endl;
-#endif
+//#endif
 
   // Now get the set of names
   try
@@ -161,18 +169,20 @@ void Names::setup_names(const char *servername, int my_port)
   if (names.size() != ports.size())
     throw runtime_error("invalid network setup");
   nplayers = names.size();
-#ifdef VERBOSE
+//#ifdef VERBOSE
   for (int i = 0; i < nplayers; i++)
     cerr << "Player " << i << " is running on machine " << names[i] << endl;
-#endif
+//#endif
   close_client_socket(socket_num);
 }
 
 
 void Names::setup_server()
 {
+  std::cerr << "Setting up server" << std::endl;
   server = new ServerSocket(ports.at(player_no));
   server->init();
+  std::cerr << "Server initialized" << std::endl;
 }
 
 void Names::set_server(ServerSocket* socket)
@@ -226,8 +236,11 @@ MultiPlayer<T>::MultiPlayer(const Names& Nms, const string& id) :
 PlainPlayer::PlainPlayer(const Names& Nms, const string& id) :
         MultiPlayer<int>(Nms, id)
 {
+  cerr << "PlainPlayer::PlainPlayer()" << endl;
   if (Nms.num_players() > 1)
     setup_sockets(Nms.names, Nms.ports, id, *Nms.server);
+
+  cerr << "PlainPlayer::PlainPlayer(done)" << endl;
 }
 
 
@@ -277,36 +290,39 @@ PlayerBase::~PlayerBase()
 void PlainPlayer::setup_sockets(const vector<string>& names,
         const vector<int>& ports, const string& id_base, ServerSocket& server)
 {
+    cerr << "PlainPlayer:setup_sockets" << endl;
     sockets.resize(nplayers);
     // Set up the client side
     for (int i=player_no; i<nplayers; i++) {
         auto pn=id_base+"P"+to_string(player_no);
         if (i==player_no) {
           const char* localhost = "127.0.0.1";
-#ifdef DEBUG_NETWORKING
+//#ifdef DEBUG_NETWORKING
           fprintf(stderr,
               "Setting up send to self socket to %s:%d with id %s\n",
               localhost, ports[i], pn.c_str());
-#endif
+//#endif
           set_up_client_socket(sockets[i],localhost,ports[i]);
         } else {
-#ifdef DEBUG_NETWORKING
+//#ifdef DEBUG_NETWORKING
             fprintf(stderr, "Setting up client to %s:%d with id %s\n",
                 names[i].c_str(), ports[i], pn.c_str());
-#endif
+//#endif
+
           set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
         }
         octetStream(pn).Send(sockets[i]);
     }
     send_to_self_socket = sockets[player_no];
+    cerr << "sockets size: " << sockets.size() << endl;
     // Setting up the server side
     for (int i=0; i<=player_no; i++) {
         auto id=id_base+"P"+to_string(i);
-#ifdef DEBUG_NETWORKING
+// #ifdef DEBUG_NETWORKING
         fprintf(stderr,
             "As a server, waiting for client with id %s to connect.\n",
             id.c_str());
-#endif
+// #endif
         sockets[i] = server.get_connection_socket(id);
     }
 
@@ -316,6 +332,7 @@ void PlainPlayer::setup_sockets(const vector<string>& names,
         tv.tv_sec = 300;
         tv.tv_usec = 0;
         int fl = setsockopt(sockets[i], SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
+        cerr << "setsockopt: " << fl << endl;
         if (fl<0) { error("set_up_socket:setsockopt");  }
     }
 }

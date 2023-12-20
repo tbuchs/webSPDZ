@@ -138,7 +138,7 @@ void OnlineMachine::start_networking()
     string hostname, ipFileName;
     int pnbase;
     int my_port;
-
+    cerr << "OnlineMachine(): Starting networking" << endl;
     opt.get("--portnumbase")->getInt(pnbase);
     opt.get("--hostname")->getString(hostname);
     opt.get("--ip-file-name")->getString(ipFileName);
@@ -161,10 +161,12 @@ void OnlineMachine::start_networking()
     } else {
       if (not opt.get("-ext-server")->isSet)
       {
+        cerr << "Starting Server" << endl;
         if (nplayers == 0)
           opt.get("-N")->getInt(nplayers);
         Server::start_networking(playerNames, mynum, nplayers,
             hostname, pnbase, my_port);
+        cerr << "OnlineMachine: Server started" << endl;
       }
       else
       {
@@ -186,12 +188,14 @@ Player* OnlineMachine::new_player(const string& id_base)
 template<class T, class U>
 int OnlineMachine::run()
 {
+  std::cerr << "OnlineMachine::run()" << std::endl;
 #ifndef INSECURE
     try
 #endif
     {
         Machine<T, U>(playerNames, use_encryption, online_opts, lg2).run(
                 online_opts.progname);
+        cerr << "Machine finished" << endl;
 
         if (online_opts.verbose)
           {

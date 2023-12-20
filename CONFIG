@@ -85,12 +85,11 @@ endif
 # Default for MAX_MOD_SZ is 10, which suffices for all Overdrive protocols
 # MOD = -DMAX_MOD_SZ=10 -DGFP_MOD_SZ=5
 
-LDLIBS = -lgmpxx -lgmp -lsodium $(MY_LDLIBS)
+LDLIBS = -lssl -lcrypto -lgmpxx -lgmp -lsodium $(MY_LDLIBS) #-lwebsockify
 LDLIBS += $(BREW_LDLIBS)
-LDLIBS +=  -Wl,-rpath -Wl,$(CURDIR)/local/lib -L$(CURDIR)/local/lib
-LDLIBS += -lboost_system -lssl -lcrypto
+LDLIBS += -I $(CURDIR)/local/lib -L $(CURDIR)/local/lib
 
-CFLAGS += -I./local/include
+CFLAGS += -I./local/include -O3
 
 ifeq ($(USE_NTL),1)
 CFLAGS += -DUSE_NTL
@@ -107,7 +106,7 @@ else
 BOOST = -lboost_thread $(MY_BOOST)
 endif
 
-CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE) #-Werror
+CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE) -Wno-vla-extension -sUSE_BOOST_HEADERS # -Werror
 CFLAGS += $(BREW_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 LD = $(CXX)

@@ -5,6 +5,11 @@
 
 #include <iostream>
 #include <fcntl.h>
+
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 using namespace std;
 
 void error(const char *str)
@@ -19,6 +24,7 @@ void error(const char *str)
 
 void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
 {
+   cerr << "set_up_client_socket: " << hostname << " " << Portnum << endl;
    struct addrinfo hints, *ai=NULL,*rp;
    memset (&hints, 0, sizeof(hints));
    hints.ai_family = AF_INET;
@@ -80,24 +86,69 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
    int connect_errno;
    do
    {
-       mysocket = socket(AF_INET, SOCK_STREAM, 0);
+       mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
        if (mysocket < 0)
          error("set_up_socket:socket");
 
-       fl = connect(mysocket, addr, len);
+       // set non-blocking
+       int flags = fcntl(mysocket, F_GETFL, 0);
+       fl = fcntl(mysocket, F_SETFL, O_NONBLOCK | flags);
+       if (fl<0) {
+          std::cerr << "TCP socket error: " << strerror(errno) << std::endl;
+          error("set_up_socket:setsocknonblock");
+       }
+       fl = connect(mysocket, (struct sockaddr *)addr4, len);
+       cerr << "connect = " << fl << " error: " << strerror(errno) << endl;
        connect_errno = errno;
        attempts++;
-       if (fl != 0)
-         {
-           close(mysocket);
-           usleep(wait *= 2);
-#ifdef DEBUG_NETWORKING
-           string msg = "Connecting to " + string(hostname) + ":" +
-               to_string(Portnum) + " failed";
-           errno = connect_errno;
-           perror(msg.c_str());
-#endif
-         }
+       if (fl == -1)
+       {
+          // for non-blocking sockets
+          if(errno == EINPROGRESS)
+          {
+            fd_set fdr;
+            fd_set fdw;
+            FD_ZERO(&fdr);
+            FD_ZERO(&fdw);
+            FD_SET(mysocket, &fdr);
+            FD_SET(mysocket, &fdw);
+
+            int res;
+            // res = select(64, &fdr, &fdw, NULL, NULL);
+            // if (res == -1) {
+            //     perror("select failed");
+            // }
+            // cerr << "select returned " << res << endl;
+            emscripten_sleep(100);
+            
+
+            if(FD_ISSET(mysocket, &fdr) || FD_ISSET(mysocket, &fdw))
+            {
+              /** After select indicates writability, use getsockopt(2) to read
+                  the SO_ERROR option at level SOL_SOCKET to determine
+                  whether connect() completed successfully **/
+              int so_error;
+              socklen_t len = sizeof(so_error);
+              res = getsockopt(mysocket, SOL_SOCKET, SO_ERROR, &so_error, &len);
+              //cerr << "getsockopt returned " << res << " so_error = " << so_error << endl;
+              if(!res)
+              {
+                cerr << "connection to " + string(hostname) + ":" +
+                  to_string(Portnum) << " succeeded for socket(" << mysocket << ")" << endl;
+                fl = 0;
+                break;
+              }
+            }
+          }
+          close(mysocket);
+          usleep(wait *= 2);
+//#ifdef DEBUG_NETWORKING
+          string msg = "Connecting to " + string(hostname) + ":" +
+              to_string(Portnum) + " failed";
+          errno = connect_errno;
+          perror(msg.c_str());
+//#endif
+       }
        errno = connect_errno;
    }
    while (fl == -1
@@ -117,9 +168,10 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
    freeaddrinfo(ai);
 
   /* disable Nagle's algorithm */
-  int one=1;
-  fl= setsockopt(mysocket, IPPROTO_TCP, TCP_NODELAY, (char*)&one, sizeof(int));
-  if (fl<0) { error("set_up_socket:setsockopt");  }
+  // int one=1;
+  // fl= setsockopt(mysocket, IPPROTO_TCP, TCP_NODELAY, (char*)&one, sizeof(int));
+  // if (fl<0) { cerr << "TCP socket error: " << strerror(errno) << endl;
+  //   error("set_up_socket:setsockopt");  }
 
 #ifdef __APPLE__
   int flags = fcntl(mysocket, F_GETFL, 0);

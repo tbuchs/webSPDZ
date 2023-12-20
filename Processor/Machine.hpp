@@ -77,11 +77,12 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
   mkdir_p(PREP_DIR);
 
   string id = "machine";
+  cerr << "use_encryption: " << use_encryption << endl;
   if (use_encryption)
     P = new CryptoPlayer(N, id);
   else
     P = new PlainPlayer(N, id);
-
+  cerr << "Machine::Machine() - after PlainPlayer" << endl;
   if (opts.live_prep)
     {
       sint::LivePrep::basic_setup(*P);
@@ -439,11 +440,13 @@ pair<DataPositions, NamedCommStats> Machine<sint, sgf2n>::stop_threads()
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::run(const string& progname)
 {
+  std::cerr << "Machine::run()" << std::endl;
   prepare(progname);
 
   Timer proc_timer(CLOCK_PROCESS_CPUTIME_ID);
   proc_timer.start();
   timer[0].start({});
+  std::cerr << "Machine::run() - run_tape()" << std::endl;
 
   // run main tape
   run_tape(0, 0, 0, N.num_players());
