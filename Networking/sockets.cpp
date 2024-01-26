@@ -7,7 +7,10 @@
 #include <fcntl.h>
 
 #ifdef EMSCRIPTEN
-#include <emscripten.h>
+  #include <emscripten/websocket.h>
+  #include <emscripten/threading.h>
+  #include <emscripten.h>
+  #include <emscripten/posix_socket.h>
 #endif
 
 using namespace std;
@@ -22,9 +25,44 @@ void error(const char *str)
   throw runtime_error(string() + err + " : " + strerror(old_errno));
 }
 
+void set_up_client_websocket(int& mysocket,const char* hostname,int Portnum)
+{
+  cerr << "set_up_client_websocket: " << hostname << " " << Portnum << endl;
+
+  if (!emscripten_websocket_is_supported())
+	{
+		cerr << "WebSockets are not supported, cannot continue!" << endl;
+		error("websocket not supported");
+	}
+
+  EmscriptenWebSocketCreateAttributes attr;
+	emscripten_websocket_init_create_attributes(&attr);
+  std::string url = "ws://" + (std::string)hostname + ":" + to_string(Portnum);
+  attr.url = url.c_str();
+  cout << "attr.url = " << attr.url << endl;
+  attr.protocols = "binary,base64";
+  attr.createOnMainThread = true;
+  mysocket = emscripten_websocket_new(&attr);
+	if (mysocket <= 0)
+	{
+    cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)mysocket << "!" << endl;
+		exit(1);
+	}
+}
+
 void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
 {
-   cerr << "set_up_client_socket: " << hostname << " " << Portnum << endl;
+  //  static EMSCRIPTEN_WEBSOCKET_T bridgeSocket = 0;
+  //  cerr << "set_up_client_socket: " << hostname << " " << Portnum << endl;
+  //  string url = "ws://" + (std::string)hostname + ":" + to_string(Portnum);
+  //  bridgeSocket = emscripten_init_websocket_to_posix_socket_bridge(url.c_str());
+  //  // Synchronously wait until connection has been established.
+  //  uint16_t readyState = 0;
+  //  do {
+  //    emscripten_websocket_get_ready_state(bridgeSocket, &readyState);
+  //    emscripten_thread_sleep(100);
+  //  } while (readyState == 0);
+
    struct addrinfo hints, *ai=NULL,*rp;
    memset (&hints, 0, sizeof(hints));
    hints.ai_family = AF_INET;
@@ -80,75 +118,59 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
    cout << "connect to ip " << hex << addr4->sin_addr.s_addr << " port " << addr4->sin_port << dec << endl;
 #endif
 
+
    int attempts = 0;
    long wait = 1;
    int fl;
    int connect_errno;
    do
    {
-       mysocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+       mysocket = socket(AF_INET, SOCK_STREAM, 0);
        if (mysocket < 0)
          error("set_up_socket:socket");
 
-       // set non-blocking
-       int flags = fcntl(mysocket, F_GETFL, 0);
-       fl = fcntl(mysocket, F_SETFL, O_NONBLOCK | flags);
-       if (fl<0) {
-          std::cerr << "TCP socket error: " << strerror(errno) << std::endl;
-          error("set_up_socket:setsocknonblock");
-       }
-       fl = connect(mysocket, (struct sockaddr *)addr4, len);
-       cerr << "connect = " << fl << " error: " << strerror(errno) << endl;
+       fl = connect(mysocket, addr, len);
        connect_errno = errno;
        attempts++;
-       if (fl == -1)
+       if(fl != 0 && errno == EINPROGRESS)
        {
-          // for non-blocking sockets
-          if(errno == EINPROGRESS)
-          {
-            fd_set fdr;
-            fd_set fdw;
-            FD_ZERO(&fdr);
-            FD_ZERO(&fdw);
-            FD_SET(mysocket, &fdr);
-            FD_SET(mysocket, &fdw);
-
-            int res;
-            // res = select(64, &fdr, &fdw, NULL, NULL);
-            // if (res == -1) {
-            //     perror("select failed");
-            // }
-            // cerr << "select returned " << res << endl;
+            struct timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000;
+            fd_set fdset;
+            FD_ZERO(&fdset);
+            FD_SET(mysocket, &fdset);
             emscripten_sleep(100);
-            
-
-            if(FD_ISSET(mysocket, &fdr) || FD_ISSET(mysocket, &fdw))
+            cerr << "FD_ISSET: " << FD_ISSET(mysocket, &fdset) << endl;
+            if (FD_ISSET(mysocket, &fdset))
             {
-              /** After select indicates writability, use getsockopt(2) to read
-                  the SO_ERROR option at level SOL_SOCKET to determine
-                  whether connect() completed successfully **/
-              int so_error;
-              socklen_t len = sizeof(so_error);
-              res = getsockopt(mysocket, SOL_SOCKET, SO_ERROR, &so_error, &len);
-              //cerr << "getsockopt returned " << res << " so_error = " << so_error << endl;
-              if(!res)
-              {
-                cerr << "connection to " + string(hostname) + ":" +
-                  to_string(Portnum) << " succeeded for socket(" << mysocket << ")" << endl;
-                fl = 0;
-                break;
-              }
+                int so_error;
+                socklen_t len = sizeof so_error;
+                getsockopt(mysocket, SOL_SOCKET, SO_ERROR, &so_error, &len);
+                if (so_error == 0)
+                {
+                    fl = 0;
+                    cerr << "Connected to " << hostname << ":" << Portnum << endl;
+                    break;
+                }
+                else
+                {
+                    fl = -1;
+                    connect_errno = so_error;
+                }
             }
-          }
-          close(mysocket);
-          usleep(wait *= 2);
-//#ifdef DEBUG_NETWORKING
-          string msg = "Connecting to " + string(hostname) + ":" +
-              to_string(Portnum) + " failed";
-          errno = connect_errno;
-          perror(msg.c_str());
-//#endif
        }
+       if (fl != 0)
+         {
+           close(mysocket);
+           usleep(wait < 1000 ? wait *= 2 : wait);
+#ifdef DEBUG_NETWORKING
+           string msg = "Connecting to " + string(hostname) + ":" +
+               to_string(Portnum) + " failed";
+           errno = connect_errno;
+           perror(msg.c_str());
+#endif
+         }
        errno = connect_errno;
    }
    while (fl == -1

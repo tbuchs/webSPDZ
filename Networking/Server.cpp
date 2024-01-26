@@ -94,7 +94,6 @@ Server::Server(int argc,char **argv)
 Server::Server(int nmachines, int PortnumBase) :
     nmachines(nmachines), PortnumBase(PortnumBase), server_socket(0)
 {
-  cerr << "Server::Server(" << nmachines << ", " << PortnumBase << ")" << endl;
 }
 
 Server::~Server()
@@ -123,13 +122,13 @@ void Server::start()
   // set up connections
   for (i=0; i<nmachines; i++)
     {
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
       cerr << "Waiting for player " << i << endl;
-//#endif
+#endif
       socket_num[i] = server.get_connection_socket("P" + to_string(i));
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
       cerr << "Connected to player " << i << endl;
-//#endif
+#endif
     }
 
   // get names
@@ -166,10 +165,10 @@ void* Server::start_in_thread(void* server)
 Server* Server::start_networking(Names& N, int my_num, int nplayers,
         string hostname, int portnum, int my_port)
 {
-// #ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
   cerr << "Starting networking for " << my_num << "/" << nplayers
       << " with server on " << hostname << ":" << (portnum) << endl;
-// #endif
+#endif
   assert(my_num >= 0);
   assert(my_num < nplayers);
   Server* server = 0;

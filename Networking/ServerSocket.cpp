@@ -23,7 +23,6 @@ using namespace std;
 
 void* accept_thread(void* server_socket)
 {
-  cerr << "accept_thread" << endl;
   ((ServerSocket*)server_socket)->accept_clients();
   return 0;
 }
@@ -54,7 +53,7 @@ ServerSocket::ServerSocket(int Portnum) : portnum(Portnum), thread(0)
   //    std::cerr << "ServerSocket::ServerSocket(" << Portnum << ") - setsockopt1() failed" << std::endl;
   // error("set_up_socket:setsockopt"); }
 
-  /* disable Nagle's algorithm */
+  // /* disable Nagle's algorithm */
   // fl= setsockopt(main_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&one,sizeof(int));
   // if (fl<0) { 
   //   std::cerr << "TCP socket error: " << strerror(errno) << std::endl;
@@ -87,11 +86,9 @@ ServerSocket::ServerSocket(int Portnum) : portnum(Portnum), thread(0)
 
   /* start listening, allowing a queue of up to 1000 pending connection */
   fl=listen(main_socket, 1000);
-  cerr << "listen ret: " << fl << " socket: " << main_socket << " errno = " << strerror(errno) << endl;
   if (fl<0) { 
     cerr << "TCP socket error at listen: " << strerror(errno) << std::endl;
     error("set_up_socket:listen");  }
-
   // Note: must not call virtual init() method in constructor: http://www.aristeia.com/EC3E/3E_item9.pdf
 }
 
@@ -160,10 +157,10 @@ void ServerSocket::accept_clients()
       dest.sin_addr.s_addr = INADDR_ANY;
       dest.sin_port = htons(5000);
       int socksize = sizeof(dest);
-// #ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
       fprintf(stderr, "Accepting...\n");
       cerr << "socket: " << main_socket << endl;
-// #endif
+#endif
       int consocket;
       fd_set fdr;
       FD_ZERO(&fdr);
@@ -202,11 +199,11 @@ void ServerSocket::accept_clients()
         }
       else
         {
-// #ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
           auto& conn = *(sockaddr_in*) &dest;
           fprintf(stderr, "deferring client on %s:%d to thread\n",
               inet_ntoa(conn.sin_addr), ntohs(conn.sin_port));
-// #endif
+#endif
           // defer to thread
           struct sockaddr dest2 = {};
           auto job = (new ServerJob(*this, consocket, dest2));
@@ -218,10 +215,10 @@ void ServerSocket::accept_clients()
 void ServerSocket::process_connection(int consocket, const string& client_id)
 {
   data_signal.lock();
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
   cerr << "client " << hex << client_id << " is on socket " << dec << consocket
       << endl;
-//#endif
+#endif
   process_client(client_id);
   clients[client_id] = consocket;
   data_signal.broadcast();
@@ -239,10 +236,6 @@ int ServerSocket::get_connection_socket(const string& id)
       ss << "Connection id " << hex << id << " already used";
       throw IO_Error(ss.str());
     }
-  
-  cerr << "clients size: " << clients.size() << endl;
-  for(auto client:clients)
-    cerr << "clients: " << client.first << " " << client.second << endl;
 
   while (clients.find(id) == clients.end())
   {

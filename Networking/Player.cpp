@@ -85,11 +85,11 @@ void Names::init(int player, int pnb, const string& filename, int nplayers_wante
   }
   if (nplayers_wanted > 0 and nplayers_wanted != nplayers)
     throw runtime_error("not enough hosts in " + filename);
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
   cerr << "Got list of " << nplayers << " players from file: " << endl;
   for (unsigned int i = 0; i < names.size(); i++)
     cerr << "    " << names[i] << ":" << ports[i] << endl;
-//#endif
+#endif
   setup_server();
 }
 
@@ -169,10 +169,10 @@ void Names::setup_names(const char *servername, int my_port)
   if (names.size() != ports.size())
     throw runtime_error("invalid network setup");
   nplayers = names.size();
-//#ifdef VERBOSE
+#ifdef VERBOSE
   for (int i = 0; i < nplayers; i++)
     cerr << "Player " << i << " is running on machine " << names[i] << endl;
-//#endif
+#endif
   close_client_socket(socket_num);
 }
 
@@ -297,32 +297,38 @@ void PlainPlayer::setup_sockets(const vector<string>& names,
         auto pn=id_base+"P"+to_string(player_no);
         if (i==player_no) {
           const char* localhost = "127.0.0.1";
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
           fprintf(stderr,
               "Setting up send to self socket to %s:%d with id %s\n",
               localhost, ports[i], pn.c_str());
-//#endif
-          set_up_client_socket(sockets[i],localhost,ports[i]);
+#endif
+#ifdef USE_WEBSOCKETS_API
+            set_up_client_websocket(sockets[i],localhost,ports[i]);
+#else
+            set_up_client_socket(sockets[i],localhost,ports[i]);
+#endif
         } else {
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
             fprintf(stderr, "Setting up client to %s:%d with id %s\n",
                 names[i].c_str(), ports[i], pn.c_str());
-//#endif
-
-          set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
+#endif
+#ifdef USE_WEBSOCKETS_API
+            set_up_client_websocket(sockets[i],names[i].c_str(),ports[i]);
+#else
+            set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
+#endif
         }
         octetStream(pn).Send(sockets[i]);
     }
     send_to_self_socket = sockets[player_no];
-    cerr << "sockets size: " << sockets.size() << endl;
     // Setting up the server side
     for (int i=0; i<=player_no; i++) {
         auto id=id_base+"P"+to_string(i);
-// #ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
         fprintf(stderr,
             "As a server, waiting for client with id %s to connect.\n",
             id.c_str());
-// #endif
+#endif
         sockets[i] = server.get_connection_socket(id);
     }
 
