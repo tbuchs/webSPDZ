@@ -43,28 +43,28 @@ public:
 
     bool is_encrypted() { return true; }
 
-    void send_to_no_stats(int other, const octetStream& o) const;
-    void receive_player_no_stats(int other, octetStream& o) const;
+    void send_to_no_stats(int other, const octetStream& o);
+    void receive_player_no_stats(int other, octetStream& o);
 
     size_t send_no_stats(int player, const PlayerBuffer& buffer,
-            bool block) const;
+            bool block);
     size_t recv_no_stats(int player, const PlayerBuffer& buffer,
-            bool block) const;
+            bool block);
 
     void exchange_no_stats(int other, const octetStream& to_send,
         octetStream& to_receive) const;
 
     void pass_around_no_stats(const octetStream& to_send, octetStream& to_receive,
-        int offset) const;
+        int offset);
 
     void send_receive_all_no_stats(const vector<vector<bool>>& channels,
             const vector<octetStream>& to_send,
-            vector<octetStream>& to_receive) const;
+            vector<octetStream>& to_receive);
 
     void partial_broadcast(const vector<bool>& my_senders,
-            const vector<bool>& my_receivers, vector<octetStream>& os) const;
+            const vector<bool>& my_receivers, vector<octetStream>& os);
 
-    void Broadcast_Receive_no_stats(vector<octetStream>& os) const;
+    void Broadcast_Receive_no_stats(vector<octetStream>& os);
 };
 
 #endif /* NETWORKING_CRYPTOPLAYER_H_ */

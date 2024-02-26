@@ -202,16 +202,16 @@ public:
   virtual int my_num() const = 0;
   virtual int num_players() const = 0;
 
-  virtual void receive_player(int, octetStream&) const
+  virtual void receive_player(int, octetStream&)
   { throw not_implemented(); }
-  virtual void pass_around(octetStream&, int = 1) const
+  virtual void pass_around(octetStream&, int = 1)
   { throw not_implemented(); }
-  virtual void Broadcast_Receive(vector<octetStream>&) const
+  virtual void Broadcast_Receive(vector<octetStream>&)
   { throw not_implemented(); }
-  virtual void unchecked_broadcast(vector<octetStream>& o) const
+  virtual void unchecked_broadcast(vector<octetStream>& o)
   { Broadcast_Receive(o); }
   virtual void send_receive_all(const vector<octetStream>&,
-      vector<octetStream>&) const
+      vector<octetStream>&)
   { throw not_implemented(); }
 
   void reset_stats();
@@ -262,49 +262,49 @@ public:
   /**
    * Send the same to all other players
    */
-  virtual void send_all(const octetStream& o) const;
+  virtual void send_all(const octetStream& o);
   /**
    * Send to a specific player
    */
-  void send_to(int player,const octetStream& o) const;
-  virtual void send_to_no_stats(int player,const octetStream& o) const = 0;
+  void send_to(int player,const octetStream& o);
+  virtual void send_to_no_stats(int player,const octetStream& o) = 0;
   /**
    * Receive from all other players.
    * Information from player 0 at ``os[0]`` etc.
    */
-  void receive_all(vector<octetStream>& os) const;
+  void receive_all(vector<octetStream>& os);
   /**
    * Receive from a specific player
    */
-  void receive_player(int i,octetStream& o) const;
-  virtual void receive_player_no_stats(int i,octetStream& o) const = 0;
-  virtual void receive_player(int i,FlexBuffer& buffer) const;
+  void receive_player(int i,octetStream& o);
+  virtual void receive_player_no_stats(int i,octetStream& o) = 0;
+  virtual void receive_player(int i,FlexBuffer& buffer);
 
-  virtual size_t send_no_stats(int, const PlayerBuffer&, bool) const
+  virtual size_t send_no_stats(int, const PlayerBuffer&, bool)
   { throw not_implemented(); }
-  virtual size_t recv_no_stats(int, const PlayerBuffer&, bool) const
+  virtual size_t recv_no_stats(int, const PlayerBuffer&, bool)
   { throw not_implemented(); }
 
   /**
    * Send to all other players by offset.
    * ``o[0]`` gets sent to the next player etc.
    */
-  void send_relative(const vector<octetStream>& o) const;
+  void send_relative(const vector<octetStream>& o);
   /*
    * Send to other player specified by offset.
    * 1 stands for the next player etc.
    */
-  void send_relative(int offset, const octetStream& o) const;
+  void send_relative(int offset, const octetStream& o);
   /**
    * Receive from all other players by offset.
    * ``o[0]`` will contain data from the next player etc.
    */
-  void receive_relative(vector<octetStream>& o) const;
+  void receive_relative(vector<octetStream>& o);
   /**
    * Receive from other player specified by offset.
    * 1 stands for the next player etc.
    */
-  void receive_relative(int offset, octetStream& o) const;
+  void receive_relative(int offset, octetStream& o);
 
   /**
    * Exchange information with one other party,
@@ -327,38 +327,38 @@ public:
    * The default is to send to the next party while receiving from the previous.
    * The buffer is reused.
    */
-  void pass_around(octetStream& o, int offset = 1) const { pass_around(o, o, offset); }
+  void pass_around(octetStream& o, int offset = 1) { pass_around(o, o, offset); }
   /**
    * Send information to a party while receiving from another by offset.
    * The default is to send to the next party while receiving from the previous.
    */
-  void pass_around(octetStream& to_send, octetStream& to_receive, int offset) const;
+  void pass_around(octetStream& to_send, octetStream& to_receive, int offset);
   virtual void pass_around_no_stats(const octetStream&, octetStream&,
-      int) const { throw runtime_error("implement passing around"); }
+      int) { throw runtime_error("implement passing around"); }
 
   /**
    * Broadcast and receive data to/from all players.
    * Assumes o[player_no] contains the data to be broadcast by me.
    */
-  virtual void unchecked_broadcast(vector<octetStream>& o) const;
+  virtual void unchecked_broadcast(vector<octetStream>& o);
   /**
    * Broadcast and receive data to/from all players with eventual verification.
    * Assumes o[player_no] contains the data to be broadcast by me.
    */
-  virtual void Broadcast_Receive(vector<octetStream>& o) const;
-  virtual void Broadcast_Receive_no_stats(vector<octetStream>&) const
+  virtual void Broadcast_Receive(vector<octetStream>& o);
+  virtual void Broadcast_Receive_no_stats(vector<octetStream>&)
   { throw runtime_error("implement broadcast"); }
 
   /**
    * Run protocol to verify broadcast is correct
    */
-  virtual void Check_Broadcast() const;
+  virtual void Check_Broadcast();
 
   /**
    * Send something different to each player.
    */
   void send_receive_all(const vector<octetStream>& to_send,
-      vector<octetStream>& to_receive) const;
+      vector<octetStream>& to_receive);
   /**
    * Specified senders only send something different to each player.
    * @param senders set whether a player sends or not,
@@ -367,7 +367,7 @@ public:
    * @param to_receive received data by player number
    */
   void send_receive_all(const vector<bool>& senders,
-      const vector<octetStream>& to_send, vector<octetStream>& to_receive) const;
+      const vector<octetStream>& to_send, vector<octetStream>& to_receive);
   /**
    * Send something different only one specified channels.
    * @param channels ``channel[i][j]`` indicates whether party ``i`` sends
@@ -377,10 +377,10 @@ public:
    */
   void send_receive_all(const vector<vector<bool>>& channels,
       const vector<octetStream>& to_send,
-      vector<octetStream>& to_receive) const;
+      vector<octetStream>& to_receive);
   virtual void send_receive_all_no_stats(const vector<vector<bool>>& channels,
       const vector<octetStream>& to_send,
-      vector<octetStream>& to_receive) const = 0;
+      vector<octetStream>& to_receive) = 0;
 
   /**
    * Specified senders broadcast information to specified receivers.
@@ -390,11 +390,11 @@ public:
    */
   virtual void partial_broadcast(const vector<bool>& senders,
       const vector<bool>& receivers,
-      vector<octetStream>& os) const;
+      vector<octetStream>& os);
 
   // dummy functions for compatibility
   virtual void request_receive(int i, octetStream& o) const { (void)i; (void)o; }
-  virtual void wait_receive(int i, octetStream& o) const
+  virtual void wait_receive(int i, octetStream& o)
   { receive_player(i, o); }
 
   NamedCommStats total_comm() const;
@@ -412,37 +412,36 @@ public:
 
   // Send an octetStream to all other players 
   //   -- And corresponding receive
-  virtual void send_to_no_stats(int player,const octetStream& o) const;
-  virtual void receive_player_no_stats(int i,octetStream& o) const;
+  virtual void send_to_no_stats(int player,const octetStream& o);
+  virtual void receive_player_no_stats(int i,octetStream& o);
   
   virtual void send_receive_all_no_stats(const vector<vector<bool>>& channels,
-      const vector<octetStream>& to_send, vector<octetStream>& to_receive) const;
+      const vector<octetStream>& to_send, vector<octetStream>& to_receive);
 
   // send to next and receive from previous player
   virtual void pass_around_no_stats(const octetStream& to_send,
-      octetStream& to_receive, int offset) const;
+      octetStream& to_receive, int offset);
 
   /* Broadcast and Receive data to/from all players 
    *  - Assumes o[player_no] contains the thing broadcast by me
   */
-  virtual void Broadcast_Receive_no_stats(vector<octetStream>& o) const;
+  virtual void Broadcast_Receive_no_stats(vector<octetStream>& o);
 
-  inline void add_message(int sender, const octetStream* msg) const {
+  inline void add_message(int sender, const octetStream* msg) {
     if(queue_counter.find(sender) != queue_counter.end()) {
       message_queue.at(sender).push_back(msg);
       queue_counter.at(sender)++;
     } else { 
       // first message
       queue_counter.insert({sender, 1});
-      message_queue.insert({sender, std::vector<const octetStream*>{msg}});
+      message_queue.insert({sender, std::deque<const octetStream*>{msg}});
     }
   }
 
-  inline const octetStream* read_message(int sender) const {
+  inline const octetStream* read_message(int sender) {
     if(queue_counter.find(sender) != queue_counter.end() && queue_counter.at(sender) > 0) {
       const octetStream* msg = message_queue.at(sender).front();
-      //message_queue.at(sender).pop_front();  
-      message_queue.erase(message_queue.begin());
+      message_queue.at(sender).pop_front();
       queue_counter.at(sender)--;
       return msg;
     }
@@ -451,7 +450,7 @@ public:
     exit(-1);
   }
 
-  inline void send_message(int receiver, const octetStream* msg) const {
+  inline void send_message(int receiver, const octetStream* msg) {
     bool success = false;
     cerr << "Sending message from " << player_no << " to " << receiver << ": " << *msg << endl;
     if(data_channels.find(receiver) != data_channels.end()) {
@@ -477,8 +476,8 @@ public:
   int connected_users;
 
 private:
-  mutable map<int, std::vector<const octetStream*>> message_queue;
-  mutable map<int, int> queue_counter;
+  map<int, std::deque<const octetStream*>> message_queue;
+  map<int, int> queue_counter;
   string id;
 };
 
@@ -514,8 +513,8 @@ public:
 
   // Send an octetStream to all other players 
   //   -- And corresponding receive
-  virtual void send_to_no_stats(int player,const octetStream& o) const;
-  virtual void receive_player_no_stats(int i,octetStream& o) const;
+  virtual void send_to_no_stats(int player,const octetStream& o);
+  virtual void receive_player_no_stats(int i,octetStream& o);
 
   // exchange data with minimal memory usage
   virtual void exchange_no_stats(int other, const octetStream& to_send,
@@ -523,16 +522,16 @@ public:
 
   // send to next and receive from previous player
   virtual void pass_around_no_stats(const octetStream& to_send,
-      octetStream& to_receive, int offset) const;
+      octetStream& to_receive, int offset);
 
   /* Broadcast and Receive data to/from all players 
    *  - Assumes o[player_no] contains the thing broadcast by me
    */
-  virtual void Broadcast_Receive_no_stats(vector<octetStream>& o) const;
+  virtual void Broadcast_Receive_no_stats(vector<octetStream>& o);
 
   virtual void send_receive_all_no_stats(const vector<vector<bool>>& channels,
       const vector<octetStream>& to_send,
-      vector<octetStream>& to_receive) const;
+      vector<octetStream>& to_receive);
 };
 
 /**
@@ -554,8 +553,8 @@ public:
   PlainPlayer(const Names& Nms, int id_base = 0);
   ~PlainPlayer();
 
-  size_t send_no_stats(int player, const PlayerBuffer& buffer, bool block) const;
-  size_t recv_no_stats(int player, const PlayerBuffer& buffer, bool block) const;
+  size_t send_no_stats(int player, const PlayerBuffer& buffer, bool block);
+  size_t recv_no_stats(int player, const PlayerBuffer& buffer, bool block);
 };
 
 
@@ -569,10 +568,10 @@ public:
   virtual ~ThreadPlayer();
 
   void request_receive(int i, octetStream& o) const;
-  void wait_receive(int i, octetStream& o) const;
-  void receive_player_no_stats(int i,octetStream& o) const;
+  void wait_receive(int i, octetStream& o);
+  void receive_player_no_stats(int i,octetStream& o);
 
-  void send_all(const octetStream& o) const;
+  void send_all(const octetStream& o);
 };
 
 
@@ -588,7 +587,7 @@ public:
   virtual void send(octetStream& o) const = 0;
   virtual void receive(octetStream& o) const = 0;
   virtual void send_receive_player(vector<octetStream>& o) const = 0;
-  void Broadcast_Receive(vector<octetStream>& o) const;
+  void Broadcast_Receive(vector<octetStream>& o);
 
   virtual size_t send(const PlayerBuffer&, bool) const
   { throw not_implemented(); }
@@ -617,7 +616,7 @@ public:
   void receive(octetStream& o) const;
   void send_receive_player(vector<octetStream>& o) const;
 
-  void pass_around(octetStream& o, int _ = 1) const { (void)_, (void) o; throw not_implemented(); }
+  void pass_around(octetStream& o, int _ = 1) { (void)_, (void) o; throw not_implemented(); }
 
   size_t send(const PlayerBuffer& buffer, bool block) const;
   size_t recv(const PlayerBuffer& buffer, bool block) const;
@@ -659,7 +658,7 @@ public:
 
   void reverse_exchange(octetStream& o) const { P.pass_around(o, P.num_players() - offset); }
   void exchange(octetStream& o) const { P.exchange(P.get_player(offset), o); }
-  void pass_around(octetStream& o, int _ = 1) const { (void)_; P.pass_around(o, offset); }
+  void pass_around(octetStream& o, int _ = 1) { (void)_; P.pass_around(o, offset); }
 };
 
 #endif

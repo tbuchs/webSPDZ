@@ -19,7 +19,7 @@
 // Special version for octetStreams
 void Commit(vector< vector<octetStream> >& Comm_data,
             vector<octetStream>& Open_data,
-            const vector< vector<octetStream> >& data,const Player& P,int num_runs)
+            const vector< vector<octetStream> >& data, Player& P,int num_runs)
 {
   int my_number=P.my_num();
   for (int i=0; i<num_runs; i++)
@@ -36,7 +36,7 @@ void Commit(vector< vector<octetStream> >& Comm_data,
 void Open(vector< vector<octetStream> >& data,
           const vector< vector<octetStream> >& Comm_data,
           const vector<octetStream>& My_Open_data,
-          const Player& P,int num_runs,int dont)
+          Player& P,int num_runs,int dont)
 {
   int my_number=P.my_num();
   int num_players=P.num_players();
@@ -60,7 +60,7 @@ void Open(vector< vector<octetStream> >& data,
           const vector< vector<octetStream> >& Comm_data,
           const vector<octetStream>& My_Open_data,
           const vector<int> open,
-          const Player& P,int num_runs)
+          Player& P,int num_runs)
 {
   int my_number=P.my_num();
   int num_players=P.num_players();
@@ -85,7 +85,7 @@ void Open(vector< vector<octetStream> >& data,
 
 void Commit_To_Challenge(vector<unsigned int>& e,
                          vector<octetStream>& Comm_e,vector<octetStream>& Open_e,
-                         const Player& P,int num_runs)
+                         Player& P,int num_runs)
 {
   PRNG G;
   G.ReSeed();
@@ -103,7 +103,7 @@ void Commit_To_Challenge(vector<unsigned int>& e,
 
 int Open_Challenge(vector<unsigned int>& e,vector<octetStream>& Open_e,
                    const vector<octetStream>& Comm_e,
-                   const Player& P,int num_runs)
+                   Player& P,int num_runs)
 {
   // Now open the challenge commitments and determine which run was for real
   P.Broadcast_Receive(Open_e);
@@ -124,7 +124,7 @@ int Open_Challenge(vector<unsigned int>& e,vector<octetStream>& Open_e,
 }
 
 
-void Create_Random_Seed(octet* seed,const PlayerBase& P,int len)
+void Create_Random_Seed(octet* seed, PlayerBase& P,int len)
 {
   PRNG G;
   G.ReSeed();
@@ -150,7 +150,7 @@ void Create_Random_Seed(octet* seed,const PlayerBase& P,int len)
 }
 
 
-void Commit_And_Open_(vector<octetStream>& datas, const Player& P, Coordinator& coordinator)
+void Commit_And_Open_(vector<octetStream>& datas, Player& P, Coordinator& coordinator)
 {
   vector<octetStream> Comm_data(P.num_players());
   vector<octetStream> Open_data(P.num_players());
@@ -176,7 +176,7 @@ void Commit_To_Seeds(vector<PRNG>& G,
                      vector< vector<octetStream> >& seeds,
                      vector< vector<octetStream> >& Comm_seeds,
 		     vector<octetStream>& Open_seeds,
-		     const Player& P,int num_runs)
+		     Player& P,int num_runs)
 {
   seeds.resize(num_runs);
   Comm_seeds.resize(num_runs);

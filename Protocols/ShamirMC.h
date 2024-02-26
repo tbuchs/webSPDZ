@@ -24,7 +24,7 @@ public:
     IndirectShamirMC(typename T::mac_key_type = {}, int = 0, int = 0) {}
     ~IndirectShamirMC() {}
 
-    virtual void exchange(const Player& P);
+    virtual void exchange(Player& P);
 };
 
 /**
@@ -43,10 +43,10 @@ class ShamirMC : public IndirectShamirMC<T>
 
 protected:
     Bundle<octetStream>* os;
-    const Player* player;
+    Player* player;
     int threshold;
 
-    void prepare(const vector<T>& S, const Player& P);
+    void prepare(const vector<T>& S, Player& P);
 
 public:
     ShamirMC(int threshold = 0);
@@ -62,18 +62,18 @@ public:
 
     virtual ~ShamirMC();
 
-    void POpen(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
-    void POpen_Begin(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
-    void POpen_End(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
+    void POpen(vector<typename T::open_type>& values,const vector<T>& S,Player& P);
+    void POpen_Begin(vector<typename T::open_type>& values,const vector<T>& S,Player& P);
+    void POpen_End(vector<typename T::open_type>& values,const vector<T>& S,Player& P);
 
-    virtual void init_open(const Player& P, int n = 0);
+    virtual void init_open(Player& P, int n = 0);
     virtual void prepare_open(const T& secret, int = -1);
-    virtual void exchange(const Player& P);
+    virtual void exchange(Player& P);
     virtual typename T::open_type finalize_raw();
 
-    void Check(const Player& P) { (void)P; }
+    void Check(Player& P) { (void)P; }
 
-    vector<rec_type> get_reconstruction(const Player& P, int n = 0);
+    vector<rec_type> get_reconstruction(Player& P, int n = 0);
     open_type reconstruct(const vector<open_type>& shares);
 };
 

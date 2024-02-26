@@ -9,7 +9,7 @@
 #include "Subroutines.h"
 
 template<class T>
-void Create_Random(T& ans,const Player& P)
+void Create_Random(T& ans, Player& P)
 {
   PRNG G;
   G.ReSeed();

@@ -10,7 +10,7 @@
 
 template<class T>
 void ReplicatedMC<T>::POpen(vector<typename T::open_type>& values,
-        const vector<T>& S, const Player& P)
+        const vector<T>& S, Player& P)
 {
     prepare(S);
     P.pass_around(to_send, o, -1);
@@ -19,7 +19,7 @@ void ReplicatedMC<T>::POpen(vector<typename T::open_type>& values,
 
 template<class T>
 void ReplicatedMC<T>::POpen_Begin(vector<typename T::open_type>&,
-        const vector<T>& S, const Player& P)
+        const vector<T>& S, Player& P)
 {
     prepare(S);
     P.send_relative(-1, to_send);
@@ -37,7 +37,7 @@ void ReplicatedMC<T>::prepare(const vector<T>& S)
 }
 
 template<class T>
-void ReplicatedMC<T>::exchange(const Player& P)
+void ReplicatedMC<T>::exchange(Player& P)
 {
     prepare(this->secrets);
     P.pass_around(to_send, o, -1);
@@ -45,7 +45,7 @@ void ReplicatedMC<T>::exchange(const Player& P)
 
 template<class T>
 void ReplicatedMC<T>::POpen_End(vector<typename T::open_type>& values,
-        const vector<T>& S, const Player& P)
+        const vector<T>& S, Player& P)
 {
     P.receive_relative(1, o);
     finalize(values, S);

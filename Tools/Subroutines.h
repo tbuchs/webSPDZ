@@ -22,7 +22,7 @@
 void Open(vector< vector<octetStream> >& data,
           const vector< vector<octetStream> >& Comm_data,
           const vector<octetStream>& My_Open_data,
-          const Player& P,int num_runs,int dont=-1);
+          Player& P,int num_runs,int dont=-1);
 
 /* This one takes a vector open which contains 0 and 1
  * If 1 then we open this value, otherwise we do not
@@ -31,7 +31,7 @@ void Open(vector< vector<octetStream> >& data,
           const vector< vector<octetStream> >& Comm_data,
           const vector<octetStream>& My_Open_data,
           const vector<int> open,
-          const Player& P,int num_runs);
+          Player& P,int num_runs);
 
 
 
@@ -42,15 +42,15 @@ void Open(vector< vector<octetStream> >& data,
  * On input data[i][j] is only defined for j=my_number
  */
 template<class T>
-void Commit_And_Open(vector< vector<T> >& data,const Player& P,int num_runs);
+void Commit_And_Open(vector< vector<T> >& data, Player& P,int num_runs);
 
 template<class T>
-void Commit_And_Open(vector<T>& data, const Player& P, Coordinator& coordinator);
+void Commit_And_Open(vector<T>& data, Player& P, Coordinator& coordinator);
 
-void Commit_And_Open_(vector<octetStream>& datas, const Player& P, Coordinator& coordinator);
+void Commit_And_Open_(vector<octetStream>& datas, Player& P, Coordinator& coordinator);
 
 template<class T>
-void Commit_And_Open(vector<T>& data, const Player& P, Coordinator& coordinator)
+void Commit_And_Open(vector<T>& data, Player& P, Coordinator& coordinator)
 {
   vector<octetStream> datas(P.num_players());
   data[P.my_num()].pack(datas[P.my_num()]);
@@ -61,24 +61,24 @@ void Commit_And_Open(vector<T>& data, const Player& P, Coordinator& coordinator)
 
 
 template<class T>
-void Transmit_Data(vector< vector<T> >& data,const Player& P,int num_runs);
+void Transmit_Data(vector< vector<T> >& data, Player& P,int num_runs);
 
 /* Functions to Commit and Open a Challenge Value */
 void Commit_To_Challenge(vector<unsigned int>& e,
                          vector<octetStream>& Comm_e,vector<octetStream>& Open_e,
-                         const Player& P,int num_runs);
+                         Player& P,int num_runs);
 
 int Open_Challenge(vector<unsigned int>& e,vector<octetStream>& Open_e,
                    const vector<octetStream>& Comm_e,
-                   const Player& P,int num_runs);
+                   Player& P,int num_runs);
 
 
 /* Function to create a shared random value for T=gfp/gf2n */
 template<class T>
-void Create_Random(T& ans,const Player& P);
+void Create_Random(T& ans, Player& P);
 
 template<class T>
-T Create_Random(const Player& P)
+T Create_Random(Player& P)
 {
   T res;
   Create_Random(res, P);
@@ -86,7 +86,7 @@ T Create_Random(const Player& P)
 }
 
 /* Produce a random seed of length len */
-void Create_Random_Seed(octet* seed,const PlayerBase& P,int len);
+void Create_Random_Seed(octet* seed, PlayerBase& P,int len);
 
 
 
@@ -97,7 +97,7 @@ void Commit_To_Seeds(vector<PRNG>& G,
                      vector< vector<octetStream> >& seeds,
                      vector< vector<octetStream> >& Comm_seeds,
 		     vector<octetStream>& Open_seeds,
-		     const Player& P,int num_runs);
+		     Player& P,int num_runs);
 
 
 
@@ -109,7 +109,7 @@ void Commit_To_Seeds(vector<PRNG>& G,
 template<class T>
 void Commit(vector< vector<octetStream> >& Comm_data,
             vector<octetStream>& Open_data,
-            const vector< vector<T> >& data,const Player& P,int num_runs)
+            const vector< vector<T> >& data, Player& P,int num_runs)
 {
   octetStream os;
   int my_number=P.my_num();
@@ -133,7 +133,7 @@ template<class T>
 void Open(vector< vector<T> >& data,
           const vector< vector<octetStream> >& Comm_data,
           const vector<octetStream>& My_Open_data,
-          const Player& P,int num_runs,int dont=-1)
+          Player& P,int num_runs,int dont=-1)
 {
   octetStream os;
   int my_number=P.my_num();

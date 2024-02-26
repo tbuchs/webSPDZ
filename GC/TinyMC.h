@@ -50,7 +50,7 @@ public:
         return *part_MC;
     }
 
-    void init_open(const Player& P, int n)
+    void init_open(Player& P, int n)
     {
         part_MC->init_open(P);
         sizes.clear();
@@ -64,7 +64,7 @@ public:
         sizes.push_back(secret.get_regs().size());
     }
 
-    void exchange(const Player& P)
+    void exchange(Player& P)
     {
         part_MC->exchange(P);
     }
@@ -78,7 +78,7 @@ public:
         return opened;
     }
 
-    void Check(const Player& P)
+    void Check(Player& P)
     {
         part_MC->Check(P);
     }

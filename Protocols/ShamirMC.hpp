@@ -27,7 +27,7 @@ ShamirMC<T>::~ShamirMC()
 
 template<class T>
 void ShamirMC<T>::POpen_Begin(vector<typename T::open_type>& values,
-        const vector<T>& S, const Player& P)
+        const vector<T>& S, Player& P)
 {
     (void) values;
     prepare(S, P);
@@ -36,7 +36,7 @@ void ShamirMC<T>::POpen_Begin(vector<typename T::open_type>& values,
 
 template<class T>
 vector<typename T::open_type::Scalar> ShamirMC<T>::get_reconstruction(
-        const Player& P, int n_relevant_players)
+        Player& P, int n_relevant_players)
 {
     if (n_relevant_players == 0)
         n_relevant_players = threshold + 1;
@@ -48,7 +48,7 @@ vector<typename T::open_type::Scalar> ShamirMC<T>::get_reconstruction(
 }
 
 template<class T>
-void ShamirMC<T>::init_open(const Player& P, int n)
+void ShamirMC<T>::init_open(Player& P, int n)
 {
     if (reconstruction.empty())
     {
@@ -65,7 +65,7 @@ void ShamirMC<T>::init_open(const Player& P, int n)
 }
 
 template<class T>
-void ShamirMC<T>::prepare(const vector<T>& S, const Player& P)
+void ShamirMC<T>::prepare(const vector<T>& S, Player& P)
 {
     init_open(P, S.size());
     for (auto& share : S)
@@ -80,7 +80,7 @@ void ShamirMC<T>::prepare_open(const T& share, int)
 
 template<class T>
 void ShamirMC<T>::POpen(vector<typename T::open_type>& values, const vector<T>& S,
-        const Player& P)
+        Player& P)
 {
     prepare(S, P);
     exchange(P);
@@ -88,7 +88,7 @@ void ShamirMC<T>::POpen(vector<typename T::open_type>& values, const vector<T>& 
 }
 
 template<class T>
-void ShamirMC<T>::exchange(const Player& P)
+void ShamirMC<T>::exchange(Player& P)
 {
     vector<bool> my_senders(P.num_players()), my_receivers(P.num_players());
     for (int i = 0; i < P.num_players(); i++)
@@ -101,7 +101,7 @@ void ShamirMC<T>::exchange(const Player& P)
 
 template<class T>
 void ShamirMC<T>::POpen_End(vector<typename T::open_type>& values,
-        const vector<T>& S, const Player& P)
+        const vector<T>& S, Player& P)
 {
     P.receive_all(*os);
     finalize(values, S);
@@ -145,7 +145,7 @@ typename T::open_type ShamirMC<T>::reconstruct(const vector<open_type>& shares)
 }
 
 template<class T>
-void IndirectShamirMC<T>::exchange(const Player& P)
+void IndirectShamirMC<T>::exchange(Player& P)
 {
     oss.resize(P.num_players());
     int threshold = ShamirMachine::s().threshold;

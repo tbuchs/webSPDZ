@@ -29,14 +29,14 @@ public:
     ReplicatedMC(const typename T::mac_key_type& _, Names& ____, int __ = 0, int ___ = 0)
     { (void)_; (void)__; (void)___; (void)____; }
 
-    void POpen(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
-    void POpen_Begin(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
-    void POpen_End(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
+    void POpen(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
+    void POpen_Begin(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
+    void POpen_End(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
 
-    virtual void exchange(const Player& P);
+    virtual void exchange( Player& P);
     virtual typename T::open_type finalize_raw();
 
-    void Check(const Player& P) { (void)P; }
+    void Check( Player& P) { (void)P; }
 
     ReplicatedMC& get_part_MC()
     {

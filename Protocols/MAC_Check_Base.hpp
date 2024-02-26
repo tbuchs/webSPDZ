@@ -10,7 +10,7 @@
 
 template<class T>
 void MAC_Check_Base<T>::POpen_Begin(vector<typename T::open_type>&,
-        const vector<T>& S, const Player& P)
+        const vector<T>& S, Player& P)
 {
     init_open(P, S.size());
     for (auto& secret : S)
@@ -20,7 +20,7 @@ void MAC_Check_Base<T>::POpen_Begin(vector<typename T::open_type>&,
 
 template<class T>
 void MAC_Check_Base<T>::POpen_End(vector<typename T::open_type>& values,
-        const vector<T>& S, const Player&)
+        const vector<T>& S, Player&)
 {
     values.clear();
     values.reserve(S.size());
@@ -29,14 +29,14 @@ void MAC_Check_Base<T>::POpen_End(vector<typename T::open_type>& values,
 }
 
 template<class T>
-void MAC_Check_Base<T>::POpen(vector<typename T::open_type>& values,const vector<T>& S,const Player& P)
+void MAC_Check_Base<T>::POpen(vector<typename T::open_type>& values,const vector<T>& S, Player& P)
 {
     MAC_Check_Base<T>::POpen_Begin(values, S, P);
     MAC_Check_Base<T>::POpen_End(values, S, P);
 }
 
 template<class T>
-typename T::open_type MAC_Check_Base<T>::POpen(const T& secret, const Player& P)
+typename T::open_type MAC_Check_Base<T>::POpen(const T& secret, Player& P)
 {
     vector<typename T::open_type> opened;
     POpen(opened, {secret}, P);
@@ -44,7 +44,7 @@ typename T::open_type MAC_Check_Base<T>::POpen(const T& secret, const Player& P)
 }
 
 template<class T>
-void MAC_Check_Base<T>::init_open(const Player&, int n)
+void MAC_Check_Base<T>::init_open(Player&, int n)
 {
     secrets.clear();
     secrets.reserve(n);
@@ -79,7 +79,7 @@ array<typename T::open_type*, 2> MAC_Check_Base<T>::finalize_several(size_t n)
 
 template<class T>
 void MAC_Check_Base<T>::CheckFor(const typename T::open_type& value,
-        const vector<T>& shares, const Player& P)
+        const vector<T>& shares, Player& P)
 {
     vector<typename T::open_type> opened;
     POpen(opened, shares, P);

@@ -32,13 +32,13 @@ public:
 
 class AllCommitments
 {
-    const Player& P;
+    Player& P;
     vector<octetStream> comms, opens;
 
 public:
     vector<octetStream> messages;
 
-    AllCommitments(const Player& P) : P(P), comms(P.num_players()), opens(P.num_players()) {}
+    AllCommitments(Player& P) : P(P), comms(P.num_players()), opens(P.num_players()) {}
     // no checks yet
     void commit_and_open(const octetStream& message);
     void commit(const octetStream& message);

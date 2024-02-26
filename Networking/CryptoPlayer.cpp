@@ -122,14 +122,14 @@ CryptoPlayer::~CryptoPlayer()
     }
 }
 
-void CryptoPlayer::send_to_no_stats(int other, const octetStream& o) const
+void CryptoPlayer::send_to_no_stats(int other, const octetStream& o)
 {
     assert(other != my_num());
     senders[other]->request(o);
     senders[other]->wait(o);
 }
 
-void CryptoPlayer::receive_player_no_stats(int other, octetStream& o) const
+void CryptoPlayer::receive_player_no_stats(int other, octetStream& o)
 {
     assert(other != my_num());
     receivers[other]->request(o);
@@ -137,7 +137,7 @@ void CryptoPlayer::receive_player_no_stats(int other, octetStream& o) const
 }
 
 size_t CryptoPlayer::send_no_stats(int player, const PlayerBuffer& buffer,
-        bool block) const
+        bool block)
 {
     assert(player != my_num());
     auto socket = senders.at(player)->get_socket();
@@ -151,7 +151,7 @@ size_t CryptoPlayer::send_no_stats(int player, const PlayerBuffer& buffer,
 }
 
 size_t CryptoPlayer::recv_no_stats(int player, const PlayerBuffer& buffer,
-        bool block) const
+        bool block)
 {
     assert(player != my_num());
     auto socket = receivers.at(player)->get_socket();
@@ -182,7 +182,7 @@ void CryptoPlayer::exchange_no_stats(int other, const octetStream& to_send,
 }
 
 void CryptoPlayer::pass_around_no_stats(const octetStream& to_send,
-        octetStream& to_receive, int offset) const
+        octetStream& to_receive, int offset)
 {
     assert(get_player(offset) != my_num());
     if (&to_send == &to_receive)
@@ -208,7 +208,7 @@ void CryptoPlayer::pass_around_no_stats(const octetStream& to_send,
 
 void CryptoPlayer::send_receive_all_no_stats(const vector<vector<bool>>& channels,
         const vector<octetStream>& to_send,
-        vector<octetStream>& to_receive) const
+        vector<octetStream>& to_receive)
 {
     to_receive.resize(num_players());
     for (int offset = 1; offset < num_players(); offset++)
@@ -233,7 +233,7 @@ void CryptoPlayer::send_receive_all_no_stats(const vector<vector<bool>>& channel
 
 void CryptoPlayer::partial_broadcast(const vector<bool>& my_senders,
         const vector<bool>& my_receivers,
-        vector<octetStream>& os) const
+        vector<octetStream>& os)
 {
     TimeScope ts(comm_stats["Partial broadcasting"].add(os[my_num()]));
     for (int offset = 1; offset < num_players(); offset++)
@@ -259,7 +259,7 @@ void CryptoPlayer::partial_broadcast(const vector<bool>& my_senders,
     }
 }
 
-void CryptoPlayer::Broadcast_Receive_no_stats(vector<octetStream>& os) const
+void CryptoPlayer::Broadcast_Receive_no_stats(vector<octetStream>& os)
 {
     for (int offset = 1; offset < num_players(); offset++)
     {

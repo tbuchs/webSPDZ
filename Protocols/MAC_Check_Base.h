@@ -41,36 +41,36 @@ public:
     virtual ~MAC_Check_Base() {}
 
     /// Run checking protocol
-    virtual void Check(const Player& P) { (void)P; }
+    virtual void Check(Player& P) { (void)P; }
 
     int number() const { return values_opened; }
 
     /// Get MAC key
     const typename T::mac_key_type::Scalar& get_alphai() const { return alphai; }
 
-    virtual void POpen_Begin(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
-    virtual void POpen_End(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
+    virtual void POpen_Begin(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
+    virtual void POpen_End(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
     /// Open values in ``S`` and store results in ``values``
-    virtual void POpen(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
-    typename T::open_type POpen(const T& secret, const Player& P);
+    virtual void POpen(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
+    typename T::open_type POpen(const T& secret, Player& P);
     /// Open single value
-    typename T::open_type open(const T& secret, const Player& P) { return POpen(secret, P); }
+    typename T::open_type open(const T& secret, Player& P) { return POpen(secret, P); }
 
     /// Initialize opening round
-    virtual void init_open(const Player& P, int n = 0);
+    virtual void init_open(Player& P, int n = 0);
     /// Add value to be opened
     virtual void prepare_open(const T& secret, int n_bits = -1);
     /// Run opening protocol
-    virtual void exchange(const Player& P) = 0;
+    virtual void exchange(Player& P) = 0;
     /// Get next opened value
     virtual typename T::clear finalize_open();
     virtual typename T::open_type finalize_raw();
     array<typename T::open_type*, 2> finalize_several(size_t n);
 
     /// Check whether all ``shares`` are ``value``
-    virtual void CheckFor(const typename T::open_type& value, const vector<T>& shares, const Player& P);
+    virtual void CheckFor(const typename T::open_type& value, const vector<T>& shares, Player& P);
 
-    virtual const Player& get_check_player(const Player& P) const { return P; }
+    virtual Player& get_check_player(Player& P) const { return P; }
 
     virtual void set_prep(Preprocessing<T>&) {}
 };

@@ -41,11 +41,11 @@ public:
     {
     }
 
-    void exchange(const Player&)
+    void exchange(Player&)
     {
         throw not_implemented();
     }
-    void CheckFor(const typename T::open_type&, const vector<T>&, const Player&)
+    void CheckFor(const typename T::open_type&, const vector<T>&, Player&)
     {
     }
 

@@ -33,10 +33,10 @@ class TreeSum
 {
   static const char* mc_timer_names[];
 
-  void start(vector<T>& values, const Player& P);
+  void start(vector<T>& values, Player& P);
   void finish(vector<T>& values, const Player& P);
 
-  void add_openings(vector<T>& values, const Player& P, int sum_players,
+  void add_openings(vector<T>& values, Player& P, int sum_players,
       int last_sum_players, int send_player);
 
   virtual void post_add_process(vector<T>&) {}
@@ -49,7 +49,7 @@ protected:
 
   vector<int> lengths;
 
-  void ReceiveValues(vector<T>& values, const Player& P, int sender);
+  void ReceiveValues(vector<T>& values, Player& P, int sender);
   virtual void AddToValues(vector<T>& values) { (void)values; }
 
 public:
@@ -272,7 +272,7 @@ size_t TreeSum<T>::report_size(ReportType type)
 }
 
 template<class T>
-void TreeSum<T>::add_openings(vector<T>& values, const Player& P,
+void TreeSum<T>::add_openings(vector<T>& values, Player& P,
     int sum_players, int last_sum_players, int send_player)
 {
   auto& MC = *this;
@@ -310,7 +310,7 @@ void TreeSum<T>::add_openings(vector<T>& values, const Player& P,
 }
 
 template<class T>
-void TreeSum<T>::start(vector<T>& values, const Player& P)
+void TreeSum<T>::start(vector<T>& values, Player& P)
 {
   if (opening_sum < 2)
     opening_sum = P.num_players();
@@ -397,7 +397,7 @@ void TreeSum<T>::finish(vector<T>& values, const Player& P)
 }
 
 template<class T>
-void TreeSum<T>::ReceiveValues(vector<T>& values, const Player& P, int sender)
+void TreeSum<T>::ReceiveValues(vector<T>& values, Player& P, int sender)
 {
   timers[RECV_SUM].start();
   P.receive_player(sender, os);

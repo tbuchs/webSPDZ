@@ -13,7 +13,7 @@ MaliciousShamirMC<T>::MaliciousShamirMC()
 }
 
 template<class T>
-void MaliciousShamirMC<T>::init_open(const Player& P, int n)
+void MaliciousShamirMC<T>::init_open(Player& P, int n)
 {
     int threshold = ShamirMachine::s().threshold;
     if (reconstructions.empty())

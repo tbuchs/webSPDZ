@@ -33,17 +33,17 @@ void PRNG::ReSeed()
   InitSeed();
 }
 
-void PRNG::SeedGlobally(const PlayerBase& P)
+void PRNG::SeedGlobally(PlayerBase& P)
 {
   octet seed[SEED_SIZE];
   Create_Random_Seed(seed, P, SEED_SIZE);
   SetSeed(seed);
 }
 
-void PRNG::SeedGlobally(const Player& P, bool secure)
+void PRNG::SeedGlobally(Player& P, bool secure)
 {
   if (secure)
-    SeedGlobally(static_cast<const PlayerBase&>(P));
+    SeedGlobally(P);
   else
     {
       octetStream os;

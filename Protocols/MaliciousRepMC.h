@@ -16,13 +16,13 @@ protected:
 
 public:
     virtual void POpen(vector<typename T::open_type>& values,
-            const vector<T>& S, const Player& P);
+            const vector<T>& S, Player& P);
     virtual void POpen_Begin(vector<typename T::open_type>& values,
-            const vector<T>& S, const Player& P);
+            const vector<T>& S, Player& P);
     virtual void POpen_End(vector<typename T::open_type>& values,
-            const vector<T>& S, const Player& P);
+            const vector<T>& S, Player& P);
 
-    virtual void Check(const Player& P);
+    virtual void Check(Player& P);
 
     MaliciousRepMC& get_part_MC()
     {
@@ -59,14 +59,14 @@ public:
     HashMaliciousRepMC();
     ~HashMaliciousRepMC();
 
-    void POpen(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
-    void POpen_End(vector<typename T::open_type>& values,const vector<T>& S,const Player& P);
+    void POpen(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
+    void POpen_End(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
 
     virtual typename T::open_type finalize_raw();
 
-    void CheckFor(const typename T::open_type& value, const vector<T>& shares, const Player& P);
+    void CheckFor(const typename T::open_type& value, const vector<T>& shares, Player& P);
 
-    void Check(const Player& P);
+    void Check(Player& P);
 };
 
 template<class T>
@@ -76,13 +76,13 @@ class CommMaliciousRepMC : public MaliciousRepMC<T>
 
 public:
     void POpen(vector<typename T::clear>& values, const vector<T>& S,
-            const Player& P);
+            Player& P);
     void POpen_Begin(vector<typename T::clear>& values, const vector<T>& S,
-            const Player& P);
+            Player& P);
     void POpen_End(vector<typename T::clear>& values, const vector<T>& S,
-            const Player& P);
+            Player& P);
 
-    void Check(const Player& P);
+    void Check(Player& P);
 };
 
 #endif /* PROTOCOLS_MALICIOUSREPMC_H_ */
