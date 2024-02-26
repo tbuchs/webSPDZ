@@ -34,9 +34,13 @@ public:
     void compare(PlayerBase& P)
     {
         P.unchecked_broadcast(*this);
-        for (auto& os : *this)
+        for (auto& os : *this) {
             if (os != mine)
+            {
+                cerr << "Mismatch among parties: " << os << " vs. " << mine << endl;
                 throw mismatch_among_parties();
+            }
+        }
     }
 
     void reset()

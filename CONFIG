@@ -85,11 +85,11 @@ endif
 # Default for MAX_MOD_SZ is 10, which suffices for all Overdrive protocols
 # MOD = -DMAX_MOD_SZ=10 -DGFP_MOD_SZ=5
 
-LDLIBS = -lssl -lcrypto -lgmpxx -lgmp -lsodium $(MY_LDLIBS) -lwebsocket.js
+LDLIBS = -lssl -lcrypto -lgmpxx -lgmp -lsodium $(MY_LDLIBS) -lwebsocket.js -ldatachannel-wasm
 LDLIBS += $(BREW_LDLIBS)
 LDLIBS += -I $(CURDIR)/local/lib -L $(CURDIR)/local/lib
 
-CFLAGS += -I./local/include -O3 -D DEBUG_NETWORKING -D USE_WEBSOCKETS_API
+CFLAGS += -I./local/include -O3 -D DEBUG_NETWORKING
 
 ifeq ($(USE_NTL),1)
 CFLAGS += -DUSE_NTL

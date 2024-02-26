@@ -58,6 +58,7 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
     use_encryption(use_encryption), live_prep(opts.live_prep), opts(opts),
     external_clients(my_number)
 {
+  cerr << "Machine::Machine()" << endl;
   OnlineOptions::singleton = opts;
 
   if (N.num_players() == 1 and sint::is_real)
@@ -77,16 +78,20 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
   mkdir_p(PREP_DIR);
 
   string id = "machine";
-  cerr << "use_encryption: " << use_encryption << endl;
+
+#ifdef EMSCRIPTEN
+  P = new WebPlayer(N, id);
+#else
   if (use_encryption)
     P = new CryptoPlayer(N, id);
   else
     P = new PlainPlayer(N, id);
-  cerr << "Machine::Machine() - after PlainPlayer" << endl;
+#endif
+
   if (opts.live_prep)
-    {
-      sint::LivePrep::basic_setup(*P);
-    }
+  {
+    sint::LivePrep::basic_setup(*P);
+  }
 
   // Set the prime modulus if not done earlier
   if (not sint::clear::length())
@@ -143,10 +148,12 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::prepare(const string& progname_str)
 {
+  cerr << "Machine::prepare()" << endl;
   int old_n_threads = nthreads;
   progs.clear();
   load_schedule(progname_str);
   check_program();
+  cerr << "Machine::prepare() - load_program()" << endl;
 
   // keep preprocessing
   nthreads = max(old_n_threads, nthreads);
@@ -160,6 +167,7 @@ void Machine<sint, sgf2n>::prepare(const string& progname_str)
           ifstream pers(filename);
           try
           {
+              cerr << "Machine::prepare() - check_file_signature()" << endl;
               check_file_signature<sint>(pers, filename);
           }
           catch (signature_mismatch&)
@@ -199,6 +207,7 @@ void Machine<sint, sgf2n>::prepare(const string& progname_str)
     {
       queues[i]->result();
     }
+    cerr << "Machine::prepare() - done" << endl;
 }
 
 template<class sint, class sgf2n>
@@ -609,6 +618,7 @@ void Machine<sint, sgf2n>::suggest_optimizations()
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::check_program()
 {
+  cerr << "Machine::check_program()" << endl;
   Hash hasher;
   for (auto& prog : progs)
     hasher.update(prog.get_hash());
@@ -617,12 +627,14 @@ void Machine<sint, sgf2n>::check_program()
   hasher.final(bundle.mine);
   try
   {
+    cerr << "Machine::check_program() - compare()" << endl;
     bundle.compare(*P);
   }
   catch (mismatch_among_parties&)
   {
     throw runtime_error("program differs between parties");
   }
+  cerr << "Machine::check_program() - done" << endl;
 }
 
 #endif

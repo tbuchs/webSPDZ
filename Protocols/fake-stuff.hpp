@@ -345,7 +345,8 @@ void read_mac_key(const string& directory, int player_num, int nplayers, U& key)
 #ifdef VERBOSE
       cerr << "Could not open MAC key file. Perhaps it needs to be generated?\n";
 #endif
-      throw mac_key_error(filename);
+      return;
+      // throw mac_key_error(filename);
     }
   inpf >> nn;
   if (nn!=nplayers)
@@ -360,11 +361,13 @@ void read_mac_key(const string& directory, int player_num, int nplayers, U& key)
   }
   catch(exception&)
   {
-      throw mac_key_error(filename);
+      return;
+      //throw mac_key_error(filename);
   }
 
   if (inpf.fail())
-      throw mac_key_error(filename);
+    return;
+      //throw mac_key_error(filename);
 
   inpf.close();
 }

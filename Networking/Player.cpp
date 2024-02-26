@@ -12,9 +12,8 @@
 #include <utility>
 #include <assert.h>
 
-#ifdef EMSCRIPTEN
-  #include <emscripten.h>
-#endif
+#include <emscripten/websocket.h>
+#include "WebConnection.h"
 
 using namespace std;
 
@@ -90,7 +89,7 @@ void Names::init(int player, int pnb, const string& filename, int nplayers_wante
   for (unsigned int i = 0; i < names.size(); i++)
     cerr << "    " << names[i] << ":" << ports[i] << endl;
 #endif
-  setup_server();
+  // setup_server(); //TODO
 }
 
 Names::Names(ez::ezOptionParser& opt, int argc, const char** argv,
@@ -224,6 +223,128 @@ Player::Player(const Names& Nms) :
   thread_stats.resize(nplayers);
 }
 
+WebPlayer::~WebPlayer() {}
+
+WebPlayer::WebPlayer(const Names& Nms, const string& id) :
+      Player(Nms), connected_users(0), id(id)
+{
+  // Establish WebSocket Connection to other Players
+  if (!emscripten_websocket_is_supported())
+	{
+		cerr << "WebSockets are not supported, cannot continue!" << endl;
+		exit(1);
+	}
+
+
+  EmscriptenWebSocketCreateAttributes attr;
+	emscripten_websocket_init_create_attributes(&attr);
+	attr.url = "ws://localhost:8080";
+	websocket_conn = emscripten_websocket_new(&attr);
+	if (websocket_conn <= 0)
+	{
+    cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)websocket_conn << "!" << endl;
+		exit(1);
+	}
+
+	emscripten_websocket_set_onopen_callback(websocket_conn, this, WebSocketOpen);
+	emscripten_websocket_set_onmessage_callback(websocket_conn, this, WebSocketMessage);
+  emscripten_websocket_set_onclose_callback(websocket_conn, nullptr, WebSocketClose);
+	emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError);
+
+  // self connection
+  queue_counter.insert({my_num(), 1});
+  message_queue.insert({my_num(), std::vector<const octetStream*>{}});
+  connected_users++;
+
+  // wait for all other players to connect
+  int sleep_interval = 1000;
+  int time_slept = 0;
+  while (connected_users < nplayers and time_slept < 60*1000)
+  {
+    cout << "connected users(" << connected_users << "/" << nplayers << ")" << endl;
+    emscripten_sleep(sleep_interval);
+    cerr << "slept for " << time_slept << "ms" << endl; 
+    time_slept += sleep_interval;
+  }
+  if(connected_users < nplayers) {
+    cerr << "Timeout - only " << connected_users << " clients!" << endl;
+    throw runtime_error("Not all clients connected after a minute");
+  }
+  cout << "All clients connected!" << endl;
+  emscripten_websocket_close(websocket_conn, 0, "Finshed WebRTC-Connection establishment.");
+  emscripten_websocket_delete(websocket_conn);
+}
+
+void WebPlayer::send_to_no_stats(int player, const octetStream& o) const
+{
+  send_message(player, &o);
+}
+
+void WebPlayer::receive_player_no_stats(int player, octetStream& o) const
+{
+  cerr << "receive_player_no_stats(" << player << ")" << endl;
+  if(queue_counter.find(player) == queue_counter.end()) {
+      // first message
+      queue_counter.insert({player, 0});
+      message_queue.insert({player, std::vector<const octetStream*>{}});
+  }
+  cerr << "waiting for message from " << player << " queue: " << queue_counter.at(player) << "/" << message_queue.at(player).size() << endl;
+  // receive message from player, if there is none, wait for it
+  while(queue_counter.at(player) == 0) {
+    emscripten_sleep(100);
+    //cerr << "waiting for message from " << player << " queue: " << queue_counter.at(player) << "/" << message_queue.at(player).size() << endl;
+  }
+  cerr << "received message from " << player << " queue: " << queue_counter.at(player) << "/" << message_queue.at(player).size() << endl; 
+  o = *read_message(player);
+  cerr << "received message from " << player << " with length " << o.get_length() << " and content " << o << endl;
+  assert(o.get_length() > 0);
+}
+
+void WebPlayer::send_receive_all_no_stats(const vector<vector<bool>>& channels,
+  const vector<octetStream>& to_send, vector<octetStream>& to_receive) const
+{
+  to_receive.resize(num_players());
+  for (int offset = 1; offset < num_players(); offset++)
+    {
+      int receive_from = get_player(-offset);
+      int send_to = get_player(offset);
+      bool receive = channels[receive_from][my_num()];
+      if (channels[my_num()][send_to])
+      {
+        if (receive)
+          pass_around_no_stats(to_send[send_to], to_receive[receive_from], offset);
+        else
+          send_to_no_stats(send_to, to_send[send_to]);
+      }
+      else if (receive)
+        receive_player_no_stats(receive_from, to_receive[receive_from]);
+    }
+}
+
+void WebPlayer::pass_around_no_stats(const octetStream& to_send,
+  octetStream& to_receive, int offset) const
+{
+  int send_to = get_player(offset);
+  int recv_from = get_player(-offset);
+  send_to_no_stats(send_to, to_send);
+  receive_player_no_stats(recv_from, to_receive);
+}
+
+void WebPlayer::Broadcast_Receive_no_stats(vector<octetStream>& o) const {
+  if (o.size() != (unsigned long)nplayers)
+    throw runtime_error("player numbers don't match");
+
+  for (int i=1; i<nplayers; i++) {
+    int send_to = (player_no + i) % nplayers;
+    send_to_no_stats(send_to, o[player_no]);
+  }
+
+  for(int i = 1; i < nplayers; i++) {
+    int receive_from = (player_no + nplayers - i) % nplayers;
+    receive_player_no_stats(receive_from,  o[receive_from]);
+  }
+}
+
 
 template<class T>
 MultiPlayer<T>::MultiPlayer(const Names& Nms, const string& id) :
@@ -236,11 +357,8 @@ MultiPlayer<T>::MultiPlayer(const Names& Nms, const string& id) :
 PlainPlayer::PlainPlayer(const Names& Nms, const string& id) :
         MultiPlayer<int>(Nms, id)
 {
-  cerr << "PlainPlayer::PlainPlayer()" << endl;
   if (Nms.num_players() > 1)
     setup_sockets(Nms.names, Nms.ports, id, *Nms.server);
-
-  cerr << "PlainPlayer::PlainPlayer(done)" << endl;
 }
 
 

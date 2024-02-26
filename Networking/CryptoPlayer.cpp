@@ -54,15 +54,12 @@ CryptoPlayer::CryptoPlayer(const Names& Nms, const string& id_base) :
         MultiPlayer<ssl_socket*>(Nms, id_base),
         ctx("P" + to_string(my_num()))
 {
-    cerr << "Crypto Player()" << endl;
     sockets.resize(num_players());
     other_sockets.resize(num_players());
     senders.resize(num_players());
     receivers.resize(num_players());
 
     vector<int> plaintext_sockets[2];
-    cerr << "plain_sockets" << endl;
-
     for (int i = 0; i < 2; i++)
     {
         PlainPlayer player(Nms, id_base + (i ? "recv" : ""));
@@ -70,7 +67,6 @@ CryptoPlayer::CryptoPlayer(const Names& Nms, const string& id_base) :
         close_client_socket(player.socket(my_num()));
         player.sockets.clear();
     }
-    cerr << "after player loop" << endl;
 
     for (int offset = 1; offset <= num_players() / 2; offset++)
     {

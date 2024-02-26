@@ -66,7 +66,6 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
 {
   this->progname = progname;
   string fname = "Programs/Schedules/" + progname + ".sch";
-  cerr << "Opening file " << fname << endl;
 #ifdef DEBUG_FILES
   cerr << "Opening file " << fname << endl;
 #endif

@@ -139,10 +139,10 @@ $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER
 
 CFLAGS += -fPIC
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS -sUSE_PTHREADS -sPROXY_TO_PTHREAD -sALLOW_MEMORY_GROWTH -sWEBSOCKET_DEBUG -sSHARED_MEMORY #-sPROXY_POSIX_SOCKETS #-sWEBSOCKET_URL='ws://' # -sWEBSOCKET_SUBPROTOCOL='binary' -sSOCKET_DEBUG=1
+LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js --js-library deps/datachannel-wasm/wasm/js/websocket.js -sWEBSOCKET_DEBUG #-sPROXY_TO_PTHREAD #-sASYNCIFY_IGNORE_INDIRECT
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
-	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS) #TODO: -sMAIN_MODULE ? or -shared? or -sSIDE_MODULE?
+	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)
 
 $(FHEOFFLINE): $(FHEOBJS) $(SHAREDLIB)
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
@@ -304,6 +304,11 @@ boost: deps/libOTe/libOTe
 	cd deps/libOTe; \
 	python3 build.py --setup --boost --install=$(CURDIR)/local
 
+deps/datachannel-wasm:
+	git submodule update --init --recursive
+	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+	cd build; make
+	
 OTE_OPTS += -DENABLE_SOFTSPOKEN_OT=ON -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_INSTALL_LIBDIR=lib
 
 ifeq ($(ARM), 1)

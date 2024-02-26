@@ -25,6 +25,10 @@ using namespace std;
 #include "Networking/PlayerBuffer.h"
 #include "Tools/Lock.h"
 
+#include "datachannel-wasm/wasm/include/rtc/datachannel.hpp"
+#include "datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
+#include "datachannel-wasm/wasm/include/rtc/configuration.hpp"
+
 template<class T> class MultiPlayer;
 class Server;
 class ServerSocket;
@@ -394,6 +398,88 @@ public:
   { receive_player(i, o); }
 
   NamedCommStats total_comm() const;
+};
+
+/**
+ * WebPlayer communication helper class 
+ * 
+ */
+class WebPlayer : public Player
+{
+public:
+  WebPlayer(const Names& Nms, const string& id);
+  virtual ~WebPlayer();
+
+  // Send an octetStream to all other players 
+  //   -- And corresponding receive
+  virtual void send_to_no_stats(int player,const octetStream& o) const;
+  virtual void receive_player_no_stats(int i,octetStream& o) const;
+  
+  virtual void send_receive_all_no_stats(const vector<vector<bool>>& channels,
+      const vector<octetStream>& to_send, vector<octetStream>& to_receive) const;
+
+  // send to next and receive from previous player
+  virtual void pass_around_no_stats(const octetStream& to_send,
+      octetStream& to_receive, int offset) const;
+
+  /* Broadcast and Receive data to/from all players 
+   *  - Assumes o[player_no] contains the thing broadcast by me
+  */
+  virtual void Broadcast_Receive_no_stats(vector<octetStream>& o) const;
+
+  inline void add_message(int sender, const octetStream* msg) const {
+    if(queue_counter.find(sender) != queue_counter.end()) {
+      message_queue.at(sender).push_back(msg);
+      queue_counter.at(sender)++;
+    } else { 
+      // first message
+      queue_counter.insert({sender, 1});
+      message_queue.insert({sender, std::vector<const octetStream*>{msg}});
+    }
+  }
+
+  inline const octetStream* read_message(int sender) const {
+    if(queue_counter.find(sender) != queue_counter.end() && queue_counter.at(sender) > 0) {
+      const octetStream* msg = message_queue.at(sender).front();
+      //message_queue.at(sender).pop_front();  
+      message_queue.erase(message_queue.begin());
+      queue_counter.at(sender)--;
+      return msg;
+    }
+    // no message received
+    cerr << "No message received from sender " << sender << " to player "<< player_no << endl;
+    exit(-1);
+  }
+
+  inline void send_message(int receiver, const octetStream* msg) const {
+    bool success = false;
+    cerr << "Sending message from " << player_no << " to " << receiver << ": " << *msg << endl;
+    if(data_channels.find(receiver) != data_channels.end()) {
+      unsigned char* data = msg->get_data();
+      size_t msg_size = msg->get_length();
+      success = data_channels.at(receiver)->send(reinterpret_cast<byte*>(data), msg_size);
+    } else if(receiver == player_no) {
+      // self send
+      add_message(receiver, msg);
+      success = true;
+    }
+    else {
+      cerr << "DataChannel not found for receiver " << receiver << endl;
+    }
+    assert(success);
+  }
+
+  virtual string get_id() const { return id; }
+
+  map<int, std::shared_ptr<rtc::DataChannel>> data_channels;
+  map<int, std::shared_ptr<rtc::PeerConnection>> peer_connections;
+  EMSCRIPTEN_WEBSOCKET_T websocket_conn;
+  int connected_users;
+
+private:
+  mutable map<int, std::vector<const octetStream*>> message_queue;
+  mutable map<int, int> queue_counter;
+  string id;
 };
 
 /**

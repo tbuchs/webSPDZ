@@ -195,7 +195,7 @@ int OnlineMachine::run()
     {
         Machine<T, U>(playerNames, use_encryption, online_opts, lg2).run(
                 online_opts.progname);
-        cerr << "Machine finished" << endl;
+        cerr << "OnlineMachine::run():Machine finished" << endl;
 
         if (online_opts.verbose)
           {

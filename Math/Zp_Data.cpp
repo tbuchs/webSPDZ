@@ -35,6 +35,9 @@ void Zp_Data::init(const bigint& p,bool mont)
   t=mpz_size(pr.get_mpz_t());
   if (t>MAX_MOD_SZ)
     throw max_mod_sz_too_small(t);
+  #ifdef EMSCRIPTEN
+    montgomery = false;
+  #endif
   if (montgomery)
     { inline_mpn_zero(R,MAX_MOD_SZ);
       inline_mpn_zero(R2,MAX_MOD_SZ);
