@@ -82,7 +82,6 @@ public:
 
   bigint& operator=(int n);
   bigint& operator=(long n);
-  bigint& operator=(unsigned long int n);
   bigint& operator=(word n);
   bigint& operator=(double f);
   template<int X, int L>
@@ -157,12 +156,6 @@ inline bigint& bigint::operator=(long n)
 }
 
 inline bigint& bigint::operator=(word n)
-{
-  mpz_class::operator=(n);
-  return *this;
-}
-
-inline bigint& bigint::operator=(unsigned long int n)
 {
   mpz_class::operator=(n);
   return *this;

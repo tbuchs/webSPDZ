@@ -127,7 +127,9 @@ static EM_BOOL WebSocketOpen([[maybe_unused]]int eventType, const EmscriptenWebS
   WebPlayer* player = (WebPlayer*)userData;
   string user_name = "P" + to_string(player->my_num());
   string number_players = to_string(player->num_players());
+  cerr << "WebSocket opened" << endl;
   send_websocket_message(websocketEvent->socket, "login", user_name, number_players);
+  cerr << "WebSocket registered" << endl;
   return EM_TRUE;
 }
 

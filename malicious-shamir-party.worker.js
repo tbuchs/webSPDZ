@@ -17,6 +17,11 @@ var ENVIRONMENT_IS_NODE = typeof process == 'object' && typeof process.versions 
 if (ENVIRONMENT_IS_NODE) {
   // Create as web-worker-like an environment as we can.
 
+  // See the parallel code in shell.js, but here we don't need the condition on
+  // multi-environment builds, as we do not have the need to interact with the
+  // modularization logic as shell.js must (see link.py:node_es6_imports and
+  // how that is used in link.py).
+
   var nodeWorkerThreads = require('worker_threads');
 
   var parentPort = nodeWorkerThreads.parentPort;
@@ -24,16 +29,19 @@ if (ENVIRONMENT_IS_NODE) {
   parentPort.on('message', (data) => onmessage({ data: data }));
 
   var fs = require('fs');
+  var vm = require('vm');
 
   Object.assign(global, {
     self: global,
     require,
     Module,
     location: {
+      // __filename is undefined in ES6 modules, and import.meta.url only in ES6
+      // modules.
       href: __filename
     },
     Worker: nodeWorkerThreads.Worker,
-    importScripts: (f) => (0, eval)(fs.readFileSync(f, 'utf8') + '//# sourceURL=' + f),
+    importScripts: (f) => vm.runInThisContext(fs.readFileSync(f, 'utf8'), {filename: f}),
     postMessage: (msg) => parentPort.postMessage(msg),
     performance: global.performance || { now: Date.now },
   });
@@ -46,8 +54,8 @@ function assert(condition, text) {
   if (!condition) abort('Assertion failed: ' + text);
 }
 
-function threadPrintErr() {
-  var text = Array.prototype.slice.call(arguments).join(' ');
+function threadPrintErr(...args) {
+  var text = args.join(' ');
   // See https://github.com/emscripten-core/emscripten/issues/14804
   if (ENVIRONMENT_IS_NODE) {
     fs.writeSync(2, text + '\n');
@@ -55,8 +63,8 @@ function threadPrintErr() {
   }
   console.error(text);
 }
-function threadAlert() {
-  var text = Array.prototype.slice.call(arguments).join(' ');
+function threadAlert(...args) {
+  var text = args.join(' ');
   postMessage({cmd: 'alert', text, threadId: Module['_pthread_self']()});
 }
 // We don't need out() for now, but may need to add it if we want to use it
@@ -113,6 +121,7 @@ function handleMessage(e) {
       // that iteration, allowing safe reference from a closure.
       for (const handler of e.data.handlers) {
         Module[handler] = (...args) => {
+          dbg(`calling handler on main thread: ${handler}`);
           postMessage({ cmd: 'callHandler', handler, args: args });
         }
       }
@@ -161,6 +170,7 @@ function handleMessage(e) {
           // and let the top level handler propagate it back to the main thread.
           throw ex;
         }
+        dbg(`Pthread 0x${Module['_pthread_self']().toString(16)} completed its main entry point with an 'unwind', keeping the worker alive for asynchronous operation.`);
       }
     } else if (e.data.cmd === 'cancel') { // Main thread is asking for a pthread_cancel() on this thread.
       if (Module['_pthread_self']()) {
@@ -181,10 +191,8 @@ function handleMessage(e) {
     }
   } catch(ex) {
     err(`worker.js onmessage() captured an uncaught exception: ${ex}`);
-    if (ex && ex.stack) err(ex.stack);
-    if (Module['__emscripten_thread_crashed']) {
-      Module['__emscripten_thread_crashed']();
-    }
+    if (ex?.stack) err(ex.stack);
+    Module['__emscripten_thread_crashed']?.();
     throw ex;
   }
 };

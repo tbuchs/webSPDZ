@@ -240,18 +240,21 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
   EmscriptenWebSocketCreateAttributes attr;
 	emscripten_websocket_init_create_attributes(&attr);
 	attr.url = "ws://localhost:8080";
+  attr.createOnMainThread = true; // WebSockets in WASM64 are only supported on the main thread
 	websocket_conn = emscripten_websocket_new(&attr);
 	if (websocket_conn <= 0)
 	{
     cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)websocket_conn << "!" << endl;
 		exit(1);
 	}
-
+  cerr << "WebSocket connection established!" << endl;
+  
 	emscripten_websocket_set_onopen_callback(websocket_conn, this, WebSocketOpen);
 	emscripten_websocket_set_onmessage_callback(websocket_conn, this, WebSocketMessage);
   emscripten_websocket_set_onclose_callback(websocket_conn, nullptr, WebSocketClose);
 	emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError);
 
+  cerr << "Waiting for all clients to connect..." << endl;
   // self connection
   message_queue.insert({my_num(), std::deque<const octetStream*>{}});
   connected_users++;

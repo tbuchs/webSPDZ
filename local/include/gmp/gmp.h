@@ -57,7 +57,7 @@ see https://www.gnu.org/licenses/.  */
 
 /* Instantiated by configure. */
 #if ! defined (__GMP_WITHIN_CONFIGURE)
-#define _LONG_LONG_LIMB 1
+/* #undef _LONG_LONG_LIMB */
 #define __GMP_LIBGMP_DLL  0
 #endif
 
@@ -2323,8 +2323,8 @@ enum
 };
 
 /* Define CC and CFLAGS which were used to build this version of GMP */
-#define __GMP_CC "gcc"
-#define __GMP_CFLAGS "-O2 -pedantic"
+#define __GMP_CC "/usr/share/emsdk/upstream/emscripten/emcc"
+#define __GMP_CFLAGS "-sMEMORY64"
 
 /* Major version number is the value of __GNU_MP__ too, above. */
 #define __GNU_MP_VERSION            6
