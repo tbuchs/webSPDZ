@@ -109,7 +109,8 @@ wss.on('connection', function(connection) {
       console.log("Disconnecting from", connection.name);
       }
       if(currNumPlayers == 0) {
-         setTimeout(shutDown, 3000); // wait 3 seconds before shutting down server
+         userNames.clear();
+         // setTimeout(shutDown, 3000); // wait 3 seconds before shutting down server
       } 
    });  	
 });  

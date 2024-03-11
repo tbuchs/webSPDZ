@@ -55,15 +55,20 @@ void init_peer_connection(WebPlayer* player, int next_player, string offer) {
     dc->onMessage([player, next_player](std::variant<rtc::binary, rtc::string> message) {
       if (std::holds_alternative<rtc::string>(message)) {
         const octetStream* msg = new octetStream(std::get<rtc::string>(message));
-        std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
+        // std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
         player->add_message(next_player, msg);
       } else {
-        std::cout << "Binary message from " << next_player << " received, size=" << std::get<rtc::binary>(message).size();
         std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-        unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
-        const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
-        cout << " content: " << *msg << endl;
-        player->add_message(next_player, msg);
+        //std::cout << "Binary message from " << next_player << " received, size=" << std::get<rtc::binary>(message).size();
+        if(binary_msg.size() == 0) {
+          // cerr << "Binary message is empty" << endl;
+          const octetStream* msg = new octetStream();
+          player->add_message(next_player, msg);
+        } else {
+          unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
+          const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
+          player->add_message(next_player, msg);
+        }
       }
     });
   } else {
@@ -82,15 +87,21 @@ void init_peer_connection(WebPlayer* player, int next_player, string offer) {
       dc->onMessage([player, next_player](std::variant<rtc::binary, rtc::string> message) {
         if (std::holds_alternative<rtc::string>(message)) {
           const octetStream* msg = new octetStream(std::get<rtc::string>(message));
-          std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
+          // std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
           player->add_message(next_player, msg);
         } else {
-          std::cout << "Binary message from " << next_player << " received, size=" << std::get<rtc::binary>(message).size();
           std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-          unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
-          const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
-          cout << " content: " << *msg << endl;
-          player->add_message(next_player, msg);
+          // std::cout << "Binary message from " << next_player << " received, size=" << binary_msg.size();
+          if(binary_msg.size() == 0) {
+            // cerr << "Binary message is empty" << endl;
+            const octetStream* msg = new octetStream();
+            player->add_message(next_player, msg);
+          } else {
+            unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
+            const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
+            player->add_message(next_player, msg);
+          }
+          //cout << " content: " << *msg << endl;
         }
       });
 	  });
@@ -127,9 +138,7 @@ static EM_BOOL WebSocketMessage([[maybe_unused]]int eventType, const EmscriptenW
   json json_msg{json::parse(message)};
 
   if (json_msg["type"] == "login") {
-    if(json_msg["success"] == true) {
-      cout << "Login successful" << endl;
-    } else {
+    if(json_msg["success"] != true) {
       cout << "Login failed (error: " << json_msg["message"] << ")" << endl;
       error("Login failed");
     }
@@ -164,4 +173,9 @@ EM_BOOL WebSocketError(int eventType, [[maybe_unused]]const EmscriptenWebSocketE
   cerr << "error(eventType=" << eventType << ")" << endl;
   exit(1);
 	return EM_TRUE;
+}
+
+bool callback_send_method(void* dc, unsigned char* data, int msg_size) {
+  rtc::DataChannel* dc_ptr = (rtc::DataChannel*)dc;
+  return dc_ptr->send(reinterpret_cast<byte*>(data), msg_size);
 }

@@ -11,6 +11,6 @@
 
 int main(int argc, const char** argv)
 {
-    // Feedback!
     ShamirMachineSpec<MaliciousShamirShare>(argc, argv);
+    emscripten_force_exit(0);
 }

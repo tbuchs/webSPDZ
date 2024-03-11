@@ -203,15 +203,14 @@ void Shamir<T>::get_hyper(vector<vector<typename T::open_type> >& hyper,
         int t, int n)
 {
     assert(hyper.empty());
-
-    try
-    {
-        octetStream os;
-        string filename = hyper_filename(t, n);
-        ifstream in(filename);
+    octetStream os;
+    string filename = hyper_filename(t, n);
+    ifstream in(filename);
 #ifdef VERBOSE_HYPER
         cerr << "Trying to load hyper-invertable matrix from " << filename << endl;
 #endif
+    if(in.is_open())
+    {
         os.input(in);
         os.get(hyper);
         if (int(hyper.size()) != n - t)
@@ -219,31 +218,27 @@ void Shamir<T>::get_hyper(vector<vector<typename T::open_type> >& hyper,
 #ifdef VERBOSE_HYPER
         cerr << "Loaded hyper-invertable matrix from " << filename << endl;
 #endif
-        return;
-    }
-    catch (...)
-    {
+    } else {
 #ifdef VERBOSE_HYPER
         cerr << "Failed to load hyper-invertable" << endl;
 #endif
-    }
-
-    map<int, U> inverses, dividends;
-    for (int i = -n; i < n; i++)
-        if (i != 0)
-            inverses[i] = U(i).invert();
-    for (int i = 0; i < 2 * n; i++)
-        dividends[i] = i;
-    for (int i = 0; i < n - t; i++)
-    {
-        hyper.push_back({});
-        for (int j = 0; j < n; j++)
+        map<int, U> inverses, dividends;
+        for (int i = -n; i < n; i++)
+            if (i != 0)
+                inverses[i] = U(i).invert();
+        for (int i = 0; i < 2 * n; i++)
+            dividends[i] = i;
+        for (int i = 0; i < n - t; i++)
         {
-            hyper.back().push_back({1});
-            for (int k = 0; k < n; k++)
-                if (k != j)
-                    hyper.back().back() *= dividends.at(n + i - k)
-                    * inverses.at(j - k);
+            hyper.push_back({});
+            for (int j = 0; j < n; j++)
+            {
+                hyper.back().push_back({1});
+                for (int k = 0; k < n; k++)
+                    if (k != j)
+                        hyper.back().back() *= dividends.at(n + i - k)
+                        * inverses.at(j - k);
+            }
         }
     }
 }

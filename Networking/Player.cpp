@@ -17,16 +17,21 @@
 
 using namespace std;
 
+// WebPlayer, no socket communication
+void Names::init(int player, int num_players)
+{
+  player_no = player;
+  nplayers = num_players;
+}
+
 void Names::init(int player, int pnb, int my_port, const char* servername,
     bool setup_socket)
 {
-  cerr << "Names::init(" << player << ", " << my_port << ", " << servername << ", " << setup_socket << ")" << endl;
   player_no=player;
   portnum_base=pnb;
   setup_names(servername, my_port);
   if (setup_socket)
     setup_server();
-  cerr << "Names::init(done)" << endl;
 }
 
 Names::Names(int player, int nplayers, const string& servername, int pnb,
@@ -89,7 +94,7 @@ void Names::init(int player, int pnb, const string& filename, int nplayers_wante
   for (unsigned int i = 0; i < names.size(); i++)
     cerr << "    " << names[i] << ":" << ports[i] << endl;
 #endif
-  // setup_server(); //TODO
+  setup_server();
 }
 
 Names::Names(ez::ezOptionParser& opt, int argc, const char** argv,
@@ -127,18 +132,16 @@ void Names::setup_ports()
 
 void Names::setup_names(const char *servername, int my_port)
 {
-  cerr << "Names::setup_names("")" << endl;
   if (my_port == DEFAULT_PORT)
     my_port = default_port(player_no);
 
   int socket_num;
   int pn = portnum_base;
   set_up_client_socket(socket_num, servername, pn);
-  cerr << "Sending: " << octetStream("P" + to_string(player_no)).str() << endl;
   octetStream("P" + to_string(player_no)).Send(socket_num);
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
   cerr << "Sent " << player_no << " to " << servername << ":" << pn << endl;
-//#endif
+#endif
 
   // Send my name
   sockaddr_in address;
@@ -147,10 +150,10 @@ void Names::setup_names(const char *servername, int my_port)
   char* my_name = inet_ntoa(address.sin_addr);
   octetStream(my_name).Send(socket_num);
   send(socket_num,(octet*)&my_port,4);
-//#ifdef DEBUG_NETWORKING
+#ifdef DEBUG_NETWORKING
   fprintf(stderr, "My Name = %s\n",my_name);
   cerr << "My number = " << player_no << endl;
-//#endif
+#endif
 
   // Now get the set of names
   try
@@ -178,10 +181,8 @@ void Names::setup_names(const char *servername, int my_port)
 
 void Names::setup_server()
 {
-  std::cerr << "Setting up server" << std::endl;
   server = new ServerSocket(ports.at(player_no));
   server->init();
-  std::cerr << "Server initialized" << std::endl;
 }
 
 void Names::set_server(ServerSocket* socket)
@@ -228,6 +229,7 @@ WebPlayer::~WebPlayer() {}
 WebPlayer::WebPlayer(const Names& Nms, const string& id) :
       Player(Nms), connected_users(0), id(id)
 {
+  msg_lock = Lock();
   // Establish WebSocket Connection to other Players
   if (!emscripten_websocket_is_supported())
 	{
@@ -251,18 +253,16 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
 	emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError);
 
   // self connection
-  queue_counter.insert({my_num(), 1});
   message_queue.insert({my_num(), std::deque<const octetStream*>{}});
   connected_users++;
 
   // wait for all other players to connect
-  int sleep_interval = 1000;
+  int sleep_interval = 100;
   int time_slept = 0;
   while (connected_users < nplayers and time_slept < 60*1000)
   {
-    cout << "connected users(" << connected_users << "/" << nplayers << ")" << endl;
+    // cout << "connected users(" << connected_users << "/" << nplayers << ")" << endl;
     emscripten_sleep(sleep_interval);
-    cerr << "slept for " << time_slept << "ms" << endl; 
     time_slept += sleep_interval;
   }
   if(connected_users < nplayers) {
@@ -274,6 +274,27 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
   emscripten_websocket_delete(websocket_conn);
 }
 
+void WebPlayer::send_message(int receiver, const octetStream* msg) 
+{
+  bool success = false;
+  if(data_channels.find(receiver) != data_channels.end()) {
+    std::shared_ptr<rtc::DataChannel> data_channel = data_channels.at(receiver);
+    void* dc = data_channel.get();
+    bool (*ptr)(void*, unsigned char*, int) = &callback_send_method;
+    unsigned char* data = (unsigned char*)msg->get_data();
+    int size = msg->get_length();
+    success = emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_IIII, ptr, dc, data, size);
+  } else if(receiver == player_no) {
+    // self send
+    add_message(receiver, msg);
+    success = true;
+  } else {
+    cerr << "DataChannel not found for receiver " << receiver << endl;
+    error("DataChannel not found for receiver");
+  }
+  assert(success);
+}
+
 void WebPlayer::send_to_no_stats(int player, const octetStream& o)
 {
   send_message(player, &o);
@@ -281,43 +302,39 @@ void WebPlayer::send_to_no_stats(int player, const octetStream& o)
 
 void WebPlayer::receive_player_no_stats(int player, octetStream& o)
 {
-  cerr << "receive_player_no_stats(" << player << ")" << endl;
-  if(queue_counter.find(player) == queue_counter.end()) {
+  msg_lock.lock();
+  if(message_queue.find(player) == message_queue.end()) {
       // first message
-      queue_counter.insert({player, 0});
       message_queue.insert({player, std::deque<const octetStream*>{}});
   }
-  cerr << "waiting for message from " << player << " queue: " << queue_counter.at(player) << "/" << message_queue.at(player).size() << endl;
+  msg_lock.unlock();
+
   // receive message from player, if there is none, wait for it
-  while(queue_counter.at(player) == 0) {
-    emscripten_sleep(100);
-    //cerr << "waiting for message from " << player << " queue: " << queue_counter.at(player) << "/" << message_queue.at(player).size() << endl;
+  while(message_queue.at(player).size() == 0) {
+    emscripten_sleep(10);
   }
-  cerr << "received message from " << player << " queue: " << queue_counter.at(player) << "/" << message_queue.at(player).size() << endl; 
   o = *read_message(player);
-  cerr << "received message from " << player << " with length " << o.get_length() << " and content " << o << endl;
-  assert(o.get_length() > 0);
 }
 
 void WebPlayer::send_receive_all_no_stats(const vector<vector<bool>>& channels,
   const vector<octetStream>& to_send, vector<octetStream>& to_receive)
 {
-  to_receive.resize(num_players());
-  for (int offset = 1; offset < num_players(); offset++)
+  to_receive.resize(nplayers);
+  for (int offset = 1; offset < nplayers; offset++)
+  {
+    int receive_from = get_player(-offset);
+    int send_to = get_player(offset);
+    bool receive = channels[receive_from][my_num()];
+    if (channels[my_num()][send_to])
     {
-      int receive_from = get_player(-offset);
-      int send_to = get_player(offset);
-      bool receive = channels[receive_from][my_num()];
-      if (channels[my_num()][send_to])
-      {
-        if (receive)
-          pass_around_no_stats(to_send[send_to], to_receive[receive_from], offset);
-        else
-          send_to_no_stats(send_to, to_send[send_to]);
-      }
-      else if (receive)
-        receive_player_no_stats(receive_from, to_receive[receive_from]);
+      if (receive)
+        pass_around_no_stats(to_send[send_to], to_receive[receive_from], offset);
+      else
+        send_to_no_stats(send_to, to_send[send_to]);
     }
+    else if (receive)
+      receive_player_no_stats(receive_from, to_receive[receive_from]);
+  }
 }
 
 void WebPlayer::pass_around_no_stats(const octetStream& to_send,
@@ -407,7 +424,6 @@ PlayerBase::~PlayerBase()
 void PlainPlayer::setup_sockets(const vector<string>& names,
         const vector<int>& ports, const string& id_base, ServerSocket& server)
 {
-    cerr << "PlainPlayer:setup_sockets" << endl;
     sockets.resize(nplayers);
     // Set up the client side
     for (int i=player_no; i<nplayers; i++) {
@@ -419,21 +435,13 @@ void PlainPlayer::setup_sockets(const vector<string>& names,
               "Setting up send to self socket to %s:%d with id %s\n",
               localhost, ports[i], pn.c_str());
 #endif
-#ifdef USE_WEBSOCKETS_API
-            set_up_client_websocket(sockets[i],localhost,ports[i]);
-#else
             set_up_client_socket(sockets[i],localhost,ports[i]);
-#endif
         } else {
 #ifdef DEBUG_NETWORKING
             fprintf(stderr, "Setting up client to %s:%d with id %s\n",
                 names[i].c_str(), ports[i], pn.c_str());
 #endif
-#ifdef USE_WEBSOCKETS_API
-            set_up_client_websocket(sockets[i],names[i].c_str(),ports[i]);
-#else
             set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
-#endif
         }
         octetStream(pn).Send(sockets[i]);
     }
@@ -455,7 +463,6 @@ void PlainPlayer::setup_sockets(const vector<string>& names,
         tv.tv_sec = 300;
         tv.tv_usec = 0;
         int fl = setsockopt(sockets[i], SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
-        cerr << "setsockopt: " << fl << endl;
         if (fl<0) { error("set_up_socket:setsockopt");  }
     }
 }

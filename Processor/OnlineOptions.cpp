@@ -109,6 +109,15 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
             "-B", // Flag token.
             "--bucket-size" // Flag token.
     );
+    opt.add(
+            "", // Default.
+            0, // Required?
+            0, // Number of args expected.
+            0, // Delimiter if expecting multiple args.
+            "To Run the program in the web using WebRTC communication", // Help description.
+            "-w", // Flag token.
+            "--web" // Flag token.
+    );
 
     if (security)
         opt.add(

@@ -58,7 +58,6 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
     use_encryption(use_encryption), live_prep(opts.live_prep), opts(opts),
     external_clients(my_number)
 {
-  cerr << "Machine::Machine()" << endl;
   OnlineOptions::singleton = opts;
 
   if (N.num_players() == 1 and sint::is_real)
@@ -148,12 +147,11 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::prepare(const string& progname_str)
 {
-  cerr << "Machine::prepare()" << endl;
+  cerr << "Size checks: long" << sizeof(long) << " int " << sizeof(int) << " long long " << sizeof(long long) << endl;
   int old_n_threads = nthreads;
   progs.clear();
   load_schedule(progname_str);
   check_program();
-  cerr << "Machine::prepare() - load_program()" << endl;
 
   // keep preprocessing
   nthreads = max(old_n_threads, nthreads);
@@ -167,13 +165,12 @@ void Machine<sint, sgf2n>::prepare(const string& progname_str)
           ifstream pers(filename);
           try
           {
-              cerr << "Machine::prepare() - check_file_signature()" << endl;
-              check_file_signature<sint>(pers, filename);
+            check_file_signature<sint>(pers, filename);
           }
           catch (signature_mismatch&)
           {
-              ofstream pers(filename, ios::binary);
-              file_signature<sint>().output(pers);
+            ofstream pers(filename, ios::binary);
+            file_signature<sint>().output(pers);
           }
           break;
         }
@@ -207,7 +204,6 @@ void Machine<sint, sgf2n>::prepare(const string& progname_str)
     {
       queues[i]->result();
     }
-    cerr << "Machine::prepare() - done" << endl;
 }
 
 template<class sint, class sgf2n>
@@ -231,7 +227,9 @@ size_t Machine<sint, sgf2n>::load_program(const string& threadname,
 {
   progs.push_back(N.num_players());
   int i = progs.size() - 1;
+  cerr << "Machine::load_program() - parse()" << endl;
   progs[i].parse(filename);
+  cerr << "Machine::load_program() - parse() done" << endl;
   M2.minimum_size(SGF2N, CGF2N, progs[i], threadname);
   Mp.minimum_size(SINT, CINT, progs[i], threadname);
   Mi.minimum_size(NONE, INT, progs[i], threadname);
@@ -455,7 +453,6 @@ void Machine<sint, sgf2n>::run(const string& progname)
   Timer proc_timer(CLOCK_PROCESS_CPUTIME_ID);
   proc_timer.start();
   timer[0].start({});
-  std::cerr << "Machine::run() - run_tape()" << std::endl;
 
   // run main tape
   run_tape(0, 0, 0, N.num_players());
@@ -618,7 +615,6 @@ void Machine<sint, sgf2n>::suggest_optimizations()
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::check_program()
 {
-  cerr << "Machine::check_program()" << endl;
   Hash hasher;
   for (auto& prog : progs)
     hasher.update(prog.get_hash());
@@ -627,14 +623,12 @@ void Machine<sint, sgf2n>::check_program()
   hasher.final(bundle.mine);
   try
   {
-    cerr << "Machine::check_program() - compare()" << endl;
     bundle.compare(*P);
   }
   catch (mismatch_among_parties&)
   {
     throw runtime_error("program differs between parties");
   }
-  cerr << "Machine::check_program() - done" << endl;
 }
 
 #endif

@@ -116,7 +116,7 @@ public:
 class ArithmeticProcessor : public ProcessorBase
 {
 protected:
-  CheckVector<long> Ci;
+  CheckVector<long long> Ci;
 
   ofstream public_output;
   ofstream binary_output;
@@ -162,13 +162,13 @@ public:
     return thread_num;
   }
 
-  const long& read_Ci(size_t i) const
+  const long long& read_Ci(size_t i) const
     { return Ci[i]; }
-  long& get_Ci_ref(size_t i)
+  long long& get_Ci_ref(size_t i)
     { return Ci[i]; }
-  void write_Ci(size_t i, const long& x)
+  void write_Ci(size_t i, const long long& x)
     { Ci[i]=x; }
-  CheckVector<long>& get_Ci()
+  CheckVector<long long>& get_Ci()
     { return Ci; }
 
   virtual ofstream& get_public_output()

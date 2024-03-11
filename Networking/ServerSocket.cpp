@@ -13,10 +13,6 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 
-#ifdef EMSCRIPTEN
-  #include <emscripten.h>
-#endif
-
 #include <iostream>
 #include <sstream>
 using namespace std;
@@ -39,26 +35,13 @@ ServerSocket::ServerSocket(int Portnum) : portnum(Portnum), thread(0)
   main_socket = socket(AF_INET, SOCK_STREAM, 0);
   if (main_socket<0) { error("set_up_socket:socket"); }
 
-  // int one=1;
-  int flags = fcntl(main_socket, F_GETFL, 0);
-  int fl = fcntl(main_socket, F_SETFL, O_NONBLOCK | flags);
-  if (fl<0) {
-    std::cerr << "TCP socket error: " << strerror(errno) << std::endl;
-    std::cerr << "ServerSocket::ServerSocket(" << Portnum << ") - setsocknonblock() failed" << std::endl;
-    error("set_up_socket:setsocknonblock"); }
+  int one=1;
+  int fl=setsockopt(main_socket,SOL_SOCKET,SO_REUSEADDR,(char*)&one,sizeof(int));
+  if (fl<0) { error("set_up_socket:setsockopt"); }
 
-  // int fl=setsockopt(main_socket,SOL_SOCKET,SO_REUSEADDR,(char*)&one,sizeof(int));
-  // if (fl<0) {
-  //    std::cerr << "TCP socket error: " << strerror(errno) << std::endl;
-  //    std::cerr << "ServerSocket::ServerSocket(" << Portnum << ") - setsockopt1() failed" << std::endl;
-  // error("set_up_socket:setsockopt"); }
-
-  // /* disable Nagle's algorithm */
-  // fl= setsockopt(main_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&one,sizeof(int));
-  // if (fl<0) { 
-  //   std::cerr << "TCP socket error: " << strerror(errno) << std::endl;
-  //   std::cerr << "ServerSocket::ServerSocket(" << Portnum << ") - setsockopt2() failed" << std::endl;
-  //   error("set_up_socket:setsockopt");  }
+  /* disable Nagle's algorithm */
+  fl= setsockopt(main_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&one,sizeof(int));
+  if (fl<0) { error("set_up_socket:setsockopt");  }
 
   octet my_name[512];
   memset(my_name,0,512*sizeof(octet));
@@ -86,9 +69,8 @@ ServerSocket::ServerSocket(int Portnum) : portnum(Portnum), thread(0)
 
   /* start listening, allowing a queue of up to 1000 pending connection */
   fl=listen(main_socket, 1000);
-  if (fl<0) { 
-    cerr << "TCP socket error at listen: " << strerror(errno) << std::endl;
-    error("set_up_socket:listen");  }
+  if (fl<0) { error("set_up_socket:listen");  }
+
   // Note: must not call virtual init() method in constructor: http://www.aristeia.com/EC3E/3E_item9.pdf
 }
 
@@ -151,23 +133,13 @@ void ServerSocket::accept_clients()
 {
   while (true)
     {
-      struct sockaddr_in dest;
+      struct sockaddr dest;
       memset(&dest, 0, sizeof(dest));    /* zero the struct before filling the fields */
-      dest.sin_family = AF_INET;
-      dest.sin_addr.s_addr = INADDR_ANY;
-      dest.sin_port = htons(5000);
       int socksize = sizeof(dest);
 #ifdef DEBUG_NETWORKING
       fprintf(stderr, "Accepting...\n");
-      cerr << "socket: " << main_socket << endl;
 #endif
       int consocket;
-      fd_set fdr;
-      FD_ZERO(&fdr);
-      FD_SET(main_socket, &fdr);
-      emscripten_sleep(100);
-      assert(FD_ISSET(main_socket, &fdr));
-
       for (int i = 0; i < 25; i++)
       {
         consocket = accept(main_socket, (struct sockaddr*) &dest,
@@ -205,8 +177,7 @@ void ServerSocket::accept_clients()
               inet_ntoa(conn.sin_addr), ntohs(conn.sin_port));
 #endif
           // defer to thread
-          struct sockaddr dest2 = {};
-          auto job = (new ServerJob(*this, consocket, dest2));
+          auto job = (new ServerJob(*this, consocket, dest));
           pthread_create(&job->thread, 0, ServerJob::run, job);
         }
     }
@@ -227,9 +198,7 @@ void ServerSocket::process_connection(int consocket, const string& client_id)
 
 int ServerSocket::get_connection_socket(const string& id)
 {
-  cerr << "ServerSocket::get_connection_socket(" << id << ")" << endl;
   data_signal.lock();
-  cerr << "ServerSocket::get_connection_socket(" << id << ") - locked" << endl;
   if (used.find(id) != used.end())
     {
       stringstream ss;
@@ -240,10 +209,7 @@ int ServerSocket::get_connection_socket(const string& id)
   while (clients.find(id) == clients.end())
   {
       if (data_signal.wait(60) == ETIMEDOUT)
-      {
-          cerr << "ServerSocket::get_connection_socket(" << id << ") - timeout" << endl;
           throw runtime_error("No client after one minute");
-      }
   }
 
   int client_socket = clients[id];

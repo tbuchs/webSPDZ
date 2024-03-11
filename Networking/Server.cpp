@@ -104,7 +104,6 @@ Server::~Server()
 
 void Server::start()
 {
-  cerr << "Server::start()" << endl;
   int i;
 
   names.resize(nmachines);
@@ -179,7 +178,6 @@ Server* Server::start_networking(Names& N, int my_num, int nplayers,
           server = new Server(nplayers, portnum));
       bool default_port = my_port == Names::DEFAULT_PORT or my_port == portnum;
       N.init(my_num, portnum, my_port, hostname.c_str(), not default_port);
-      std::cerr << "Player: " << my_num << " at port " << portnum << "my_port " << my_port << "init" << std::endl;
       pthread_join(thread, 0);
       if (default_port)
         N.set_server(server->get_socket());

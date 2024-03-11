@@ -83,7 +83,7 @@ void Instruction::bitdecint(ArithmeticProcessor& Proc) const
 {
     for (int j = 0; j < size; j++)
     {
-        long a = Proc.read_Ci(r[0] + j);
+        long long a = Proc.read_Ci(r[0] + j);
         for (unsigned int i = 0; i < start.size(); i++)
         {
             Proc.get_Ci_ref(start[i] + j) = (a >> i) & 1;

@@ -65,6 +65,13 @@ class Names
   static const int DEFAULT_PORT = -1;
 
   /**
+   * Initialize without socket communication
+   * @param player my number
+   * @param num_players number of players
+   */
+  void init(int player, int num_players);
+
+  /**
    * Initialize with central server
    * @param player my number
    * @param pnb base port number (server listens one below)
@@ -427,57 +434,46 @@ public:
   */
   virtual void Broadcast_Receive_no_stats(vector<octetStream>& o);
 
+  virtual bool is_encrypted() { return true; }
+
+  void send_message(int receiver, const octetStream* msg);
+
   inline void add_message(int sender, const octetStream* msg) {
-    if(queue_counter.find(sender) != queue_counter.end()) {
+    msg_lock.lock();
+    if(message_queue.find(sender) != message_queue.end()) {
       message_queue.at(sender).push_back(msg);
-      queue_counter.at(sender)++;
     } else { 
       // first message
-      queue_counter.insert({sender, 1});
       message_queue.insert({sender, std::deque<const octetStream*>{msg}});
     }
-  }
-
-  inline const octetStream* read_message(int sender) {
-    if(queue_counter.find(sender) != queue_counter.end() && queue_counter.at(sender) > 0) {
-      const octetStream* msg = message_queue.at(sender).front();
-      message_queue.at(sender).pop_front();
-      queue_counter.at(sender)--;
-      return msg;
-    }
-    // no message received
-    cerr << "No message received from sender " << sender << " to player "<< player_no << endl;
-    exit(-1);
-  }
-
-  inline void send_message(int receiver, const octetStream* msg) {
-    bool success = false;
-    cerr << "Sending message from " << player_no << " to " << receiver << ": " << *msg << endl;
-    if(data_channels.find(receiver) != data_channels.end()) {
-      unsigned char* data = msg->get_data();
-      size_t msg_size = msg->get_length();
-      success = data_channels.at(receiver)->send(reinterpret_cast<byte*>(data), msg_size);
-    } else if(receiver == player_no) {
-      // self send
-      add_message(receiver, msg);
-      success = true;
-    }
-    else {
-      cerr << "DataChannel not found for receiver " << receiver << endl;
-    }
-    assert(success);
+    msg_lock.unlock();
   }
 
   virtual string get_id() const { return id; }
 
+  Lock msg_lock;
   map<int, std::shared_ptr<rtc::DataChannel>> data_channels;
   map<int, std::shared_ptr<rtc::PeerConnection>> peer_connections;
   EMSCRIPTEN_WEBSOCKET_T websocket_conn;
   int connected_users;
 
 private:
+
+  inline const octetStream* read_message(int sender) {
+    msg_lock.lock();
+    if(message_queue.find(sender) != message_queue.end() && message_queue.at(sender).size() > 0) {
+      const octetStream* msg = message_queue.at(sender).front();
+      message_queue.at(sender).pop_front();
+      msg_lock.unlock();
+      return msg;
+    }
+    // no message received
+    cerr << "No message received from sender " << sender << " to player "<< player_no << endl;
+    msg_lock.unlock();
+    exit(-1);
+  }
+
   map<int, std::deque<const octetStream*>> message_queue;
-  map<int, int> queue_counter;
   string id;
 };
 

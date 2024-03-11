@@ -252,7 +252,7 @@ void BaseMachine::print_global_comm(Player& P, const NamedCommStats& stats)
   P.Broadcast_Receive_no_stats(bundle);
   size_t global = 0;
   for (auto& os : bundle)
-    global += os.get_int(8);
+    global += os.get_int(sizeof(size_t));
   cerr << "Global data sent = " << global / 1e6 << " MB (all parties)" << endl;
 }
 

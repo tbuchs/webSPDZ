@@ -89,7 +89,7 @@ LDLIBS = -lssl -lcrypto -lgmpxx -lgmp -lsodium $(MY_LDLIBS) -lwebsocket.js -ldat
 LDLIBS += $(BREW_LDLIBS)
 LDLIBS += -I $(CURDIR)/local/lib -L $(CURDIR)/local/lib
 
-CFLAGS += -I./local/include -O3 -D DEBUG_NETWORKING
+CFLAGS += -I./local/include -O3
 
 ifeq ($(USE_NTL),1)
 CFLAGS += -DUSE_NTL

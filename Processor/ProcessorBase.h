@@ -18,7 +18,7 @@ using namespace std;
 class ProcessorBase
 {
   // Stack
-  stack<long> stacki;
+  stack<long long> stacki;
 
   ifstream input_file;
   string input_filename;
@@ -38,8 +38,8 @@ public:
 
   ProcessorBase();
 
-  void pushi(long x) { stacki.push(x); }
-  void popi(long& x) { x = stacki.top(); stacki.pop(); }
+  void pushi(long long x) { stacki.push(x); }
+  void popi(long long& x) { x = stacki.top(); stacki.pop(); }
 
   int get_arg() const
     {

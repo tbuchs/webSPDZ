@@ -137,9 +137,9 @@ ecdsa-static: static-dir $(patsubst ECDSA/%.cpp,static/%.x,$(wildcard ECDSA/*-ec
 $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER) $(GC)
 	$(AR) -csr $@ $^
 
-CFLAGS += -fPIC
+CFLAGS += -fPIC -fsanitize=undefined -fsanitize-minimal-runtime -Wbad-function-cast -Wcast-function-type -sMEMORY64=2
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js --js-library deps/datachannel-wasm/wasm/js/websocket.js -sWEBSOCKET_DEBUG #-sPROXY_TO_PTHREAD #-sASYNCIFY_IGNORE_INDIRECT
+LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js --js-library deps/datachannel-wasm/wasm/js/websocket.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sWASM_BIGINT -sMEMORY64=2 #-sPTHREAD_POOL_SIZE=5 -sASYNCIFY_IGNORE_INDIRECT
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)
@@ -207,7 +207,7 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) $(SHAREDLIB) -o $(subst .x,,$@).html --preload-file Programs --preload-file Player-Data --preload-file ip-file
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) $(SHAREDLIB) -o $(subst .x,,$@).html --preload-file Programs --preload-file Player-Data
 
 %-ecdsa-party.x: ECDSA/%-ecdsa-party.o ECDSA/P256Element.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)

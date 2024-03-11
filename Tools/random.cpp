@@ -29,6 +29,9 @@ PRNG::PRNG(octetStream& seed) : PRNG()
 
 void PRNG::ReSeed()
 {
+  if (sodium_init() == -1)
+    throw runtime_error("couldn't initialize libsodium");
+  randombytes_stir();
   randombytes_buf(seed, SEED_SIZE);
   InitSeed();
 }
