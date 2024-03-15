@@ -91,6 +91,18 @@ wss.on('connection', function(connection) {
             } 
 				
             break;  
+
+         case "candidate":
+            console.log("Sending candidate from " + connection.name + " to: " + data.name);
+            var conn = users[data.name];
+            if(conn != null) {
+               sendTo(conn, {
+                  type: "candidate",
+                  name: connection.name,
+                  candidate: data.content
+               });
+            }
+            break;
 	
          default: 
             sendTo(connection, { 
