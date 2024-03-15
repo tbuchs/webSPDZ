@@ -147,7 +147,6 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::prepare(const string& progname_str)
 {
-  cerr << "Size checks: long" << sizeof(long) << " int " << sizeof(int) << " long long " << sizeof(long long) << endl;
   int old_n_threads = nthreads;
   progs.clear();
   load_schedule(progname_str);

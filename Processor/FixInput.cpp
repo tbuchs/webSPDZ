@@ -18,6 +18,7 @@ void FixInput_<Integer>::read(std::istream& in, const int* params)
 template<>
 void FixInput_<bigint>::read(std::istream& in, const int* params)
 {
+#define HIGH_PREC_INPUT ; // TODO temp fix for weird behavior of mpz_class = double (works with other datatypes)
 #ifdef HIGH_PREC_INPUT
     mpf_class x;
     in >> x;

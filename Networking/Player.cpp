@@ -257,7 +257,7 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
   connected_users++;
 
   // wait for all other players to connect
-  int sleep_interval = 100;
+  int sleep_interval = 10;
   int time_slept = 0;
   while (connected_users < nplayers and time_slept < 60*1000)
   {
@@ -269,7 +269,7 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
     cerr << "Timeout - only " << connected_users << " clients!" << endl;
     throw runtime_error("Not all clients connected after a minute");
   }
-  cout << "All clients connected!" << endl;
+  // cout << "All clients connected!" << endl;
   emscripten_websocket_close(websocket_conn, 0, "Finshed WebRTC-Connection establishment.");
   emscripten_websocket_delete(websocket_conn);
 }

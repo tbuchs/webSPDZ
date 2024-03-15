@@ -1,7 +1,7 @@
 # sint: secret integers
 
 # you can assign public numbers to sint
-
+start_timer(1)
 a = sint(1)
 b = sint(2)
 
@@ -134,3 +134,4 @@ M[1][1] = 0
 M = data * M
 test(M[0][0], data[0][1].reveal())
 test(M[1][1], data[1][0].reveal())
+stop_timer(1)
