@@ -226,9 +226,7 @@ size_t Machine<sint, sgf2n>::load_program(const string& threadname,
 {
   progs.push_back(N.num_players());
   int i = progs.size() - 1;
-  cerr << "Machine::load_program() - parse()" << endl;
   progs[i].parse(filename);
-  cerr << "Machine::load_program() - parse() done" << endl;
   M2.minimum_size(SGF2N, CGF2N, progs[i], threadname);
   Mp.minimum_size(SINT, CINT, progs[i], threadname);
   Mi.minimum_size(NONE, INT, progs[i], threadname);
@@ -449,7 +447,7 @@ void Machine<sint, sgf2n>::run(const string& progname)
   std::cerr << "Machine::run()" << std::endl;
   prepare(progname);
 
-  Timer proc_timer(CLOCK_PROCESS_CPUTIME_ID);
+  Timer proc_timer;
   proc_timer.start();
   timer[0].start({});
 

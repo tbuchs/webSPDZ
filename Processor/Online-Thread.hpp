@@ -355,6 +355,7 @@ void thread_info<sint, sgf2n>::Sub_Main_Func()
   timer.stop(P.total_comm());
   queues->timers["online"] = online_timer - online_prep_timer - queues->wait_timer;
   queues->timers["prep"] = timer - queues->timers["wait"] - queues->timers["online"];
+  cerr << "Timer rcv: " << P.recv_timer.elapsed() << " vs " << P.wait_timer.elapsed() << endl;
 
   // prevent faulty usage message
   Proc.DataF.set_usage(actual_usage);

@@ -240,6 +240,7 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
   EmscriptenWebSocketCreateAttributes attr;
 	emscripten_websocket_init_create_attributes(&attr);
 	attr.url = "ws://localhost:8080";
+  attr.createOnMainThread = true; // TODO idea: create on webrtc thread, but not main thread
 	websocket_conn = emscripten_websocket_new(&attr);
 	if (websocket_conn <= 0)
 	{
@@ -253,7 +254,7 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
 	emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError);
 
   // self connection
-  message_queue.insert({my_num(), std::deque<const octetStream*>{}});
+  message_queue.insert({get_map_key(my_num()), std::deque<const octetStream*>{}});
   connected_users++;
 
   // wait for all other players to connect
@@ -276,44 +277,52 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
 
 void WebPlayer::send_message(int receiver, const octetStream* msg) 
 {
-  bool success = false;
-  if(data_channels.find(receiver) != data_channels.end()) {
-    std::shared_ptr<rtc::DataChannel> data_channel = data_channels.at(receiver);
+  string receiver_key = get_map_key(receiver);
+  if(data_channels.find(receiver_key) != data_channels.end()) {
+    std::shared_ptr<rtc::DataChannel> data_channel = data_channels.at(receiver_key);
     void* dc = data_channel.get();
-    bool (*ptr)(void*, unsigned char*, int) = &callback_send_method;
+    void (*ptr)(void*, unsigned char*, int) = &callback_send_method;
     unsigned char* data = (unsigned char*)msg->get_data();
     int size = msg->get_length();
-    success = emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_IIII, ptr, dc, data, size);
+    emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_VIII, ptr, dc, data, size);
+    // emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VIII, ptr, dc, data, size);
   } else if(receiver == player_no) {
     // self send
-    add_message(receiver, msg);
-    success = true;
+    cerr << "Sending message to self" << endl;
+    add_message(receiver_key, msg);
   } else {
     cerr << "DataChannel not found for receiver " << receiver << endl;
     error("DataChannel not found for receiver");
   }
-  assert(success);
 }
 
 void WebPlayer::send_to_no_stats(int player, const octetStream& o)
 {
+  TimeScope ts(comm_stats["Sending WebPlayer"].add(o));
   send_message(player, &o);
+  comm_stats.sent += o.get_length();
 }
 
 void WebPlayer::receive_player_no_stats(int player, octetStream& o)
 {
-  msg_lock.lock();
-  if(message_queue.find(player) == message_queue.end()) {
+  recv_timer.start();
+  string player_key = get_map_key(player);
+  if(message_queue.find(player_key) == message_queue.end()) {
       // first message
-      message_queue.insert({player, std::deque<const octetStream*>{}});
+      msg_lock.lock();
+      message_queue.insert({player_key, std::deque<const octetStream*>{}});
+      msg_lock.unlock();
   }
-  msg_lock.unlock();
 
   // receive message from player, if there is none, wait for it
-  while(message_queue.at(player).size() == 0) {
-    emscripten_sleep(10);
+  std::deque<const octetStream*>& messages = message_queue.at(player_key);
+  wait_timer.start();
+  while(messages.size() == 0) {
+    emscripten_sleep(0);
   }
-  o = *read_message(player);
+  wait_timer.stop();
+  o = *read_message(player_key);
+  recv_timer.stop();
 }
 
 void WebPlayer::send_receive_all_no_stats(const vector<vector<bool>>& channels,
