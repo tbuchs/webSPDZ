@@ -74,12 +74,14 @@ wss.on('connection', function(connection) {
                   name: connection.name, 
                   offer: data.content
                }); 
+            } else {
+               console.log("Offer not sent");
             }
             break;  
 				
          case "answer": 
             console.log("Sending answer from " + connection.name + " to: " + data.name); 
-            var conn = users[data.name]; 
+            var conn = users[data.name];
 				
             if(conn != null) { 
                connection.otherName = data.name; 
@@ -88,7 +90,9 @@ wss.on('connection', function(connection) {
                   name: connection.name, 
                   answer: data.content
                }); 
-            } 
+            } else {
+               console.log("Answer not sent");
+            }
 				
             break;  
 
@@ -101,7 +105,8 @@ wss.on('connection', function(connection) {
                   name: connection.name,
                   candidate: data.content
                });
-            }
+            } else
+               console.log("Candidate not sent");
             break;
 	
          default: 
