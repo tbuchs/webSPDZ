@@ -25,6 +25,8 @@
 #include <atomic>
 using namespace std;
 
+#include "Networking/PeerConnectionManager.h"
+
 template<class sint, class sgf2n>
 class Machine : public BaseMachine
 {

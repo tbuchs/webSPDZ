@@ -26,8 +26,6 @@ using namespace std;
 #include "Tools/Lock.h"
 
 #include "datachannel-wasm/wasm/include/rtc/datachannel.hpp"
-#include "datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
-#include "datachannel-wasm/wasm/include/rtc/configuration.hpp"
 
 template<class T> class MultiPlayer;
 class Server;
@@ -458,13 +456,8 @@ public:
 
   Lock msg_lock;
   map<string, std::shared_ptr<rtc::DataChannel>> data_channels;
-  map<string, std::shared_ptr<rtc::PeerConnection>> peer_connections;
-  map<string, std::vector<rtc::Candidate>> webrtc_candidates;
-  EMSCRIPTEN_WEBSOCKET_T websocket_conn;
-  int connected_users;
 
 private:
-
   inline const octetStream* read_message(string sender) {
     msg_lock.lock();
     const octetStream* msg = message_queue.at(sender).front();

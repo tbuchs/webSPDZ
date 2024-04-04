@@ -163,6 +163,7 @@ void OnlineMachine::start_networking()
         if(nplayers == 0)
           opt.get("-N")->getInt(nplayers);
         playerNames.init(playerno, nplayers);
+        online_opts.web = true;
       }
       else if (not opt.get("-ext-server")->isSet)
       {

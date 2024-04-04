@@ -13,7 +13,8 @@
 #include <assert.h>
 
 #include <emscripten/websocket.h>
-#include "WebConnection.h"
+#include "WebConnection.hpp"
+#include "PeerConnectionManager.h"
 
 using namespace std;
 
@@ -227,52 +228,28 @@ Player::Player(const Names& Nms) :
 WebPlayer::~WebPlayer() {}
 
 WebPlayer::WebPlayer(const Names& Nms, const string& id) :
-      Player(Nms), connected_users(0), id(id)
+      Player(Nms), id(id)
 {
   msg_lock = Lock();
-  // Establish WebSocket Connection to other Players
-  if (!emscripten_websocket_is_supported())
-	{
-		cerr << "WebSockets are not supported, cannot continue!" << endl;
-		exit(1);
-	}
 
-  EmscriptenWebSocketCreateAttributes attr;
-	emscripten_websocket_init_create_attributes(&attr);
-	attr.url = "ws://localhost:8080";
-  attr.createOnMainThread = true; // TODO idea: create on webrtc thread, but not main thread
-	websocket_conn = emscripten_websocket_new(&attr);
-	if (websocket_conn <= 0)
-	{
-    cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)websocket_conn << "!" << endl;
-		exit(1);
-	}
+  // webrtc datachannel specs
+  rtc::Reliability reliability;
+  reliability.type = rtc::Reliability::Type::Reliable;
+  reliability.unordered = false;
+  rtc::DataChannelInit dc_init;
+  dc_init.reliability = reliability;
 
-	emscripten_websocket_set_onopen_callback(websocket_conn, this, WebSocketOpen);
-	emscripten_websocket_set_onmessage_callback(websocket_conn, this, WebSocketMessage);
-  emscripten_websocket_set_onclose_callback(websocket_conn, nullptr, WebSocketClose);
-	emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError);
+  // open data channels to all players
+  string own_key = get_map_key(player_no);
+  for(int i = 0; i < nplayers; i++) {
+    if(i != player_no) {
+      string next_player_key = get_map_key(i);
 
-  // self connection
-  message_queue.insert({get_map_key(my_num()), std::deque<const octetStream*>{}});
-  connected_users++;
-
-  // wait for all other players to connect
-  int sleep_interval = 10;
-  int time_slept = 0;
-  while (connected_users < nplayers and time_slept < 60*1000)
-  {
-    // cout << "connected users(" << connected_users << "/" << nplayers << ")" << endl;
-    emscripten_sleep(sleep_interval);
-    time_slept += sleep_interval;
+      std::shared_ptr<rtc::DataChannel> dc = PeerConnectionManager::singleton.peer_connections.at(i)->createDataChannel(
+        "Channel: " + own_key + "-" + next_player_key, dc_init);
+      data_channels.insert({next_player_key, dc});
+    }
   }
-  if(connected_users < nplayers) {
-    cerr << "Timeout - only " << connected_users << " clients!" << endl;
-    throw runtime_error("Not all clients connected after a minute");
-  }
-  // cout << "All clients connected!" << endl;
-  emscripten_websocket_close(websocket_conn, 0, "Finshed WebRTC-Connection establishment.");
-  emscripten_websocket_delete(websocket_conn);
 }
 
 void WebPlayer::send_message(int receiver, const octetStream* msg) 

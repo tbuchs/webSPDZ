@@ -78,14 +78,13 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 
   string id = "machine";
 
-#ifdef EMSCRIPTEN
-  P = new WebPlayer(N, id);
-#else
-  if (use_encryption)
+  if(opts.web) {
+    PeerConnectionManager::singleton = new PeerConnectionManager(playerNames);
+    P = new WebPlayer(N, id);
+  } else if (use_encryption)
     P = new CryptoPlayer(N, id);
   else
     P = new PlainPlayer(N, id);
-#endif
 
   if (opts.live_prep)
   {
