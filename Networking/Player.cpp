@@ -240,7 +240,7 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
   EmscriptenWebSocketCreateAttributes attr;
 	emscripten_websocket_init_create_attributes(&attr);
 	attr.url = "ws://localhost:8080";
-  attr.createOnMainThread = true; // TODO idea: create on webrtc thread, but not main thread
+  attr.createOnMainThread = true;
 	websocket_conn = emscripten_websocket_new(&attr);
 	if (websocket_conn <= 0)
 	{
@@ -260,7 +260,7 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
   // wait for all other players to connect
   int sleep_interval = 10;
   int time_slept = 0;
-  while (connected_users < nplayers and time_slept < 60*1000)
+  while (connected_users < nplayers and time_slept < 120*1000)
   {
     // cout << "connected users(" << connected_users << "/" << nplayers << ")" << endl;
     emscripten_sleep(sleep_interval);
@@ -270,7 +270,7 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
     cerr << "Timeout - only " << connected_users << " clients!" << endl;
     throw runtime_error("Not all clients connected after a minute");
   }
-  // cout << "All clients connected!" << endl;
+  cout << "All clients connected!" << endl;
   emscripten_websocket_close(websocket_conn, 0, "Finshed WebRTC-Connection establishment.");
   emscripten_websocket_delete(websocket_conn);
 }

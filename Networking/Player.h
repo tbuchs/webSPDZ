@@ -454,7 +454,8 @@ public:
 
   virtual string get_id() const { return id; }
 
-  string get_map_key(int player) const { return id + "P" + to_string(player); }
+  string get_map_key(int player) const { return id + "/" + to_string(player); }
+  string get_map_key(string group, int player_no) const { return group + "/" + to_string(player_no); }
 
   Lock msg_lock;
   map<string, std::shared_ptr<rtc::DataChannel>> data_channels;

@@ -23,8 +23,10 @@ using namespace std;
 #include "datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
 #include "datachannel-wasm/wasm/include/rtc/configuration.hpp"
 
-void send_websocket_message(int websocket, string type, string player, string msg) {
-  json message = {{"type", type}, {"name", player}, {"content", msg}};
+void send_websocket_message(int websocket, string type, string player_group, int player_id, string msg) {
+  json message = {{"type", type}, {"group", player_group}, {"name", player_id}, {"content", msg}};
+  unsigned short ready;
+  emscripten_websocket_get_ready_state(websocket, &ready);
   int result = emscripten_websocket_send_utf8_text(websocket, message.dump().c_str());
   if (result < 0) {
     cerr << "WebSocket send failed with error code " << result << endl;
@@ -33,8 +35,9 @@ void send_websocket_message(int websocket, string type, string player, string ms
   }
 }
 
-void init_peer_connection(WebPlayer* player, string next_player_key, string offer) {
+void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
   std::shared_ptr<rtc::PeerConnection> pc;
+  string next_player_key = player->get_map_key(next_player_id);
   if(player->peer_connections.find(next_player_key) == player->peer_connections.end()) {
     rtc::Configuration config;
     config.iceServers.emplace_back("stun:stun.1.google.com:19302");
@@ -51,7 +54,7 @@ void init_peer_connection(WebPlayer* player, string next_player_key, string offe
     rtc::DataChannelInit dc_init;
     dc_init.reliability = reliability;
 
-    std::shared_ptr<rtc::DataChannel> dc = pc->createDataChannel("Channel: " + to_string(player->my_num()) + "-" + next_player_key, dc_init);
+    std::shared_ptr<rtc::DataChannel> dc = pc->createDataChannel("Channel: " + player->get_id() + " " + to_string(player->my_num()) + "-" + to_string(next_player_id), dc_init);
     player->data_channels.emplace(next_player_key, dc);
 
     dc->onOpen([player, dc]() {
@@ -123,11 +126,11 @@ void init_peer_connection(WebPlayer* player, string next_player_key, string offe
 	  });
   }
 
-  pc->onGatheringStateChange([player, pc, next_player_key](rtc::PeerConnection::GatheringState state) {
+  pc->onGatheringStateChange([player, pc, next_player_id](rtc::PeerConnection::GatheringState state) {
     if (state == rtc::PeerConnection::GatheringState::Complete) { // only send offer/answer if gathering of candidates is complete
       std::optional<rtc::Description> desc = pc->localDescription();
       if(desc.has_value()) {
-        send_websocket_message(player->websocket_conn, desc.value().typeString(), next_player_key, rtc::string(desc.value()).c_str());
+        send_websocket_message(player->websocket_conn, desc.value().typeString(), player->get_id(), next_player_id, rtc::string(desc.value()).c_str());
         }
       }
   });
@@ -136,9 +139,10 @@ void init_peer_connection(WebPlayer* player, string next_player_key, string offe
 static EM_BOOL WebSocketOpen([[maybe_unused]]int eventType, const EmscriptenWebSocketOpenEvent *websocketEvent, void *userData) {
   // register on websocket server
   WebPlayer* player = (WebPlayer*)userData;
-  string user_name = player->get_map_key(player->my_num());
+  int user_id = player->my_num();
+  string user_group = player->get_id();
   string number_players = to_string(player->num_players());
-  send_websocket_message(websocketEvent->socket, "login", user_name, number_players);
+  send_websocket_message(websocketEvent->socket, "login", user_group, user_id, number_players);
   return EM_TRUE;
 }
 
@@ -158,12 +162,11 @@ static EM_BOOL WebSocketMessage([[maybe_unused]]int eventType, const EmscriptenW
     int player_no = player->my_num();
     int nplayers = player->num_players();
     for (int i=player_no+1; i<nplayers; i++) {
-      string i_key = player->get_map_key(i);
-      init_peer_connection(player, i_key, "");
+      init_peer_connection(player, i, "");
     }
   } else if (json_msg["type"] == "offer") {
     std::string name = json_msg.at("name");
-    init_peer_connection(player, name, json_msg.at("offer"));
+    init_peer_connection(player, stoi(name), json_msg.at("offer"));
   } else if (json_msg["type"] == "answer") {
     std::string name = json_msg.at("name");
     player->peer_connections.at(name)->setRemoteDescription(rtc::Description(json_msg.at("answer"), rtc::Description::Type::Answer));
