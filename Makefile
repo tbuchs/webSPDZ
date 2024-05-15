@@ -104,7 +104,7 @@ semi-he: hemi-party.x soho-party.x temi-party.x
 
 rep-field: malicious-rep-field-party.x replicated-field-party.x ps-rep-field-party.x
 
-rep-ring: replicated-ring-party.x brain-party.x malicious-rep-ring-party.x ps-rep-ring-party.x rep4-ring-party.x
+rep-ring: replicated-ring-party.x #brain-party.x malicious-rep-ring-party.x ps-rep-ring-party.x rep4-ring-party.x
 
 rep-bin: replicated-bin-party.x malicious-rep-bin-party.x ps-rep-bin-party.x Fake-Offline.x
 
@@ -127,7 +127,7 @@ ifeq ($(ARM), 1)
 $(patsubst %.cpp,%.o,$(wildcard */*.cpp)): deps/simde/simde
 endif
 
-shamir: malicious-shamir-party.x # shamir-party.x malicious-shamir-party.x atlas-party.x galois-degree.x
+shamir: shamir-party.x #malicious-shamir-party.x atlas-party.x galois-degree.x
 
 sy: sy-rep-field-party.x sy-rep-ring-party.x sy-shamir-party.x
 
@@ -139,7 +139,7 @@ $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER
 
 CFLAGS += -fPIC #-fsanitize=undefined -fsanitize-minimal-runtime -Wbad-function-cast -Wcast-function-type
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sWASMFS -sINITIAL_MEMORY=98304000 #1500 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP 
+LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sWASMFS -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)

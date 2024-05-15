@@ -33,7 +33,6 @@ void thread_info<sint, sgf2n>::print_usage(ostream &o,
 template<class sint, class sgf2n>
 void thread_info<sint, sgf2n>::Sub_Main_Func()
 {
-  cerr << "thread_info<sint, sgf2n>::Sub_Main_Func()" << endl;
   bigint::init_thread();
 
   auto tinfo = this;
@@ -282,19 +281,14 @@ void thread_info<sint, sgf2n>::Sub_Main_Func()
              
           //printf("\tExecuting program");
           // Execute the program
-          cerr << "Executing program" << endl;
           progs[program].execute(Proc);
 
           // make sure values used in other threads are safe
-          cerr << "Checking program " << typeid(Proc).name() << endl;
           Proc.check();
 
           // prevent mangled output
-          cerr << "Flushing output" << endl;
           cout.flush();
-          cerr << "Increasing actual usage" << endl;
           actual_usage.increase(Proc.DataF.get_usage());
-          cerr << "Checking usage unknown " << progs[program].usage_unknown() << endl;
          if (progs[program].usage_unknown())
            { // communicate file positions to main thread
              job.pos.increase(Proc.DataF.get_usage());
@@ -309,7 +303,6 @@ void thread_info<sint, sgf2n>::Sub_Main_Func()
           wait_timer.start();
           queues->finished(job, P.total_comm());
 	 wait_timer.stop();
-          cerr << "Finished program " << program << endl;
        }  
     }
 

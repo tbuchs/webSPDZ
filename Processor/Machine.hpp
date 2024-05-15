@@ -446,6 +446,7 @@ void Machine<sint, sgf2n>::run(const string& progname)
 {
   std::cerr << "Machine::run()" << std::endl;
   prepare(progname);
+  std::cerr << "Machine::prepare() done" << std::endl;
 
   Timer proc_timer;
   proc_timer.start();
