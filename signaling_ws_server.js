@@ -3,12 +3,13 @@ const ws = require('ws');
 var wss = new ws.Server({port: 8080}); 
 
 //all connected to the server users 
-var users = {};
+var users = new Map();
+var currNumPlayers = new Map();
 var userNames = new Set();
+var userGroups = new Set();
 
 //number of players to connect
 var totalNumPlayers = 0;
-var currNumPlayers = 0;
   
 wss.on('connection', function(connection) {
    connection.on('message', function(message) {	
@@ -22,13 +23,16 @@ wss.on('connection', function(connection) {
       switch (data.type) { 		
          case "login": 				
             //if anyone is logged in with this username then refuse
-            if(userNames.has(data.name)) { 
+            if(userGroups.has(data.group) && (typeof users[data.group][data.name] !== 'undefined')) {
+               console.log("Usergroup: " + data.group + " name: " + data.name + " has " + users[data.group][data.name]); 
                sendTo(connection, { 
                   type: "login", 
                   success: false,
                   message: "Username is unavailable!"
                });
-              } else if((currNumPlayers != 0) && (totalNumPlayers != data.content)) {
+              } else if((userNames.size != 0) && (totalNumPlayers != data.content)) {
+                console.log("Number of players " + data.content + " does not match with other players.");
+                console.log("Current number of players: " + userNames.size);
                 sendTo(connection, {
                     type: "login",
                     success: false,
@@ -36,14 +40,20 @@ wss.on('connection', function(connection) {
                 });
             } else {
                // first player sets the number of players
-               if(currNumPlayers == 0)
+               if(userNames.size == 0)
                   totalNumPlayers = data.content;
  
-               // save user connection on the server 
-               users[data.name] = connection; 
+               // save user connection on the server
+               if(currNumPlayers[data.group] == null) {
+                  currNumPlayers[data.group] = 0;
+                  users[data.group] = Array.apply(null, Array(totalNumPlayers)).map(function () {});
+               }
+
+               users[data.group][data.name] = connection;
                userNames.add(data.name);
-               connection.name = data.name; 
-               currNumPlayers++;
+               userGroups.add(data.group);
+               connection.name = data.group + '/' + data.name; 
+               currNumPlayers[data.group]++;
 					
                sendTo(connection, { 
                   type: "login", 
@@ -52,10 +62,10 @@ wss.on('connection', function(connection) {
                console.log(connection.name, "logged in");
                
                // notify all players when all players have logged in
-               if(currNumPlayers == totalNumPlayers) {
+               if(currNumPlayers[data.group] == totalNumPlayers) {
                   console.log("All players have logged in");
-                  for(var i in users) {
-                     sendTo(users[i], {
+                  for(let i of users[data.group]) {
+                     sendTo(i, {
                         type: "start",
                         players: totalNumPlayers
                      });
@@ -65,13 +75,14 @@ wss.on('connection', function(connection) {
             break; 
 				
          case "offer": 
-            console.log("Sending offer from " + connection.name + " to: " + data.name); 
-            var conn = users[data.name];
+            console.log("Sending offer from " + connection.name + " to: " + data.group + '/' + data.name); 
+            var conn = users[data.group][data.name];
             if(conn != null) { 
-               connection.otherName = data.name; 
+               connection.otherName = data.group + '/' + data.name; 
                sendTo(conn, { 
                   type: "offer", 
-                  name: connection.name, 
+                  group: connection.name.split('/')[0],
+                  name: connection.name.split('/')[1],
                   offer: data.content
                }); 
             } else {
@@ -80,11 +91,11 @@ wss.on('connection', function(connection) {
             break;  
 				
          case "answer": 
-            console.log("Sending answer from " + connection.name + " to: " + data.name); 
-            var conn = users[data.name];
+            console.log("Sending answer from " + connection.name + " to: " + data.group + '/' + data.name);
+            var conn = users[data.group][data.name];
 				
             if(conn != null) { 
-               connection.otherName = data.name; 
+               connection.otherName = data.group + '/' + data.name; 
                sendTo(conn, { 
                   type: "answer", 
                   name: connection.name, 
@@ -97,8 +108,8 @@ wss.on('connection', function(connection) {
             break;  
 
          case "candidate":
-            console.log("Sending candidate from " + connection.name + " to: " + data.name);
-            var conn = users[data.name];
+            console.log("Sending candidate from " + connection.name + " to: " + data.group + '/' + data.name);
+            var conn = users[data.group][data.name];
             if(conn != null) {
                sendTo(conn, {
                   type: "candidate",
@@ -120,19 +131,30 @@ wss.on('connection', function(connection) {
 	
    // when user exits/closes the browser window or established webrtc connections
    connection.on("close", function() { 
-      if(connection.name) { 
-      delete users[connection.name];
-      currNumPlayers--;
-      console.log("Disconnecting from", connection.name);
+      if(connection.name) {
+         var group = connection.name.split('/')[0];
+         var name = connection.name.split('/')[1];
+         users[group][name] = undefined;
+         currNumPlayers[group]--;
+
+         if(currNumPlayers[group] == 0) {
+            userGroups.delete(group);
+            users.delete(group);
+         }
+         console.log("Disconnected from", connection.name);
       }
-      if(currNumPlayers == 0) {
+      console.log("UserGroups: ", userGroups.size);
+      if(!userGroups || userGroups.size == 0) {
+         console.log("All players have disconnected");
          userNames.clear();
          // setTimeout(shutDown, 3000); // wait 3 seconds before shutting down server
       } 
    });  	
 });  
 
-function sendTo(connection, message) { 
+function sendTo(connection, message) {
+   console.log("Sending message to: ", connection.name);
+   console.log(message.type);
    connection.send(JSON.stringify(message)); 
 }
 
