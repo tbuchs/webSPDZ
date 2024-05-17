@@ -15,6 +15,9 @@ The building process differs from the original MP-SPDZ since the project is buil
 There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/). 
 
 ### Building
+To initialize all dependencies, run:
+```make setup```
+
 To build webSPDZ with Shamir protocol, simply run:
 ```make shamir -j```
 

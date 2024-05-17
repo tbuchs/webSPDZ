@@ -116,7 +116,7 @@ mascot: mascot-party.x spdz2k mama-party.x
 ifeq ($(OS), Darwin)
 setup: mac-setup
 else
-setup: boost linux-machine-setup
+setup: linux-machine-setup #boost
 endif
 
 tldr: setup
@@ -361,6 +361,11 @@ mac-machine-setup:
 
 deps/simde/simde:
 	git submodule update --init deps/simde || git clone https://github.com/simd-everywhere/simde deps/simde
+
+deps/datachannel-wasm:
+	git submodule update --init --recursive
+	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+	cd build; make
 
 clean-deps:
 	-rm -rf local/lib/liblibOTe.* deps/libOTe/out
