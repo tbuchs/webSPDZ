@@ -15,11 +15,11 @@ The building process differs from the original MP-SPDZ since the project is buil
 There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/). 
 
 ### Building
-To initialize all dependencies, run:
+To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datachannel-wasm) library upon first compilation and install the needed websocket package for nodejs, run:
 ```make setup```
 
-See [Programs/Source/](Programs/Source/) for some example MPC programs. To run the [tutorial.mpc](Programs/Source/tutorial.mpc) in default mode with 128bit run:
-```./compile.py Programs/Source/tutorial.mpc -F 128```
+See [Programs/Source/](Programs/Source/) for some example MPC programs. To run the [tutorial.mpc](Programs/Source/tutorial.mpc) in default mode run:
+```./compile.py Programs/Source/tutorial.mpc```
 
 After that, to build webSPDZ with Shamir protocol and the previously compiled program, simply run:
 ```make shamir -j```
@@ -33,13 +33,11 @@ To run webSPDZ, start a local server for hosting the webpage. Some features of W
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
-A simple python server with the required headers is provided in the repository. To start the server, run:
+
+The needed services (WebServer and SignalingServer for establishing the secure WEBRTC connection) are already included in the repository. Both servers can be started by executing ```./run-servers.sh```.
+Otherwise, the servers can be started manually:
 ```
 python3 wasm-server.py
-```
-
-For establishing a secure connection via WEBRTC, a Node.js server is required to act as a signaling server. The signaling server is already included in the repository. To start the signaling server, run:
-```
 node signaling_ws_server.js
 ```
 
