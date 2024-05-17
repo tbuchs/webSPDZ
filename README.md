@@ -18,7 +18,10 @@ There are more prerequisites for running webSPDZ, but they are already included 
 To initialize all dependencies, run:
 ```make setup```
 
-To build webSPDZ with Shamir protocol, simply run:
+See [Programs/Source/](Programs/Source/) for some example MPC programs. To run the [tutorial.mpc](Programs/Source/tutorial.mpc) in default mode with 128bit run:
+```./compile.py Programs/Source/tutorial.mpc -F 128```
+
+After that, to build webSPDZ with Shamir protocol and the previously compiled program, simply run:
 ```make shamir -j```
 
 Other protocols are not supported at the moment but are under development.
@@ -32,7 +35,7 @@ Cross-Origin-Embedder-Policy: require-corp
 ```
 A simple python server with the required headers is provided in the repository. To start the server, run:
 ```
-python3 wasm-server.py 8080
+python3 wasm-server.py
 ```
 
 For establishing a secure connection via WEBRTC, a Node.js server is required to act as a signaling server. The signaling server is already included in the repository. To start the signaling server, run:
@@ -40,7 +43,7 @@ For establishing a secure connection via WEBRTC, a Node.js server is required to
 node signaling_ws_server.js
 ```
 
-To execute the protocol, open a firefox browser (other browsers are not tested at the moment) and open the generated HTML file: `http://localhost:8080/"Protocolname"-party.html`.
+To execute the protocol, open a Firefox browser (other browsers are not tested at the moment) and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
 
 Parameters for the computation must be set in the URL. An overview of available parameters can be found in the [MP-SPDZ Readme](README_MPSPDZ.md). 
 To allow communication via WEBRTC add the flag `--web` or `-w`.
@@ -48,7 +51,7 @@ To allow communication via WEBRTC add the flag `--web` or `-w`.
 
 As an example: running the tutorial with 3 parties would require 3 browser tabs open with the following URLs:
  ```
-localhost:8080/shamir-party.html?arguments=-N,3,-w,0,tutorial
-localhost:8080/shamir-party.html?arguments=-N,3,-w,1,tutorial
-localhost:8080/shamir-party.html?arguments=-N,3,-w,2,tutorial
+localhost:8000/shamir-party.html?arguments=-N,3,-w,0,tutorial
+localhost:8000/shamir-party.html?arguments=-N,3,-w,1,tutorial
+localhost:8000/shamir-party.html?arguments=-N,3,-w,2,tutorial
  ```

@@ -116,7 +116,9 @@ mascot: mascot-party.x spdz2k mama-party.x
 ifeq ($(OS), Darwin)
 setup: mac-setup
 else
-setup: linux-machine-setup #boost
+setup: datachannel 
+	npm install websocket
+#boost linux-machine-setup
 endif
 
 tldr: setup
@@ -304,10 +306,10 @@ boost: deps/libOTe/libOTe
 	cd deps/libOTe; \
 	python3 build.py --setup --boost --install=$(CURDIR)/local
 
-deps/datachannel-wasm:
-	git submodule update --init --recursive
-	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
-	cd build; make
+datachannel:
+	git clone https://github.com/paullouisageneau/datachannel-wasm.git deps/datachannel-wasm
+	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$(EMSDK)/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+	cd deps/datachannel-wasm/build; make -j2;
 	
 OTE_OPTS += -DENABLE_SOFTSPOKEN_OT=ON -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_INSTALL_LIBDIR=lib
 
@@ -361,11 +363,6 @@ mac-machine-setup:
 
 deps/simde/simde:
 	git submodule update --init deps/simde || git clone https://github.com/simd-everywhere/simde deps/simde
-
-deps/datachannel-wasm:
-	git submodule update --init --recursive
-	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
-	cd build; make
 
 clean-deps:
 	-rm -rf local/lib/liblibOTe.* deps/libOTe/out
