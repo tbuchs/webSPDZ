@@ -215,7 +215,6 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 replicated-bin-party.x: GC/square64.o
-replicated-ring-party.x: GC/square64.o
 replicated-field-party.x: GC/square64.o
 brain-party.x: GC/square64.o
 malicious-rep-bin-party.x: GC/square64.o
@@ -309,7 +308,7 @@ boost: deps/libOTe/libOTe
 datachannel:
 	git clone https://github.com/paullouisageneau/datachannel-wasm.git deps/datachannel-wasm
 	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$(EMSDK)/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
-	cd deps/datachannel-wasm/build; make -j2;
+	cd deps/datachannel-wasm/build; make -j4;
 	
 OTE_OPTS += -DENABLE_SOFTSPOKEN_OT=ON -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_INSTALL_LIBDIR=lib
 
