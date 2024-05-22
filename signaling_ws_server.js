@@ -143,7 +143,6 @@ wss.on('connection', function(connection) {
          }
          console.log("Disconnected from", connection.name);
       }
-      console.log("UserGroups: ", userGroups.size);
       if(!userGroups || userGroups.size == 0) {
          console.log("All players have disconnected");
          userNames.clear();
@@ -153,8 +152,6 @@ wss.on('connection', function(connection) {
 });  
 
 function sendTo(connection, message) {
-   console.log("Sending message to: ", connection.name);
-   console.log(message.type);
    connection.send(JSON.stringify(message)); 
 }
 
