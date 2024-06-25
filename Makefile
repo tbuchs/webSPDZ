@@ -279,7 +279,6 @@ Test/failure.x: Protocols/MalRepRingOptions.o
 .PHONY: Programs/Circuits
 
 datachannel:
-	git clone https://github.com/paullouisageneau/datachannel-wasm.git deps/datachannel-wasm
 	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$(EMSDK)/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_CXX_FLAGS="-fPIC -pthread -sMEMORY64=1" -DCMAKE_FLAGS="-fPIC -pthread -sMEMORY64=1" 
 	cd deps/datachannel-wasm/build; make -j4;
 	
