@@ -65,18 +65,8 @@ see https://www.gnu.org/licenses/.  */
 #if __GMPXX_USE_CXX11
 #define __GMPXX_NOEXCEPT noexcept
 #include <type_traits> // for common_type
-typedef signed long long int __gmp_slli;
-typedef unsigned long long int __gmp_ulli;
 #else
 #define __GMPXX_NOEXCEPT
-// Fake long long to avoid too many #ifdef
-struct __gmp_slli { bool operator<(int) const; };
-struct __gmp_ulli {
-  __gmp_ulli(__gmp_slli);
-  operator unsigned long() const;
-  __gmp_ulli operator-() const;
-  __gmp_ulli operator>>(int) const;
-};
 #endif
 
 // Max allocations for plain types when converted to GMP types
@@ -163,11 +153,6 @@ inline unsigned long __gmpxx_abs_ui (signed long l)
 {
   return l >= 0 ? static_cast<unsigned long>(l)
 	  : -static_cast<unsigned long>(l);
-}
-inline __gmp_ulli __gmpxx_abs_ull (__gmp_slli l)
-{
-  return l < 0 ? -static_cast<__gmp_ulli>(l)
-	  : static_cast<__gmp_ulli>(l);
 }
 
 /**************** Function objects ****************/
@@ -1348,9 +1333,6 @@ struct __gmp_alloc_cstring
 template <class T, class U>
 class __gmp_expr;
 
-typedef __gmp_expr<mpz_t, mpz_t> mpz_class;
-typedef __gmp_expr<mpq_t, mpq_t> mpq_class;
-typedef __gmp_expr<mpf_t, mpf_t> mpf_class;
 
 // templates for resolving expression types
 template <class T>
@@ -1429,27 +1411,6 @@ struct __gmp_resolve_expr<mpf_t, mpq_t>
   typedef mpf_t value_type;
 };
 
-// To reduce code bloat, signed char, short and int are cast to long
-// internally, and similarly for unsigned types. long long is cast to long if
-// that has the same size, or mpz_class otherwise.
-template <class T, bool = sizeof(T) <= sizeof(long), bool = std::numeric_limits<T>::is_signed>
-struct __gmpxx_int_canonical
-{
-  typedef mpz_class Type;
-};
-
-template <class T>
-struct __gmpxx_int_canonical<T, true, true>
-{
-  typedef long Type;
-};
-
-template <class T>
-struct __gmpxx_int_canonical<T, true, false>
-{
-  typedef unsigned long Type;
-};
-
 #if __GMPXX_USE_CXX11
 namespace std {
   template <class T, class U, class V, class W>
@@ -1488,8 +1449,6 @@ namespace std {
   __GMPXX_DECLARE_COMMON_TYPE(unsigned short int);
   __GMPXX_DECLARE_COMMON_TYPE(signed long int);
   __GMPXX_DECLARE_COMMON_TYPE(unsigned long int);
-  __GMPXX_DECLARE_COMMON_TYPE(__gmp_slli);
-  __GMPXX_DECLARE_COMMON_TYPE(__gmp_ulli);
   __GMPXX_DECLARE_COMMON_TYPE(float);
   __GMPXX_DECLARE_COMMON_TYPE(double);
 #undef __GMPXX_DECLARE_COMMON_TYPE
@@ -1537,8 +1496,6 @@ private:
   __gmp_expr & fun(unsigned short int);       \
   __gmp_expr & fun(signed long int);          \
   __gmp_expr & fun(unsigned long int);        \
-  __gmp_expr & fun(__gmp_slli);               \
-  __gmp_expr & fun(__gmp_ulli);               \
   __gmp_expr & fun(float);                    \
   __gmp_expr & fun(double);                   \
   /* __gmp_expr & fun(long double); */
@@ -1563,8 +1520,6 @@ __GMPN_DECLARE_COMPOUND_OPERATOR(fun)
   __gmp_expr(unsigned short int s) { init_ui(s); }	\
   __gmp_expr(signed long int l) { init_si(l); }		\
   __gmp_expr(unsigned long int l) { init_ui(l); }	\
-  __gmp_expr(__gmp_slli l) { init_sll(l); }	\
-  __gmp_expr(__gmp_ulli l) { init_ull(l); }	\
   __gmp_expr(float f) { init_d(f); }			\
   __gmp_expr(double d) { init_d(d); }
 
@@ -1577,8 +1532,6 @@ __GMPN_DECLARE_COMPOUND_OPERATOR(fun)
   __gmp_expr & operator=(unsigned short int s) { assign_ui(s); return *this; } \
   __gmp_expr & operator=(signed long int l) { assign_si(l); return *this; } \
   __gmp_expr & operator=(unsigned long int l) { assign_ui(l); return *this; } \
-  __gmp_expr & operator=(__gmp_slli l) { assign_sll(l); return *this; } \
-  __gmp_expr & operator=(__gmp_ulli l) { assign_ull(l); return *this; } \
   __gmp_expr & operator=(float f) { assign_d(f); return *this; } \
   __gmp_expr & operator=(double d) { assign_d(d); return *this; }
 
@@ -1591,22 +1544,22 @@ fun(const __gmp_expr<T, U> &expr);
 static inline __gmp_expr<T, __gmp_unary_expr<bigtype, eval_fun> >            \
 fun(type expr);
 
-#define __GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
-__GMPNN_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, __gmpxx_int_canonical<type>::Type)
+#define __GMPNS_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
+__GMPNN_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, signed long)
+#define __GMPNU_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
+__GMPNN_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, unsigned long)
 #define __GMPND_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
 __GMPNN_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, double)
 
 #define __GMPN_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun)                 \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed char)           \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned char)         \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed int)            \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned int)          \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed short int)      \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned short int)    \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed long int)       \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned long int)     \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, __gmp_slli)            \
-__GMPNI_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, __gmp_ulli)            \
+__GMPNS_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed char)           \
+__GMPNU_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned char)         \
+__GMPNS_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed int)            \
+__GMPNU_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned int)          \
+__GMPNS_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed short int)      \
+__GMPNU_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned short int)    \
+__GMPNS_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed long int)       \
+__GMPNU_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned long int)     \
 __GMPND_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, float)                 \
 __GMPND_DECLARE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, double)
 
@@ -1627,7 +1580,7 @@ private:
   void assign_ui(unsigned long l)
   {
     if (__GMPXX_CONSTANT_TRUE(l == 0))
-      mp->_mp_size = 0;
+      __get_mp()->_mp_size = 0;
     else
       mpz_set_ui(mp, l);
   }
@@ -1671,70 +1624,6 @@ private:
   {
     mpz_init_set_d (mp, d);
   }
-  void init_ull(__gmp_ulli l)
-  {
-    //if (sizeof(long) == sizeof(long long))
-    if (l <= std::numeric_limits<unsigned long>::max())
-      {
-	init_ui(static_cast<unsigned long>(l));
-	return;
-      }
-# ifdef INTRUSIVE
-    mpz_init2(mp, std::numeric_limits<__gmp_ulli>::digits);
-    mp_limb_t *p = mp->_mp_d;
-    while (l != 0)
-      {
-	*p++ = static_cast<mp_limb_t>(l & GMP_NUMB_MASK);
-	l >>= GMP_NUMB_BITS;
-      }
-    mp->_mp_size = p - mp->_mp_d;
-# else
-    // avoid a warning about x >> 64 for 64-bit x in dead code.
-    int sizel = (sizeof(long) < sizeof(__gmp_ulli))
-		? std::numeric_limits<unsigned long>::digits : 0;
-    init_ull(l >> sizel);
-    mpz_mul_2exp(mp, mp, sizel);
-    mpz_add_ui(mp, mp, static_cast<unsigned long>(l));
-# endif
-  }
-  void init_sll(__gmp_slli l)
-  {
-    init_ull(__gmpxx_abs_ull(l));
-    if (l < 0)
-      mpz_neg(mp, mp);
-  }
-  void assign_ull(__gmp_ulli l)
-  {
-    //if (sizeof(long) == sizeof(long long))
-    if (l <= std::numeric_limits<unsigned long>::max())
-      {
-	assign_ui(static_cast<unsigned long>(l));
-	return;
-      }
-# ifdef INTRUSIVE
-    if (mp->_mp_alloc * GMP_NUMB_BITS < std::numeric_limits<__gmp_ulli>::digits)
-      mpz_realloc2(mp, std::numeric_limits<__gmp_ulli>::digits);
-    mp_limb_t *p = mp->_mp_d;
-    while (l != 0)
-      {
-	*p++ = static_cast<mp_limb_t>(l & GMP_NUMB_MASK);
-	l >>= GMP_NUMB_BITS;
-      }
-    mp->_mp_size = p - mp->_mp_d;
-# else
-    int sizel = (sizeof(long) < sizeof(__gmp_ulli))
-		? std::numeric_limits<unsigned long>::digits : 0;
-    assign_ull(l >> sizel);
-    mpz_mul_2exp(mp, mp, std::numeric_limits<unsigned long>::digits);
-    mpz_add_ui(mp, mp, static_cast<unsigned long>(l));
-# endif
-  }
-  void assign_sll(__gmp_slli l)
-  {
-    assign_ull(__gmpxx_abs_ull(l));
-    if (l < 0)
-      mpz_neg(mp, mp);
-  }
 
 public:
   mp_bitcnt_t get_prec() const { return mpf_get_default_prec(); }
@@ -1745,7 +1634,7 @@ public:
   __gmp_expr(const __gmp_expr &z) { mpz_init_set(mp, z.mp); }
 #if __GMPXX_USE_CXX11
   __gmp_expr(__gmp_expr &&z) noexcept
-  { *mp = *z.mp; mpz_init(z.mp); }
+  { *__get_mp() = *z.__get_mp(); mpz_init(z.mp); }
 #endif
   template <class T>
   __gmp_expr(const __gmp_expr<mpz_t, T> &expr)
@@ -1777,7 +1666,8 @@ public:
 
   ~__gmp_expr() { mpz_clear(mp); }
 
-  void swap(__gmp_expr& z) __GMPXX_NOEXCEPT { std::swap(*mp, *z.mp); }
+  void swap(__gmp_expr& z) __GMPXX_NOEXCEPT
+  { std::swap(*__get_mp(), *z.__get_mp()); }
 
   // assignment operators
   __gmp_expr & operator=(const __gmp_expr &z)
@@ -1839,7 +1729,7 @@ public:
   // bool fits_ldouble_p() const { return mpz_fits_ldouble_p(mp); }
 
 #if __GMPXX_USE_CXX11
-  explicit operator bool() const { return mp->_mp_size != 0; }
+  explicit operator bool() const { return __get_mp()->_mp_size != 0; }
 #endif
 
   // member operators
@@ -1864,6 +1754,8 @@ public:
   __GMP_DECLARE_UNARY_STATIC_MEMFUN(mpz_t, fibonacci, __gmp_fib_function)
 };
 
+typedef __gmp_expr<mpz_t, mpz_t> mpz_class;
+
 
 /**************** mpq_class -- wrapper for mpq_t ****************/
 
@@ -1874,7 +1766,7 @@ private:
   typedef mpq_t value_type;
   value_type mp;
 
-  //  Helper functions used for all arithmetic types
+  // Helper functions used for all arithmetic types
   void assign_ui(unsigned long l) { mpq_set_ui(mp, l, 1); }
   void assign_si(signed long l)
   {
@@ -1884,14 +1776,10 @@ private:
       mpq_set_si(mp, l, 1);
   }
   void assign_d (double d)        { mpq_set_d (mp, d); }
-  void assign_ull(__gmp_ulli l)	{ get_num() = l; get_den() = 1; }
-  void assign_sll(__gmp_slli l)	{ get_num() = l; get_den() = 1; }
 
   void init_ui(unsigned long l)	{ mpq_init(mp); get_num() = l; }
   void init_si(signed long l)	{ mpq_init(mp); get_num() = l; }
   void init_d (double d)	{ mpq_init(mp); assign_d (d); }
-  void init_ull(__gmp_ulli l)	{ mpq_init(mp); get_num() = l; }
-  void init_sll(__gmp_slli l)	{ mpq_init(mp); get_num() = l; }
 
 public:
   mp_bitcnt_t get_prec() const { return mpf_get_default_prec(); }
@@ -1908,6 +1796,12 @@ public:
 #if __GMPXX_USE_CXX11
   __gmp_expr(__gmp_expr &&q)
   { *mp = *q.mp; mpq_init(q.mp); }
+  __gmp_expr(mpz_class &&z)
+  {
+    *mpq_numref(mp) = *z.get_mpz_t();
+    mpz_init_set_ui(mpq_denref(mp), 1);
+    mpz_init(z.get_mpz_t());
+  }
 #endif
   template <class T>
   __gmp_expr(const __gmp_expr<mpz_t, T> &expr)
@@ -2003,9 +1897,11 @@ public:
 
   // conversion functions
 
-  // casting a reference to an mpz_t to mpz_class & is a dirty hack,
-  // but works because the internal representation of mpz_class is
-  // exactly an mpz_t
+  // casting a reference to an mpz_t to mpz_class & is a dirty hack.
+  // It kind of works because the internal representation of mpz_class is
+  // exactly an mpz_t, but compilers are allowed to assume that mpq_class
+  // and mpz_class do not alias... In mpz_class, we avoid using mp directly,
+  // to reduce the risks of such problematic optimizations.
   const mpz_class & get_num() const
   { return reinterpret_cast<const mpz_class &>(*mpq_numref(mp)); }
   mpz_class & get_num()
@@ -2044,6 +1940,7 @@ public:
   __GMP_DECLARE_INCREMENT_OPERATOR(operator--)
 };
 
+typedef __gmp_expr<mpq_t, mpq_t> mpq_class;
 
 
 /**************** mpf_class -- wrapper for mpf_t ****************/
@@ -2064,14 +1961,6 @@ private:
     else
       mpf_set_si(mp, l);
   }
-  void assign_sll(__gmp_slli l)
-  {
-    *this = static_cast<__gmpxx_int_canonical<__gmp_slli>::Type>(l);
-  }
-  void assign_ull(__gmp_ulli l)
-  {
-    *this = static_cast<__gmpxx_int_canonical<__gmp_ulli>::Type>(l);
-  }
   void assign_d (double d)        { mpf_set_d (mp, d); }
 
   void init_ui(unsigned long l)
@@ -2088,8 +1977,6 @@ private:
     else
       mpf_init_set_si(mp, l);
   }
-  void init_sll(__gmp_slli l)	{ mpf_init(mp); assign_sll(l); }
-  void init_ull(__gmp_ulli l)	{ mpf_init(mp); assign_ull(l); }
   void init_d (double d)	{ mpf_init_set_d (mp, d); }
 
 public:
@@ -2137,11 +2024,6 @@ public:
   { mpf_init2(mp, prec); mpf_set_si(mp, l); }
   __gmp_expr(unsigned long int l, mp_bitcnt_t prec)
   { mpf_init2(mp, prec); mpf_set_ui(mp, l); }
-
-  __gmp_expr(__gmp_slli l, mp_bitcnt_t prec)
-  { mpf_init2(mp, prec); *this = mpz_class(l); }
-  __gmp_expr(__gmp_ulli l, mp_bitcnt_t prec)
-  { mpf_init2(mp, prec); *this = mpz_class(l); }
 
   __gmp_expr(float f, mp_bitcnt_t prec)
   { mpf_init2(mp, prec); mpf_set_d(mp, f); }
@@ -2271,24 +2153,26 @@ public:
   __GMP_DECLARE_INCREMENT_OPERATOR(operator--)
 };
 
+typedef __gmp_expr<mpf_t, mpf_t> mpf_class;
+
 
 
 /**************** User-defined literals ****************/
 
 #if __GMPXX_USE_CXX11
-inline mpz_class operator""_mpz(const char* s)
+inline mpz_class operator"" _mpz(const char* s)
 {
   return mpz_class(s);
 }
 
-inline mpq_class operator""_mpq(const char* s)
+inline mpq_class operator"" _mpq(const char* s)
 {
   mpq_class q;
   q.get_num() = s;
   return q;
 }
 
-inline mpf_class operator""_mpf(const char* s)
+inline mpf_class operator"" _mpf(const char* s)
 {
   return mpf_class(s);
 }
@@ -3107,7 +2991,7 @@ inline __gmp_expr                                                          \
 fun(const __gmp_expr<T, U> &expr, type t)                                  \
 {                                                                          \
   return __gmp_expr                                                        \
-    <T, __gmp_binary_expr<__gmp_expr<T, U>, bigtype, eval_fun> >(expr, static_cast<bigtype>(t)); \
+    <T, __gmp_binary_expr<__gmp_expr<T, U>, bigtype, eval_fun> >(expr, t); \
 }                                                                          \
                                                                            \
 template <class T, class U>                                                \
@@ -3116,11 +3000,14 @@ inline __gmp_expr                                                          \
 fun(type t, const __gmp_expr<T, U> &expr)                                  \
 {                                                                          \
   return __gmp_expr                                                        \
-    <T, __gmp_binary_expr<bigtype, __gmp_expr<T, U>, eval_fun> >(static_cast<bigtype>(t), expr); \
+    <T, __gmp_binary_expr<bigtype, __gmp_expr<T, U>, eval_fun> >(t, expr); \
 }
 
-#define __GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, type)          \
-__GMPNN_DEFINE_BINARY_FUNCTION(fun, eval_fun, type, __gmpxx_int_canonical<type>::Type)
+#define __GMPNS_DEFINE_BINARY_FUNCTION(fun, eval_fun, type)          \
+__GMPNN_DEFINE_BINARY_FUNCTION(fun, eval_fun, type, signed long int)
+
+#define __GMPNU_DEFINE_BINARY_FUNCTION(fun, eval_fun, type)            \
+__GMPNN_DEFINE_BINARY_FUNCTION(fun, eval_fun, type, unsigned long int)
 
 #define __GMPND_DEFINE_BINARY_FUNCTION(fun, eval_fun, type) \
 __GMPNN_DEFINE_BINARY_FUNCTION(fun, eval_fun, type, double)
@@ -3129,16 +3016,14 @@ __GMPNN_DEFINE_BINARY_FUNCTION(fun, eval_fun, type, double)
 __GMPNN_DEFINE_BINARY_FUNCTION(fun, eval_fun, type, long double)
 
 #define __GMPN_DEFINE_BINARY_FUNCTION(fun, eval_fun)              \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed char)        \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned char)      \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed int)         \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned int)       \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed short int)   \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned short int) \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed long int)    \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned long int)  \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, __gmp_slli)         \
-__GMPNI_DEFINE_BINARY_FUNCTION(fun, eval_fun, __gmp_ulli)         \
+__GMPNS_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed char)        \
+__GMPNU_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned char)      \
+__GMPNS_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed int)         \
+__GMPNU_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned int)       \
+__GMPNS_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed short int)   \
+__GMPNU_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned short int) \
+__GMPNS_DEFINE_BINARY_FUNCTION(fun, eval_fun, signed long int)    \
+__GMPNU_DEFINE_BINARY_FUNCTION(fun, eval_fun, unsigned long int)  \
 __GMPND_DEFINE_BINARY_FUNCTION(fun, eval_fun, float)              \
 __GMPND_DEFINE_BINARY_FUNCTION(fun, eval_fun, double)             \
 /* __GMPNLD_DEFINE_BINARY_FUNCTION(fun, eval_fun, long double) */
@@ -3169,7 +3054,7 @@ inline __gmp_expr                                                          \
 fun(const __gmp_expr<T, U> &expr, type t)                                  \
 {                                                                          \
   return __gmp_expr                                                        \
-    <T, __gmp_binary_expr<__gmp_expr<T, U>, bigtype, eval_fun> >(expr, static_cast<bigtype>(t)); \
+    <T, __gmp_binary_expr<__gmp_expr<T, U>, bigtype, eval_fun> >(expr, t); \
 }                                                                          \
                                                                            \
 template <class U>                                                         \
@@ -3178,11 +3063,14 @@ inline __gmp_expr                                                          \
 fun(type t, const __gmp_expr<T, U> &expr)                                  \
 {                                                                          \
   return __gmp_expr                                                        \
-    <T, __gmp_binary_expr<bigtype, __gmp_expr<T, U>, eval_fun> >(static_cast<bigtype>(t), expr); \
+    <T, __gmp_binary_expr<bigtype, __gmp_expr<T, U>, eval_fun> >(t, expr); \
 }
 
-#define __GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type)          \
-__GMPNN_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type, __gmpxx_int_canonical<type>::Type)
+#define __GMPNS_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type)          \
+__GMPNN_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type, signed long int)
+
+#define __GMPNU_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type)          \
+__GMPNN_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type, unsigned long int)
 
 #define __GMPND_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type) \
 __GMPNN_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type, double)
@@ -3191,16 +3079,14 @@ __GMPNN_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type, double)
 __GMPNN_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, type, long double)
 
 #define __GMPN_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun)              \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed char)        \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned char)      \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed int)         \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned int)       \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed short int)   \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned short int) \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed long int)    \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned long int)  \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, __gmp_slli) \
-__GMPNI_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, __gmp_ulli) \
+__GMPNS_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed char)        \
+__GMPNU_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned char)      \
+__GMPNS_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed int)         \
+__GMPNU_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned int)       \
+__GMPNS_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed short int)   \
+__GMPNU_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned short int) \
+__GMPNS_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, signed long int)    \
+__GMPNU_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, unsigned long int)  \
 __GMPND_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, float)              \
 __GMPND_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, double)             \
 /* __GMPNLD_DEFINE_BINARY_FUNCTION_1(T, fun, eval_fun, long double) */
@@ -3250,9 +3136,13 @@ inline type fun(type2 t, const __gmp_expr<T, U> &expr)             \
   return eval_fun::eval(static_cast<bigtype>(t), temp.__get_mp()); \
 }
 
-#define __GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, type2) \
+#define __GMPNS_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, type2) \
 __GMPNN_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun,                \
-				    type2, __gmpxx_int_canonical<type2>::Type)
+				    type2, signed long int)
+
+#define __GMPNU_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, type2) \
+__GMPNN_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun,                \
+				    type2, unsigned long int)
 
 #define __GMPND_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, type2) \
 __GMPNN_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, type2, double)
@@ -3261,16 +3151,14 @@ __GMPNN_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, type2, double)
 __GMPNN_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, type2, long double)
 
 #define __GMPN_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun)              \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed char)        \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned char)      \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed int)         \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned int)       \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed short int)   \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned short int) \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed long int)    \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned long int)  \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, __gmp_slli)         \
-__GMPNI_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, __gmp_ulli)         \
+__GMPNS_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed char)        \
+__GMPNU_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned char)      \
+__GMPNS_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed int)         \
+__GMPNU_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned int)       \
+__GMPNS_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed short int)   \
+__GMPNU_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned short int) \
+__GMPNS_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, signed long int)    \
+__GMPNU_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, unsigned long int)  \
 __GMPND_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, float)              \
 __GMPND_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, double)             \
 /* __GMPNLD_DEFINE_BINARY_TYPE_FUNCTION(type, fun, eval_fun, long double) */
@@ -3298,13 +3186,17 @@ inline type##_class & type##_class::fun(const __gmp_expr<T, U> &expr)        \
 inline type##_class & type##_class::fun(type2 t)                 \
 {                                                                \
   __gmp_set_expr(mp, __gmp_expr<type##_t, __gmp_binary_expr      \
-		 <type##_class, bigtype, eval_fun> >(*this, static_cast<bigtype>(t))); \
+		 <type##_class, bigtype, eval_fun> >(*this, t)); \
   return *this;                                                  \
 }
 
-#define __GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, type2) \
+#define __GMPNS_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, type2) \
 __GMPNN_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun,                \
-				 type2, __gmpxx_int_canonical<type2>::Type)
+				 type2, signed long int)
+
+#define __GMPNU_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, type2) \
+__GMPNN_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun,                \
+				 type2, unsigned long int)
 
 #define __GMPND_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, type2) \
 __GMPNN_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, type2, double)
@@ -3313,16 +3205,14 @@ __GMPNN_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, type2, double)
 __GMPNN_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, type2, long double)
 
 #define __GMPN_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun)              \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed char)        \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned char)      \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed int)         \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned int)       \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed short int)   \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned short int) \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed long int)    \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned long int)  \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, __gmp_slli)         \
-__GMPNI_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, __gmp_ulli)         \
+__GMPNS_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed char)        \
+__GMPNU_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned char)      \
+__GMPNS_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed int)         \
+__GMPNU_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned int)       \
+__GMPNS_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed short int)   \
+__GMPNU_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned short int) \
+__GMPNS_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, signed long int)    \
+__GMPNU_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, unsigned long int)  \
 __GMPND_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, float)              \
 __GMPND_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, double)             \
 /* __GMPNLD_DEFINE_COMPOUND_OPERATOR(type, fun, eval_fun, long double) */
@@ -3402,22 +3292,22 @@ fun(type expr)                                                               \
   return __gmp_expr<T, __gmp_unary_expr<bigtype, eval_fun> >(expr);          \
 }
 
-#define __GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
-__GMPNN_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, __gmpxx_int_canonical<type>::Type)
+#define __GMPNS_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
+__GMPNN_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, signed long)
+#define __GMPNU_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
+__GMPNN_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, unsigned long)
 #define __GMPND_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type)  \
 __GMPNN_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, type, double)
 
 #define __GMPN_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun)                 \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed char)           \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned char)         \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed int)            \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned int)          \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed short int)      \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned short int)    \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed long int)       \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned long int)     \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, __gmp_slli)            \
-__GMPNI_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, __gmp_ulli)            \
+__GMPNS_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed char)           \
+__GMPNU_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned char)         \
+__GMPNS_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed int)            \
+__GMPNU_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned int)          \
+__GMPNS_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed short int)      \
+__GMPNU_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned short int)    \
+__GMPNS_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, signed long int)       \
+__GMPNU_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, unsigned long int)     \
 __GMPND_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, float)                 \
 __GMPND_DEFINE_UNARY_STATIC_MEMFUN(T, fun, eval_fun, double)                \
 
@@ -3778,18 +3668,8 @@ namespace std {
 #undef __GMPNU_DEFINE_BINARY_FUNCTION
 #undef __GMPND_DEFINE_BINARY_FUNCTION
 #undef __GMPNLD_DEFINE_BINARY_FUNCTION
-#undef __GMPNZ_DEFINE_BINARY_FUNCTION
 #undef __GMPN_DEFINE_BINARY_FUNCTION
 #undef __GMP_DEFINE_BINARY_FUNCTION
-#undef __GMPP_DEFINE_BINARY_FUNCTION_1
-#undef __GMPNN_DEFINE_BINARY_FUNCTION_1
-#undef __GMPNS_DEFINE_BINARY_FUNCTION_1
-#undef __GMPNU_DEFINE_BINARY_FUNCTION_1
-#undef __GMPND_DEFINE_BINARY_FUNCTION_1
-#undef __GMPNLD_DEFINE_BINARY_FUNCTION_1
-#undef __GMPNZ_DEFINE_BINARY_FUNCTION_1
-#undef __GMPN_DEFINE_BINARY_FUNCTION_1
-#undef __GMP_DEFINE_BINARY_FUNCTION_1
 
 #undef __GMP_DEFINE_BINARY_FUNCTION_UI
 
@@ -3799,7 +3679,6 @@ namespace std {
 #undef __GMPNU_DEFINE_BINARY_TYPE_FUNCTION
 #undef __GMPND_DEFINE_BINARY_TYPE_FUNCTION
 #undef __GMPNLD_DEFINE_BINARY_TYPE_FUNCTION
-#undef __GMPNZ_DEFINE_BINARY_TYPE_FUNCTION
 #undef __GMPN_DEFINE_BINARY_TYPE_FUNCTION
 #undef __GMP_DEFINE_BINARY_TYPE_FUNCTION
 
@@ -3811,19 +3690,8 @@ namespace std {
 #undef __GMPNU_DEFINE_COMPOUND_OPERATOR
 #undef __GMPND_DEFINE_COMPOUND_OPERATOR
 #undef __GMPNLD_DEFINE_COMPOUND_OPERATOR
-#undef __GMPNZ_DEFINE_COMPOUND_OPERATOR
 #undef __GMPN_DEFINE_COMPOUND_OPERATOR
 #undef __GMP_DEFINE_COMPOUND_OPERATOR
-
-#undef __GMPP_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMPNN_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMPNS_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMPNU_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMPND_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMPNLD_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMPNZ_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMPN_DEFINE_UNARY_STATIC_MEMFUN
-#undef __GMP_DEFINE_UNARY_STATIC_MEMFUN
 
 #undef __GMPQ_DEFINE_COMPOUND_OPERATOR
 #undef __GMPF_DEFINE_COMPOUND_OPERATOR
