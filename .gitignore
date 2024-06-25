@@ -18,7 +18,6 @@ config_mine.py
 *.tmp
 callgrind.out.*
 HOSTS*
-libSPDZ.so
 
 # Vim
 .*.swp
@@ -54,6 +53,7 @@ Programs/Public-Input/*
 *.exe
 *.x
 *.o
+*.so
 *.pyc
 *.bc
 *.sch
