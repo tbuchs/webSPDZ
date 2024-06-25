@@ -104,7 +104,7 @@ semi-he: hemi-party.x soho-party.x temi-party.x
 
 rep-field: malicious-rep-field-party.x replicated-field-party.x ps-rep-field-party.x
 
-rep-ring: replicated-ring-party.x brain-party.x malicious-rep-ring-party.x ps-rep-ring-party.x rep4-ring-party.x
+rep-ring: replicated-ring-party.x #brain-party.x malicious-rep-ring-party.x ps-rep-ring-party.x rep4-ring-party.x
 
 rep-bin: replicated-bin-party.x malicious-rep-bin-party.x ps-rep-bin-party.x Fake-Offline.x
 
@@ -116,7 +116,9 @@ mascot: mascot-party.x spdz2k mama-party.x
 ifeq ($(OS), Darwin)
 setup: mac-setup
 else
-setup: boost linux-machine-setup
+setup: datachannel 
+	npm install websocket
+#boost linux-machine-setup
 endif
 
 tldr: setup
@@ -127,7 +129,7 @@ ifeq ($(ARM), 1)
 $(patsubst %.cpp,%.o,$(wildcard */*.cpp)): deps/simde/simde
 endif
 
-shamir: malicious-shamir-party.x # shamir-party.x malicious-shamir-party.x atlas-party.x galois-degree.x
+shamir: shamir-party.x #malicious-shamir-party.x atlas-party.x galois-degree.x
 
 sy: sy-rep-field-party.x sy-rep-ring-party.x sy-shamir-party.x
 
@@ -137,9 +139,9 @@ ecdsa-static: static-dir $(patsubst ECDSA/%.cpp,static/%.x,$(wildcard ECDSA/*-ec
 $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER) $(GC)
 	$(AR) -csr $@ $^
 
-CFLAGS += -fPIC -fsanitize=undefined -fsanitize-minimal-runtime -Wbad-function-cast -Wcast-function-type -sMEMORY64=1
+CFLAGS += -fPIC -fsanitize=undefined -Wbad-function-cast -Wcast-function-type -sMEMORY64=1#-fsanitize-minimal-runtime
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js --js-library deps/datachannel-wasm/wasm/js/websocket.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sWASM_BIGINT -sMEMORY64=1 -sWEBSOCKET_DEBUG # -sASYNCIFY_IGNORE_INDIRECT
+LDFLAGS += -sWASMFS -sASYNCIFY -sMEMORY64=1 -sWASM_BIGINT -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)
@@ -207,13 +209,12 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=5 $(SHAREDLIB) -o $(subst .x,,$@).html --preload-file Programs --preload-file Player-Data
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Programs --embed-file Player-Data
 
 %-ecdsa-party.x: ECDSA/%-ecdsa-party.o ECDSA/P256Element.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 replicated-bin-party.x: GC/square64.o
-replicated-ring-party.x: GC/square64.o
 replicated-field-party.x: GC/square64.o
 brain-party.x: GC/square64.o
 malicious-rep-bin-party.x: GC/square64.o
@@ -275,39 +276,12 @@ static/bmr-program-party.x: $(BMR)
 static/no-party.x: Protocols/ShareInterface.o
 Test/failure.x: Protocols/MalRepRingOptions.o
 
-ifeq ($(AVX_OT), 1)
-$(LIBSIMPLEOT_ASM): deps/SimpleOT/Makefile
-	$(MAKE) -C deps/SimpleOT
-
-OT/BaseOT.o: deps/SimpleOT/Makefile
-
-deps/SimpleOT/Makefile:
-	git submodule update --init deps/SimpleOT || git clone https://github.com/mkskeller/SimpleOT deps/SimpleOT
-endif
-
-$(LIBSIMPLEOT_C): deps/SimplestOT_C/ref10/Makefile
-	$(MAKE) -C deps/SimplestOT_C/ref10
-
-OT/BaseOT.o: deps/SimplestOT_C/ref10/Makefile
-
-deps/SimplestOT_C/ref10/Makefile:
-	git submodule update --init deps/SimplestOT_C || git clone https://github.com/mkskeller/SimplestOT_C deps/SimplestOT_C
-	cd deps/SimplestOT_C/ref10; PATH="$(CURDIR)/local/bin:$(PATH)" cmake .
-
 .PHONY: Programs/Circuits
-Programs/Circuits:
-	git submodule update --init Programs/Circuits
 
-deps/libOTe/libOTe:
-	git submodule update --init --recursive deps/libOTe || git clone --recurse-submodules https://github.com/mkskeller/softspoken-implementation deps/libOTe
-boost: deps/libOTe/libOTe
-	cd deps/libOTe; \
-	python3 build.py --setup --boost --install=$(CURDIR)/local
-
-deps/datachannel-wasm:
-	git submodule update --init --recursive
-	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
-	cd build; make
+datachannel:
+	git clone https://github.com/paullouisageneau/datachannel-wasm.git deps/datachannel-wasm
+	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$(EMSDK)/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_CXX_FLAGS="-fPIC -pthread -sMEMORY64=1" -DCMAKE_FLAGS="-fPIC -pthread -sMEMORY64=1" 
+	cd deps/datachannel-wasm/build; make -j4;
 	
 OTE_OPTS += -DENABLE_SOFTSPOKEN_OT=ON -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_INSTALL_LIBDIR=lib
 
@@ -358,9 +332,6 @@ mac-setup: mac-machine-setup
 
 linux-machine-setup:
 mac-machine-setup:
-
-deps/simde/simde:
-	git submodule update --init deps/simde || git clone https://github.com/simd-everywhere/simde deps/simde
 
 clean-deps:
 	-rm -rf local/lib/liblibOTe.* deps/libOTe/out
