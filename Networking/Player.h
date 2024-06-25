@@ -12,6 +12,7 @@
 #include <set>
 #include <iostream>
 #include <fstream>
+#include <emscripten/websocket.h>
 using namespace std;
 
 #include "Tools/octetStream.h"
@@ -25,9 +26,9 @@ using namespace std;
 #include "Networking/PlayerBuffer.h"
 #include "Tools/Lock.h"
 
-#include "datachannel-wasm/wasm/include/rtc/datachannel.hpp"
-#include "datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
-#include "datachannel-wasm/wasm/include/rtc/configuration.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/datachannel.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/configuration.hpp"
 
 template<class T> class MultiPlayer;
 class Server;
@@ -167,7 +168,7 @@ struct CommStats
 class NamedCommStats : public map<string, CommStats>
 {
 public:
-  size_t sent;
+  word sent;
   string last;
 
   NamedCommStats();
@@ -201,6 +202,9 @@ protected:
 
 public:
   mutable Timer timer;
+  mutable Timer send_timer;
+  mutable Timer recv_timer;
+  mutable Timer wait_timer;
 
   PlayerBase(int player_no) : player_no(player_no), sent(comm_stats.sent) {}
   virtual ~PlayerBase();
@@ -438,7 +442,7 @@ public:
 
   void send_message(int receiver, const octetStream* msg);
 
-  inline void add_message(int sender, const octetStream* msg) {
+  inline void add_message(string sender, const octetStream* msg) {
     msg_lock.lock();
     if(message_queue.find(sender) != message_queue.end()) {
       message_queue.at(sender).push_back(msg);
@@ -451,29 +455,27 @@ public:
 
   virtual string get_id() const { return id; }
 
+  string get_map_key(int player) const { return id + "/" + to_string(player); }
+  string get_map_key(string group, int player_no) const { return group + "/" + to_string(player_no); }
+
   Lock msg_lock;
-  map<int, std::shared_ptr<rtc::DataChannel>> data_channels;
-  map<int, std::shared_ptr<rtc::PeerConnection>> peer_connections;
+  map<string, std::shared_ptr<rtc::DataChannel>> data_channels;
+  map<string, std::shared_ptr<rtc::PeerConnection>> peer_connections;
+  map<string, std::vector<rtc::Candidate>> webrtc_candidates;
   EMSCRIPTEN_WEBSOCKET_T websocket_conn;
   int connected_users;
 
 private:
 
-  inline const octetStream* read_message(int sender) {
+  inline const octetStream* read_message(string sender) {
     msg_lock.lock();
-    if(message_queue.find(sender) != message_queue.end() && message_queue.at(sender).size() > 0) {
-      const octetStream* msg = message_queue.at(sender).front();
-      message_queue.at(sender).pop_front();
-      msg_lock.unlock();
-      return msg;
-    }
-    // no message received
-    cerr << "No message received from sender " << sender << " to player "<< player_no << endl;
+    const octetStream* msg = message_queue.at(sender).front();
+    message_queue.at(sender).pop_front();
     msg_lock.unlock();
-    exit(-1);
+    return msg;
   }
 
-  map<int, std::deque<const octetStream*>> message_queue;
+  map<string, std::deque<const octetStream*>> message_queue;
   string id;
 };
 

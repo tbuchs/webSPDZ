@@ -23,13 +23,14 @@
 #include <iostream>
 using namespace std;
 
-#include <emscripten/threading.h>
-#include <emscripten/websocket.h>
+// default to one minute
+#ifndef CONNECTION_TIMEOUT
+#define CONNECTION_TIMEOUT 60
+#endif
 
 void error(const char *str);
 
 void set_up_client_socket(int& mysocket,const char* hostname,int Portnum);
-void set_up_client_websocket(int& mysocket,const char* hostname,int Portnum);
 void close_client_socket(int socket);
 
 // send/receive integers
@@ -41,63 +42,44 @@ void receive(T& socket, size_t& a, size_t len);
 
 inline size_t send_non_blocking(int socket, octet* msg, size_t len)
 {
-#ifdef USE_WEBSOCKETS_API
-    int j = emscripten_websocket_send_utf8_text(socket, (const char*)msg);
-    (void)len; // unused
+#ifdef __APPLE__
+  int j = send(socket,msg,min(len,10000lu),MSG_DONTWAIT);
 #else
-    int j = send(socket,msg,len,0);
+  int j = send(socket,msg,len,MSG_DONTWAIT);
 #endif
-
   if (j < 0)
-  {
-    if (errno != EINTR and errno != EAGAIN and errno != EWOULDBLOCK)
-      { cerr << "send_non_blocking: " << strerror(errno) << endl;
-        error("Send error - 1 ");  }
-    else
-      return 0;
-  }
+    {
+      if (errno != EINTR and errno != EAGAIN and errno != EWOULDBLOCK and
+	  errno != ENOBUFS)
+        { error("Send error - 1 ");  }
+      else
+        return 0;
+    }
   return j;
 }
 
-inline EM_BOOL onopen(int eventType, const EmscriptenWebSocketOpenEvent *websocketEvent, void *userData) {
-  char* msg = (char*) userData;
-  (void)eventType; // unused
-  int result = emscripten_websocket_send_utf8_text(websocketEvent->socket, msg);
-  if (result < 0) {
-    cerr << "WebSocket send failed with error code " << result << endl;
-    error("WebSocket send failed");
-  }
-  return EM_TRUE;
-}
-
-
 inline void send(int socket,octet *msg,size_t len)
 {
-#ifdef USE_WEBSOCKETS_API
-    emscripten_websocket_set_onopen_callback(socket, (void*)msg, onopen);
-    (void)len; // unused
-#else
-    size_t i = 0;
-    long wait = 1;
-    while (i < len)
+  size_t i = 0;
+  long wait = 1;
+  while (i < len)
     {
       size_t j = send_non_blocking(socket, msg + i, len - i);
       i += j;
       if (i > 0)
-        wait = 1;
+	wait = 1;
       else
-      {
-        emscripten_thread_sleep(wait);
-        wait *= 2;
-      }
+	{
+	  usleep(wait);
+	  wait *= 2;
+	}
     }
-#endif
 }
 
 template<class T>
 inline void send(T& socket, size_t a, size_t len)
 {
-  octet blen[len];
+  octet blen[8];
   encode_length(blen, a, len);
   send(socket, blen, len);
 }
@@ -138,7 +120,7 @@ inline void receive(int socket,octet *msg,size_t len)
 template<class T>
 inline void receive(T& socket, size_t& a, size_t len)
 {
-  octet blen[len];
+  octet blen[8];
   receive(socket, blen, len);
   a = decode_length(blen, len);
 }

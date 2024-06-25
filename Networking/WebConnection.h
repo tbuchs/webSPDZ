@@ -19,12 +19,14 @@ using namespace std;
 #include "Player.h"
 
 #include <emscripten/websocket.h>
-#include "datachannel-wasm/wasm/include/rtc/datachannel.hpp"
-#include "datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
-#include "datachannel-wasm/wasm/include/rtc/configuration.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/datachannel.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/configuration.hpp"
 
-void send_websocket_message(int websocket, string type, string player, string msg) {
-  json message = {{"type", type}, {"name", player}, {"content", msg}};
+void send_websocket_message(int websocket, string type, string player_group, int player_id, string msg) {
+  json message = {{"type", type}, {"group", player_group}, {"name", player_id}, {"content", msg}};
+  unsigned short ready;
+  emscripten_websocket_get_ready_state(websocket, &ready);
   int result = emscripten_websocket_send_utf8_text(websocket, message.dump().c_str());
   if (result < 0) {
     cerr << "WebSocket send failed with error code " << result << endl;
@@ -33,15 +35,27 @@ void send_websocket_message(int websocket, string type, string player, string ms
   }
 }
 
-void init_peer_connection(WebPlayer* player, int next_player, string offer) {
-  rtc::Configuration config;
-  config.iceServers.emplace_back("stun:stun.1.google.com:19302");
-  std::shared_ptr<rtc::PeerConnection> pc = std::make_shared<rtc::PeerConnection>(config);
-  player->peer_connections.emplace(next_player, pc);
+void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
+  std::shared_ptr<rtc::PeerConnection> pc;
+  string next_player_key = player->get_map_key(next_player_id);
+  if(player->peer_connections.find(next_player_key) == player->peer_connections.end()) {
+    rtc::Configuration config;
+    config.iceServers.emplace_back("stun:stun.1.google.com:19302");
+    pc = std::make_shared<rtc::PeerConnection>(config);
+    player->peer_connections.emplace(next_player_key, pc);
+  } else
+    pc = player->peer_connections.at(next_player_key);
+
 
   if(offer.empty()) {
-    std::shared_ptr<rtc::DataChannel> dc = pc->createDataChannel("Channel:" + to_string(player->my_num()) + "-" + to_string(next_player));
-    player->data_channels.emplace(next_player, dc);
+    rtc::Reliability reliability;
+    // reliability.type = rtc::Reliability::Type::Reliable;
+    reliability.unordered = false;
+    rtc::DataChannelInit dc_init;
+    dc_init.reliability = reliability;
+
+    std::shared_ptr<rtc::DataChannel> dc = pc->createDataChannel("Channel: " + player->get_id() + " " + to_string(player->my_num()) + "-" + to_string(next_player_id), dc_init);
+    player->data_channels.emplace(next_player_key, dc);
 
     dc->onOpen([player, dc]() {
       std::cout << "[DataChannel open: " << dc->label() << "]" << std::endl;
@@ -52,30 +66,35 @@ void init_peer_connection(WebPlayer* player, int next_player, string offer) {
       player->connected_users--;
     });
 
-    dc->onMessage([player, next_player](std::variant<rtc::binary, rtc::string> message) {
+    dc->onMessage([player, next_player_key](std::variant<rtc::binary, rtc::string> message) {
       if (std::holds_alternative<rtc::string>(message)) {
         const octetStream* msg = new octetStream(std::get<rtc::string>(message));
         // std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
-        player->add_message(next_player, msg);
+        player->add_message(next_player_key, msg);
       } else {
         std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
         //std::cout << "Binary message from " << next_player << " received, size=" << std::get<rtc::binary>(message).size();
         if(binary_msg.size() == 0) {
           // cerr << "Binary message is empty" << endl;
           const octetStream* msg = new octetStream();
-          player->add_message(next_player, msg);
+          player->add_message(next_player_key, msg);
         } else {
           unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
           const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
-          player->add_message(next_player, msg);
+          player->add_message(next_player_key, msg);
         }
       }
     });
   } else {
     pc->setRemoteDescription(rtc::Description(offer, rtc::Description::Type::Offer));
-    pc->onDataChannel([player, next_player](std::shared_ptr<rtc::DataChannel> _dc) { //only the answerer has to create a new dc object
+    if(player->webrtc_candidates.find(next_player_key) != player->webrtc_candidates.end()) {
+      for(rtc::Candidate candidate : player->webrtc_candidates.at(next_player_key)) {
+        pc->addRemoteCandidate(candidate); 
+      }
+    }
+    pc->onDataChannel([player, next_player_key](std::shared_ptr<rtc::DataChannel> _dc) { //only the answerer has to create a new dc object
       std::cout << "[Got a DataChannel with label: " << _dc->label() << "]" << std::endl;
-      player->data_channels.emplace(next_player, _dc);
+      player->data_channels.emplace(next_player_key, _dc);
       std::shared_ptr<rtc::DataChannel> dc = _dc;
       player->connected_users++;
 
@@ -84,22 +103,22 @@ void init_peer_connection(WebPlayer* player, int next_player, string offer) {
         player->connected_users--;
       });
 
-      dc->onMessage([player, next_player](std::variant<rtc::binary, rtc::string> message) {
+      dc->onMessage([player, next_player_key](std::variant<rtc::binary, rtc::string> message) {
         if (std::holds_alternative<rtc::string>(message)) {
           const octetStream* msg = new octetStream(std::get<rtc::string>(message));
           // std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
-          player->add_message(next_player, msg);
+          player->add_message(next_player_key, msg);
         } else {
           std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
           // std::cout << "Binary message from " << next_player << " received, size=" << binary_msg.size();
           if(binary_msg.size() == 0) {
             // cerr << "Binary message is empty" << endl;
             const octetStream* msg = new octetStream();
-            player->add_message(next_player, msg);
+            player->add_message(next_player_key, msg);
           } else {
             unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
             const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
-            player->add_message(next_player, msg);
+            player->add_message(next_player_key, msg);
           }
           //cout << " content: " << *msg << endl;
         }
@@ -107,29 +126,23 @@ void init_peer_connection(WebPlayer* player, int next_player, string offer) {
 	  });
   }
 
-  pc->onGatheringStateChange([player, pc, next_player, offer](rtc::PeerConnection::GatheringState state) {
+  pc->onGatheringStateChange([player, pc, next_player_id](rtc::PeerConnection::GatheringState state) {
     if (state == rtc::PeerConnection::GatheringState::Complete) { // only send offer/answer if gathering of candidates is complete
       std::optional<rtc::Description> desc = pc->localDescription();
-      if(desc.has_value())
-      {
-        if(offer.empty()) {
-          send_websocket_message(player->websocket_conn, "offer", "P" + to_string(next_player), rtc::string(desc.value()).c_str());
-        } else {
-          send_websocket_message(player->websocket_conn, "answer", "P" + to_string(next_player), rtc::string(desc.value()).c_str());
+      if(desc.has_value()) {
+        send_websocket_message(player->websocket_conn, desc.value().typeString(), player->get_id(), next_player_id, rtc::string(desc.value()).c_str());
         }
       }
-    }
   });
 }
 
 static EM_BOOL WebSocketOpen([[maybe_unused]]int eventType, const EmscriptenWebSocketOpenEvent *websocketEvent, void *userData) {
   // register on websocket server
   WebPlayer* player = (WebPlayer*)userData;
-  string user_name = "P" + to_string(player->my_num());
+  int user_id = player->my_num();
+  string user_group = player->get_id();
   string number_players = to_string(player->num_players());
-  cerr << "WebSocket opened" << endl;
-  send_websocket_message(websocketEvent->socket, "login", user_name, number_players);
-  cerr << "WebSocket registered" << endl;
+  send_websocket_message(websocketEvent->socket, "login", user_group, user_id, number_players);
   return EM_TRUE;
 }
 
@@ -149,14 +162,29 @@ static EM_BOOL WebSocketMessage([[maybe_unused]]int eventType, const EmscriptenW
     int player_no = player->my_num();
     int nplayers = player->num_players();
     for (int i=player_no+1; i<nplayers; i++) {
-        init_peer_connection(player, i, "");
+      init_peer_connection(player, i, "");
     }
   } else if (json_msg["type"] == "offer") {
-    string player_no = json_msg.at("name").dump().substr(2, 1); // P1 -> 1
-    init_peer_connection(player, stoi(player_no), json_msg.at("offer"));
+    std::string name = json_msg.at("name");
+    init_peer_connection(player, stoi(name), json_msg.at("offer"));
   } else if (json_msg["type"] == "answer") {
-    string player_no = json_msg.at("name").dump().substr(2, 1); // P1 -> 1
-    player->peer_connections.at(stoi(player_no))->setRemoteDescription(rtc::Description(json_msg.at("answer"), rtc::Description::Type::Answer));
+    std::string name = json_msg.at("name");
+    player->peer_connections.at(name)->setRemoteDescription(rtc::Description(json_msg.at("answer"), rtc::Description::Type::Answer));
+  } else if (json_msg["type"] == "candidate") {
+    string name = json_msg.at("name");
+    std::shared_ptr<rtc::PeerConnection> pc;
+    if(player->peer_connections.find(name) == player->peer_connections.end()) {
+      rtc::Configuration config;
+      config.iceServers.emplace_back("stun:stun.1.google.com:19302");
+      pc = std::make_shared<rtc::PeerConnection>(config);
+      player->peer_connections.emplace(name, pc);
+    } else
+      pc = player->peer_connections.at(name);
+
+    if(player->webrtc_candidates.find(name) == player->webrtc_candidates.end())
+      player->webrtc_candidates.emplace(name, vector<rtc::Candidate>());
+
+    player->webrtc_candidates.at(name).push_back(rtc::Candidate(json_msg.at("candidate"), "0")); // TODO use real mid?
   } else {
     cout << "Unknown message type" << endl;
     exit(1);
@@ -177,7 +205,17 @@ EM_BOOL WebSocketError(int eventType, [[maybe_unused]]const EmscriptenWebSocketE
 	return EM_TRUE;
 }
 
-bool callback_send_method(void* dc, unsigned char* data, int msg_size) {
-  rtc::DataChannel* dc_ptr = (rtc::DataChannel*)dc;
-  return dc_ptr->send(reinterpret_cast<byte*>(data), msg_size);
+struct args {
+  void* dc_;
+  unsigned char* data_;
+  int msg_size_;
+};
+
+void callback_send_method(void* ptr_args) {
+  struct args* a = (args*)ptr_args;
+  rtc::DataChannel* dc_ptr = (rtc::DataChannel*)a->dc_;
+  if(!dc_ptr->send(reinterpret_cast<byte*>(a->data_), a->msg_size_)) {
+    cerr << "Failed to send message" << endl;
+    exit(1);
+  }
 }

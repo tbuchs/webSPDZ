@@ -13,6 +13,8 @@
 #include <assert.h>
 
 #include <emscripten/websocket.h>
+#include <emscripten/threading.h>
+#include <emscripten/proxying.h>
 #include "WebConnection.h"
 
 using namespace std;
@@ -240,29 +242,27 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
   EmscriptenWebSocketCreateAttributes attr;
 	emscripten_websocket_init_create_attributes(&attr);
 	attr.url = "ws://localhost:8080";
-  attr.createOnMainThread = true; // WebSockets in WASM64 are only supported on the main thread
+  attr.createOnMainThread = true;
 	websocket_conn = emscripten_websocket_new(&attr);
 	if (websocket_conn <= 0)
 	{
     cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)websocket_conn << "!" << endl;
 		exit(1);
 	}
-  cerr << "WebSocket connection established!" << endl;
-  
+
 	emscripten_websocket_set_onopen_callback(websocket_conn, this, WebSocketOpen);
 	emscripten_websocket_set_onmessage_callback(websocket_conn, this, WebSocketMessage);
   emscripten_websocket_set_onclose_callback(websocket_conn, nullptr, WebSocketClose);
 	emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError);
 
-  cerr << "Waiting for all clients to connect..." << endl;
   // self connection
-  message_queue.insert({my_num(), std::deque<const octetStream*>{}});
+  message_queue.insert({get_map_key(my_num()), std::deque<const octetStream*>{}});
   connected_users++;
 
   // wait for all other players to connect
-  int sleep_interval = 100;
+  int sleep_interval = 10;
   int time_slept = 0;
-  while (connected_users < nplayers and time_slept < 60*1000)
+  while (connected_users < nplayers and time_slept < 120*1000)
   {
     // cout << "connected users(" << connected_users << "/" << nplayers << ")" << endl;
     emscripten_sleep(sleep_interval);
@@ -279,44 +279,57 @@ WebPlayer::WebPlayer(const Names& Nms, const string& id) :
 
 void WebPlayer::send_message(int receiver, const octetStream* msg) 
 {
-  bool success = false;
-  if(data_channels.find(receiver) != data_channels.end()) {
-    std::shared_ptr<rtc::DataChannel> data_channel = data_channels.at(receiver);
-    void* dc = data_channel.get();
-    bool (*ptr)(void*, unsigned char*, int) = &callback_send_method;
-    unsigned char* data = (unsigned char*)msg->get_data();
-    int size = msg->get_length();
-    success = emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_IIII, ptr, dc, data, size);
+  string receiver_key = get_map_key(receiver);
+  if(data_channels.find(receiver_key) != data_channels.end()) {
+    std::shared_ptr<rtc::DataChannel> data_channel = data_channels.at(receiver_key);
+    void (*func_ptr)(void*) = callback_send_method;
+    // #define EM_FUNC_SIG_VPPI  (EM_FUNC_SIG_RETURN_VALUE_V | EM_FUNC_SIG_WITH_N_PARAMETERS(3) | EM_FUNC_SIG_SET_PARAM(0, EM_FUNC_SIG_PARAM_P) | EM_FUNC_SIG_SET_PARAM(1, EM_FUNC_SIG_PARAM_P) | EM_FUNC_SIG_SET_PARAM(2, EM_FUNC_SIG_PARAM_I))
+    // emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_VPPI, ptr, dc, data, size);
+    em_proxying_queue* q = emscripten_proxy_get_system_queue();
+    args* data_args = new args();
+    data_args->dc_ = data_channel.get();
+    data_args->data_ = (unsigned char*)msg->get_data();
+    data_args->msg_size_ = msg->get_length();
+    emscripten_proxy_sync(q, emscripten_main_runtime_thread_id(), func_ptr, data_args);
+    delete data_args;
+    
   } else if(receiver == player_no) {
     // self send
-    add_message(receiver, msg);
-    success = true;
+    cerr << "Sending message to self" << endl;
+    add_message(receiver_key, msg);
   } else {
     cerr << "DataChannel not found for receiver " << receiver << endl;
     error("DataChannel not found for receiver");
   }
-  assert(success);
 }
 
 void WebPlayer::send_to_no_stats(int player, const octetStream& o)
 {
+  TimeScope ts(comm_stats["Sending WebPlayer"].add(o));
   send_message(player, &o);
+  comm_stats.sent += o.get_length();
 }
 
 void WebPlayer::receive_player_no_stats(int player, octetStream& o)
 {
-  msg_lock.lock();
-  if(message_queue.find(player) == message_queue.end()) {
+  recv_timer.start();
+  string player_key = get_map_key(player);
+  if(message_queue.find(player_key) == message_queue.end()) {
       // first message
-      message_queue.insert({player, std::deque<const octetStream*>{}});
+      msg_lock.lock();
+      message_queue.insert({player_key, std::deque<const octetStream*>{}});
+      msg_lock.unlock();
   }
-  msg_lock.unlock();
 
   // receive message from player, if there is none, wait for it
-  while(message_queue.at(player).size() == 0) {
-    emscripten_sleep(10);
+  std::deque<const octetStream*>& messages = message_queue.at(player_key);
+  wait_timer.start();
+  while(messages.size() == 0) {
+    emscripten_sleep(0);
   }
-  o = *read_message(player);
+  wait_timer.stop();
+  o = *read_message(player_key);
+  recv_timer.stop();
 }
 
 void WebPlayer::send_receive_all_no_stats(const vector<vector<bool>>& channels,
@@ -352,7 +365,6 @@ void WebPlayer::pass_around_no_stats(const octetStream& to_send,
 void WebPlayer::Broadcast_Receive_no_stats(vector<octetStream>& o) {
   if (o.size() != (unsigned long)nplayers)
     throw runtime_error("player numbers don't match");
-
   for (int i=1; i<nplayers; i++) {
     int send_to = (player_no + i) % nplayers;
     send_to_no_stats(send_to, o[player_no]);
@@ -422,14 +434,14 @@ PlayerBase::~PlayerBase()
 
 
 // Set up nmachines client and server sockets to send data back and fro
-//   A machine is a server between it and player i if i<=my_number
+//   A machine is a server between it and player i if i>=my_number
 //   Can also communicate with myself, but only with send_to and receive_from
 void PlainPlayer::setup_sockets(const vector<string>& names,
         const vector<int>& ports, const string& id_base, ServerSocket& server)
 {
     sockets.resize(nplayers);
     // Set up the client side
-    for (int i=player_no; i<nplayers; i++) {
+    for (int i=0; i<=player_no; i++) {
         auto pn=id_base+"P"+to_string(player_no);
         if (i==player_no) {
           const char* localhost = "127.0.0.1";
@@ -438,19 +450,19 @@ void PlainPlayer::setup_sockets(const vector<string>& names,
               "Setting up send to self socket to %s:%d with id %s\n",
               localhost, ports[i], pn.c_str());
 #endif
-            set_up_client_socket(sockets[i],localhost,ports[i]);
+          set_up_client_socket(sockets[i],localhost,ports[i]);
         } else {
 #ifdef DEBUG_NETWORKING
             fprintf(stderr, "Setting up client to %s:%d with id %s\n",
                 names[i].c_str(), ports[i], pn.c_str());
 #endif
-            set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
+          set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
         }
         octetStream(pn).Send(sockets[i]);
     }
     send_to_self_socket = sockets[player_no];
     // Setting up the server side
-    for (int i=0; i<=player_no; i++) {
+    for (int i=player_no; i<nplayers; i++) {
         auto id=id_base+"P"+to_string(i);
 #ifdef DEBUG_NETWORKING
         fprintf(stderr,

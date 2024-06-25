@@ -5,14 +5,6 @@
 
 #include <iostream>
 #include <fcntl.h>
-
-#ifdef EMSCRIPTEN
-  #include <emscripten/websocket.h>
-  #include <emscripten/threading.h>
-  #include <emscripten.h>
-  #include <emscripten/posix_socket.h>
-#endif
-
 using namespace std;
 
 void error(const char *str)
@@ -25,44 +17,8 @@ void error(const char *str)
   throw runtime_error(string() + err + " : " + strerror(old_errno));
 }
 
-void set_up_client_websocket(int& mysocket,const char* hostname,int Portnum)
-{
-  cerr << "set_up_client_websocket: " << hostname << " " << Portnum << endl;
-
-  if (!emscripten_websocket_is_supported())
-	{
-		cerr << "WebSockets are not supported, cannot continue!" << endl;
-		error("websocket not supported");
-	}
-
-  EmscriptenWebSocketCreateAttributes attr;
-	emscripten_websocket_init_create_attributes(&attr);
-  std::string url = "ws://" + (std::string)hostname + ":" + to_string(Portnum);
-  attr.url = url.c_str();
-  cout << "attr.url = " << attr.url << endl;
-  attr.protocols = "binary,base64";
-  attr.createOnMainThread = true;
-  mysocket = emscripten_websocket_new(&attr);
-	if (mysocket <= 0)
-	{
-    cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)mysocket << "!" << endl;
-		exit(1);
-	}
-}
-
 void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
 {
-  //  static EMSCRIPTEN_WEBSOCKET_T bridgeSocket = 0;
-  //  cerr << "set_up_client_socket: " << hostname << " " << Portnum << endl;
-  //  string url = "ws://" + (std::string)hostname + ":" + to_string(Portnum);
-  //  bridgeSocket = emscripten_init_websocket_to_posix_socket_bridge(url.c_str());
-  //  // Synchronously wait until connection has been established.
-  //  uint16_t readyState = 0;
-  //  do {
-  //    emscripten_websocket_get_ready_state(bridgeSocket, &readyState);
-  //    emscripten_thread_sleep(100);
-  //  } while (readyState == 0);
-
    struct addrinfo hints, *ai=NULL,*rp;
    memset (&hints, 0, sizeof(hints));
    hints.ai_family = AF_INET;
@@ -73,7 +29,7 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
    gethostname((char*)my_name,512);
 
    int erp;
-   for (int i = 0; i < 60; i++)
+   for (int i = 0; i < CONNECTION_TIMEOUT; i++)
      { erp=getaddrinfo (hostname, NULL, &hints, &ai);
        if (erp == 0)
          { break; }
@@ -118,7 +74,6 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
    cout << "connect to ip " << hex << addr4->sin_addr.s_addr << " port " << addr4->sin_port << dec << endl;
 #endif
 
-
    int attempts = 0;
    long wait = 1;
    int fl;
@@ -132,34 +87,6 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
        fl = connect(mysocket, addr, len);
        connect_errno = errno;
        attempts++;
-       if(fl != 0 && errno == EINPROGRESS)
-       {
-            struct timeval tv;
-            tv.tv_sec = 0;
-            tv.tv_usec = 100000;
-            fd_set fdset;
-            FD_ZERO(&fdset);
-            FD_SET(mysocket, &fdset);
-            emscripten_sleep(100);
-            cerr << "FD_ISSET: " << FD_ISSET(mysocket, &fdset) << endl;
-            if (FD_ISSET(mysocket, &fdset))
-            {
-                int so_error;
-                socklen_t len = sizeof so_error;
-                getsockopt(mysocket, SOL_SOCKET, SO_ERROR, &so_error, &len);
-                if (so_error == 0)
-                {
-                    fl = 0;
-                    cerr << "Connected to " << hostname << ":" << Portnum << endl;
-                    break;
-                }
-                else
-                {
-                    fl = -1;
-                    connect_errno = so_error;
-                }
-            }
-       }
        if (fl != 0)
          {
            close(mysocket);
@@ -175,7 +102,7 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
    }
    while (fl == -1
        && (errno == ECONNREFUSED || errno == ETIMEDOUT || errno == EINPROGRESS)
-       && timer.elapsed() < 60);
+       && timer.elapsed() < CONNECTION_TIMEOUT);
 
    if (fl < 0)
      {
@@ -190,10 +117,58 @@ void set_up_client_socket(int& mysocket,const char* hostname,int Portnum)
    freeaddrinfo(ai);
 
   /* disable Nagle's algorithm */
-  // int one=1;
-  // fl= setsockopt(mysocket, IPPROTO_TCP, TCP_NODELAY, (char*)&one, sizeof(int));
-  // if (fl<0) { cerr << "TCP socket error: " << strerror(errno) << endl;
-  //   error("set_up_socket:setsockopt");  }
+  int one=1;
+  fl= setsockopt(mysocket, IPPROTO_TCP, TCP_NODELAY, (char*)&one, sizeof(int));
+  if (fl<0) { error("set_up_socket:setsockopt");  }
+    
+
+  /* 
+  * The following code block is either taken directly from or derived from the solutions posted at:
+  *     https://stackoverflow.com/questions/20188718/configuring-tcp-keep-alive-with-boostasio
+  *     https://stackoverflow.com/questions/23669005/tcp-keepalive-protocol-not-available
+  */
+  unsigned int timeout_milli = 10000;
+
+  #if (defined _WIN32 || defined WIN32 || defined OS_WIN64 || defined _WIN64 || defined WIN64 || defined WINNT)
+    int32_t timeout = timeout_milli;
+    fl = setsockopt(mysocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    if (fl<0) { error("set_tcp_keepalive:setsockopt(SOL_SOCKET, SO_RCVTIMEO)");  }
+
+    fl = setsockopt(mysocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+    if (fl<0) { error("set_tcp_keepalive:setsockopt(SOL_SOCKET, SO_SNDTIMEO)");  }
+
+  #else
+    struct timeval tv;
+    tv.tv_sec  = timeout_milli / 1000;
+    tv.tv_usec = (timeout_milli % 1000) * 1000;
+
+    fl = setsockopt(mysocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    if (fl<0) { error("set_tcp_keepalive:setsockopt(SOL_SOCKET, SO_RCVTIMEO)");  }
+
+    fl = setsockopt(mysocket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    if (fl<0) { error("set_tcp_keepalive:setsockopt(SOL_SOCKET, SO_RCVTIMEO)");  }
+
+    int enable_keepalive = 1;
+    int keepalive_strobe_interval_secs = 3;
+    int num_keepalive_strobes = 5;
+
+    fl = setsockopt(mysocket, SOL_SOCKET, SO_KEEPALIVE,(char *)&enable_keepalive, sizeof(enable_keepalive));
+    if (fl<0) { error("set_tcp_keepalive:setsockopt(SOL_SOCKET, SO_KEEPALIVE)");  }
+
+    #ifdef TCP_KEEPIDLE
+      int keepalive_idle_time_secs = 1;
+      fl = setsockopt(mysocket, IPPROTO_TCP, TCP_KEEPIDLE, (char *)&keepalive_idle_time_secs, sizeof(keepalive_idle_time_secs));
+      if (fl<0) { error("set_tcp_keepalive:setsockopt(IPPROTO_TCP, TCP_KEEPIDLE)");  }
+    #endif
+
+    fl = setsockopt(mysocket, IPPROTO_TCP, TCP_KEEPINTVL, (char *)&keepalive_strobe_interval_secs, sizeof(keepalive_strobe_interval_secs));
+    if (fl<0) { error("set_tcp_keepalive:setsockopt(IPPROTO_TCP, TCP_KEEPINTVL)");  }
+
+    setsockopt(mysocket, IPPROTO_TCP, TCP_KEEPCNT, (char *)&num_keepalive_strobes, sizeof(num_keepalive_strobes));
+    if (fl<0) { error("set_tcp_keepalive:setsockopt(IPPROTO_TCP, TCP_KEEPCNT)");  }
+
+  #endif
+  /* End third-party code */
 
 #ifdef __APPLE__
   int flags = fcntl(mysocket, F_GETFL, 0);
