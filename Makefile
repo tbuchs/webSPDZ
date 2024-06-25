@@ -92,7 +92,7 @@ externalIO: bankers-bonus-client.x
 
 bmr: bmr-program-party.x bmr-program-tparty.x
 
-real-bmr: $(patsubst Machines/%.cpp,%.x,$(wildcard Machines/*-bmr-party.cpp))
+real-bmr: $(patsubst Machines/BMR/%.cpp,%.x,$(wildcard Machines/BMR/*-bmr-party.cpp))
 
 yao: yao-party.x
 
@@ -115,10 +115,11 @@ mascot: mascot-party.x spdz2k mama-party.x
 
 ifeq ($(OS), Darwin)
 setup: mac-setup
-else
+else ifeq ($(WEB), 1)
 setup: datachannel 
 	npm install websocket
-#boost linux-machine-setup
+else
+setup: maybe-boost linux-machine-setup
 endif
 
 tldr: setup
@@ -139,21 +140,31 @@ ecdsa-static: static-dir $(patsubst ECDSA/%.cpp,static/%.x,$(wildcard ECDSA/*-ec
 $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER) $(GC)
 	$(AR) -csr $@ $^
 
+ifeq ($(WEB), 1)
 CFLAGS += -fPIC -fsanitize=undefined -Wbad-function-cast -Wcast-function-type -sMEMORY64=1#-fsanitize-minimal-runtime
 LDLIBS += -I $(CURDIR)
 LDFLAGS += -sWASMFS -sASYNCIFY -sMEMORY64=1 -sWASM_BIGINT -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG
+else
+CFLAGS += -fPIC
+LDLIBS += -Wl,-rpath -Wl,$(CURDIR)
+endif
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
+	ifeq ($(WEB), 1)
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)
+	else
+	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
+	endif
 
 $(FHEOFFLINE): $(FHEOBJS) $(SHAREDLIB)
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
 
 static/%.x: Machines/%.o $(LIBRELEASE) $(LIBSIMPLEOT) local/lib/libcryptoTools.a local/lib/liblibOTe.a
-	$(CXX) -o $@ $(CFLAGS) $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(LIBRELEASE) -llibOTe -lcryptoTools $(LIBSIMPLEOT) $(LDLIBS) $(LDFLAGS) -Wl,-Bdynamic -ldl
+	$(MAKE) static-dir
+	$(CXX) -o $@ $(CFLAGS) $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(LIBRELEASE) -llibOTe -lcryptoTools $(LIBSIMPLEOT) $(BOOST) $(LDLIBS) -Wl,-Bdynamic -ldl
 
 static/%.x: ECDSA/%.o ECDSA/P256Element.o $(VMOBJS) $(OT) $(LIBSIMPLEOT)
-	$(CXX) $(CFLAGS) -o $@ $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(LDFLAGS) $(LDLIBS) -Wl,-Bdynamic -ldl
+	$(CXX) $(CFLAGS) -o $@ $^ -Wl,-Map=$<.map -Wl,-Bstatic -static-libgcc -static-libstdc++ $(BOOST) $(LDLIBS) -Wl,-Bdynamic -ldl
 
 static-dir:
 	@ mkdir static 2> /dev/null; true
@@ -170,11 +181,11 @@ ot-offline.x: $(OT) $(LIBSIMPLEOT) Machines/TripleMachine.o
 
 gc-emulate.x: $(VM) GC/FakeSecret.o GC/square64.o
 
-bmr-%.x: $(BMR) $(VM) Machines/bmr-%.cpp $(LIBSIMPLEOT)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDFLAGS) $(LDLIBS)
+bmr-%.x: $(BMR) $(VM) Machines/BMR/bmr-%.cpp $(LIBSIMPLEOT)
+	$(CXX) -o $@ $(CFLAGS) $^ $(BOOST) $(LDLIBS)
 
-%-bmr-party.x: Machines/%-bmr-party.o $(BMR) $(SHAREDLIB) $(MINI_OT)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDFLAGS) $(LDLIBS)
+%-bmr-party.x: Machines/BMR/%-bmr-party.o $(BMR) $(SHAREDLIB) $(MINI_OT)
+	$(CXX) -o $@ $(CFLAGS) $^ $(BOOST) $(LDLIBS)
 
 bmr-clean:
 	-rm BMR/*.o BMR/*/*.o GC/*.o
@@ -209,12 +220,17 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
+	ifeq ($(WEB), 1)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Programs --embed-file Player-Data
+	else
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB)
+	endif
 
 %-ecdsa-party.x: ECDSA/%-ecdsa-party.o ECDSA/P256Element.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 replicated-bin-party.x: GC/square64.o
+replicated-ring-party.x: GC/square64.o
 replicated-field-party.x: GC/square64.o
 brain-party.x: GC/square64.o
 malicious-rep-bin-party.x: GC/square64.o
@@ -248,17 +264,18 @@ mama-party.x: $(TINIER)
 ps-rep-ring-party.x: Protocols/MalRepRingOptions.o
 malicious-rep-ring-party.x: Protocols/MalRepRingOptions.o
 sy-rep-ring-party.x: Protocols/MalRepRingOptions.o
-rep4-ring-party.x: GC/Rep4Secret.o
+rep4-ring-party.x: GC/Rep4Secret.o GC/Rep4Prep.o
 no-party.x: Protocols/ShareInterface.o
 semi-ecdsa-party.x: $(OT) $(LIBSIMPLEOT) $(GC_SEMI)
 mascot-ecdsa-party.x: $(OT) $(LIBSIMPLEOT)
+rep4-ecdsa-party.x: GC/Rep4Prep.o
 fake-spdz-ecdsa-party.x: $(OT) $(LIBSIMPLEOT)
 emulate.x: GC/FakeSecret.o
 semi-bmr-party.x: $(GC_SEMI) $(OT)
 real-bmr-party.x: $(OT)
 paper-example.x: $(VM) $(OT) $(FHEOFFLINE)
-binary-example.x: $(VM) $(OT) GC/PostSacriBin.o $(GC_SEMI) GC/AtlasSecret.o
-mixed-example.x: $(VM) $(OT) GC/PostSacriBin.o $(GC_SEMI) GC/AtlasSecret.o Machines/Tinier.o
+binary-example.x: $(VM) $(OT) GC/PostSacriBin.o $(GC_SEMI) GC/AtlasSecret.o GC/Rep4Prep.o
+mixed-example.x: $(VM) $(OT) GC/PostSacriBin.o $(GC_SEMI) GC/AtlasSecret.o GC/Rep4Prep.o Machines/Tinier.o
 l2h-example.x: $(VM) $(OT) Machines/Tinier.o
 he-example.x: $(FHEOFFLINE)
 mascot-offline.x: $(VM) $(TINIER)
@@ -276,12 +293,39 @@ static/bmr-program-party.x: $(BMR)
 static/no-party.x: Protocols/ShareInterface.o
 Test/failure.x: Protocols/MalRepRingOptions.o
 
-.PHONY: Programs/Circuits
+ifeq ($(AVX_OT), 1)
+$(LIBSIMPLEOT_ASM): deps/SimpleOT/Makefile
+	$(MAKE) -C deps/SimpleOT
 
-datachannel:
-	cd deps/datachannel-wasm; cmake -B build -DCMAKE_TOOLCHAIN_FILE=$(EMSDK)/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_CXX_FLAGS="-fPIC -pthread -sMEMORY64=1" -DCMAKE_FLAGS="-fPIC -pthread -sMEMORY64=1" 
-	cd deps/datachannel-wasm/build; make -j4;
-	
+OT/BaseOT.o: deps/SimpleOT/Makefile
+
+deps/SimpleOT/Makefile:
+	git submodule update --init deps/SimpleOT || git clone https://github.com/mkskeller/SimpleOT deps/SimpleOT
+endif
+
+$(LIBSIMPLEOT_C): deps/SimplestOT_C/ref10/Makefile
+	$(MAKE) -C deps/SimplestOT_C/ref10
+
+OT/BaseOT.o: deps/SimplestOT_C/ref10/Makefile
+
+deps/SimplestOT_C/ref10/Makefile:
+	git submodule update --init deps/SimplestOT_C || git clone https://github.com/mkskeller/SimplestOT_C deps/SimplestOT_C
+	cd deps/SimplestOT_C/ref10; PATH="$(CURDIR)/local/bin:$(PATH)" cmake .
+
+.PHONY: Programs/Circuits
+Programs/Circuits:
+	git submodule update --init Programs/Circuits || git clone https://github.com/mkskeller/bristol-fashion Programs/Circuits
+
+deps/libOTe/libOTe:
+	git submodule update --init --recursive deps/libOTe || git clone --recurse-submodules https://github.com/mkskeller/softspoken-implementation deps/libOTe
+boost: deps/libOTe/libOTe
+	cd deps/libOTe; \
+	python3 build.py --setup --boost --install=$(CURDIR)/local
+maybe-boost: deps/libOTe/libOTe
+	cd `mktemp -d`; \
+	PATH="$(CURDIR)/local/bin:$(PATH)" cmake $(CURDIR)/deps/libOTe || \
+	{ cd -; make boost; }
+
 OTE_OPTS += -DENABLE_SOFTSPOKEN_OT=ON -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_INSTALL_LIBDIR=lib
 
 ifeq ($(ARM), 1)
@@ -312,11 +356,12 @@ OT/OTExtensionWithMatrix.o: $(OTE)
 endif
 
 local/lib/liblibOTe.a: deps/libOTe/libOTe
+	make maybe-boost; \
 	cd deps/libOTe; \
 	PATH="$(CURDIR)/local/bin:$(PATH)" python3 build.py --install=$(CURDIR)/local -- -DBUILD_SHARED_LIBS=0 $(OTE_OPTS) && \
 	touch ../../local/lib/liblibOTe.a
 
-$(SHARED_OTE): deps/libOTe/libOTe
+$(SHARED_OTE): deps/libOTe/libOTe maybe-boost
 	cd deps/libOTe; \
 	python3 build.py --install=$(CURDIR)/local -- -DBUILD_SHARED_LIBS=1 $(OTE_OPTS)
 
@@ -333,7 +378,7 @@ linux-machine-setup:
 mac-machine-setup:
 
 clean-deps:
-	-rm -rf local/lib/liblibOTe.* deps/libOTe/out
+	-rm -rf local/lib/liblibOTe.* deps/libOTe/out deps/SimplestOT_C
 
 clean: clean-deps
-	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x libSPDZ.so */*.tmp
+	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x *.so

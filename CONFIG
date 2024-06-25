@@ -27,9 +27,11 @@ USE_GF2N_LONG = 1
 # BMI2 is used to optimize multiplication modulo a prime
 # ADX is used to optimize big integer additions
 # delete the second line to compile for a platform that supports everything
+ifeq ($(WEB),1)
+ARCH = -msse -msse2 -msse4.1 -msse4.2 -mavx -msimd128
+else
 ARCH = -mtune=native -msse4.1 -msse4.2 -maes -mpclmul -mavx -mavx2 -mbmi2 -madx
-ARCH = -msse -msse2 -msse4.1 -msse4.2 -mavx -msimd128 # -march=corei7 -maes -mpclmul
-# ARCH = -march=native
+endif
 
 MACHINE := $(shell uname -m)
 ARM := $(shell uname -m | grep x86; echo $$?)
@@ -65,8 +67,11 @@ endif
 USE_KOS = 0
 
 # allow to set compiler in CONFIG.mine
-# CXX = clang++
+ifeq ($(WEB),1)
 CXX = emcc
+else
+CXX = clang++
+endif
 
 # use CONFIG.mine to overwrite DIR settings
 -include CONFIG.mine
@@ -85,9 +90,16 @@ endif
 # Default for MAX_MOD_SZ is 10, which suffices for all Overdrive protocols
 # MOD = -DMAX_MOD_SZ=10 -DGFP_MOD_SZ=5
 
-LDLIBS = -lssl -lcrypto -lgmpxx -lgmp -lsodium $(MY_LDLIBS) -lwebsocket.js -ldatachannel-wasm
-LDLIBS += $(BREW_LDLIBS)
+LDLIBS = -lgmpxx -lgmp -lsodium $(MY_LDLIBS) -lssl -lcrypto 
+
+ifeq ($(WEB),1)
+LDLIBS += -lwebsocket.js -ldatachannel-wasm
 LDLIBS += -I $(CURDIR)/local/lib -L $(CURDIR)/local/lib
+else
+LDLIBS += $(BREW_LDLIBS)
+LDLIBS +=  -Wl,-rpath -Wl,$(CURDIR)/local/lib -L$(CURDIR)/local/lib
+LDLIBS += - lboost_system -lboost_filesystem -lboost_iostreams
+endif
 
 CFLAGS += -I./local/include
 
@@ -106,7 +118,11 @@ else
 BOOST = -lboost_thread $(MY_BOOST)
 endif
 
-CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE) -Wno-vla-extension -sUSE_BOOST_HEADERS # -Werror
+ifeq ($(WEB))
+CFLAGS += -sUSE_BOOST_HEADERS
+endif
+
+CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE)
 CFLAGS += $(BREW_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 LD = $(CXX)
