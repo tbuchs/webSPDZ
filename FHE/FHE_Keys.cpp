@@ -94,8 +94,8 @@ void FHE_PK::partial_key_gen(const Rq_Element& sk, const Rq_Element& a, PRNG& G,
       add(PK.Sw_b,PK.Sw_b,es);
 
       // bs=bs-p1*s^2
-      Rq_Element s2;
-      mul(s2,sk,sk);    // Mult at level 0
+      // Mult at level 0
+      auto s2 = sk * sk;
       s2.mul_by_p1();         // This raises back to level 1
       sub(PK.Sw_b,PK.Sw_b,s2);
     }
@@ -155,17 +155,12 @@ void FHE_PK::quasi_encrypt(Ciphertext& c,
   if (&rc.get_params()!=params) { throw params_mismatch(); }
   assert(pr != 0);
 
-  Rq_Element ed,edd,c0,c1,aa;
-
   // c1=a0*u+p*v
-  mul(aa,a0,rc.u());
-  mul(ed,rc.v(),pr);
-  add(c1,aa,ed);
+  auto c1 = a0 * rc.u() + rc.v() * pr;
 
   // c0 = b0 * u + p * w + mess
-  mul(c0,b0,rc.u());
-  mul(edd,rc.w(),pr);
-  add(edd,edd,mess);
+  auto c0 = b0 * rc.u();
+  auto edd = rc.w() * pr + mess;
   if (params->n_mults() == 0)
     edd.change_rep(evaluation);
   else
@@ -218,10 +213,7 @@ Rq_Element FHE_SK::quasi_decrypt(const Ciphertext& c) const
 {
   if (&c.get_params()!=params)  { throw params_mismatch(); }
 
-  Rq_Element ans;
-
-  mul(ans,c.c1(),sk);
-  sub(ans,c.c0(),ans);
+  auto ans = c.c0() - c.c1() * sk;
   ans.change_rep(polynomial);
   return ans;
 }
@@ -267,8 +259,7 @@ void FHE_SK::dist_decrypt_1(vector<bigint>& vv,const Ciphertext& ctx,int player_
   Ciphertext cc=ctx; cc.Scale(pr);
 
   // First do the basic decryption
-  Rq_Element dec_sh;
-  mul(dec_sh,cc.c1(),sk);
+  auto dec_sh = cc.c1() * sk;
   if (player_number==0)
     { sub(dec_sh,cc.c0(),dec_sh); }
   else

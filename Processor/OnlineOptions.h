@@ -27,6 +27,7 @@ public:
     bool direct;
     int bucket_size;
     int security_parameter;
+    bool use_security_parameter;
     std::string cmd_private_input_file;
     std::string cmd_private_output_file;
     bool verbose;
@@ -34,6 +35,8 @@ public:
     int trunc_error;
     int opening_sum, max_broadcast;
     bool receive_threads;
+    std::string disk_memory;
+    vector<long> args;
 
     OnlineOptions();
     OnlineOptions(ez::ezOptionParser& opt, int argc, const char** argv,
@@ -48,7 +51,8 @@ public:
     OnlineOptions(T);
     ~OnlineOptions() {}
 
-    void finalize(ez::ezOptionParser& opt, int argc, const char** argv);
+    void finalize(ez::ezOptionParser& opt, int argc, const char** argv,
+            bool networking = true);
 
     void set_trunc_error(ez::ezOptionParser& opt);
 

@@ -7,6 +7,7 @@
 
 #include "Processor/OnlineMachine.hpp"
 #include "Processor/Machine.hpp"
+#include "Processor/OnlineOptions.hpp"
 #include "Protocols/Replicated.hpp"
 #include "Protocols/MalRepRingPrep.hpp"
 #include "Protocols/ReplicatedPrep.hpp"
@@ -17,7 +18,7 @@
 int main(int argc, const char** argv)
 {
     ez::ezOptionParser opt;
-    OnlineOptions::singleton = {opt, argc, argv};
+    OnlineOptions::singleton = {opt, argc, argv, NoShare<gf2n>()};
     OnlineMachine machine(argc, argv, opt, OnlineOptions::singleton);
     OnlineOptions::singleton.finalize(opt, argc, argv);
     machine.start_networking();

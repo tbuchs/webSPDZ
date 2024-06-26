@@ -36,7 +36,7 @@ class SubProcessor
 
   void resize(size_t size)       { C.resize(size); S.resize(size); }
 
-  void matmulsm_prep(int ii, int j, const CheckVector<T>& source,
+  void matmulsm_prep(int ii, int j, const MemoryPart<T>& source,
       const vector<int>& dim, size_t a, size_t b);
   void matmulsm_finalize(int i, int j, const vector<int>& dim,
       typename vector<T>::iterator C);
@@ -47,6 +47,8 @@ class SubProcessor
   template<class U> friend class Beaver;
 
   typedef typename T::bit_type::part_type BT;
+
+  typedef typename T::Protocol::Shuffler::store_type ShuffleStore;
 
 public:
   ArithmeticProcessor* Proc;
@@ -71,19 +73,19 @@ public:
   // Access to PO (via calls to POpen start/stop)
   void POpen(const Instruction& inst);
 
-  void muls(const vector<int>& reg, int size);
+  void muls(const vector<int>& reg);
   void mulrs(const vector<int>& reg);
   void dotprods(const vector<int>& reg, int size);
-  void matmuls(const vector<T>& source, const Instruction& instruction, size_t a,
-      size_t b);
-  void matmulsm(const CheckVector<T>& source, const Instruction& instruction, size_t a,
+  void matmuls(const vector<T>& source, const Instruction& instruction);
+  void matmulsm(const MemoryPart<T>& source, const Instruction& instruction, size_t a,
       size_t b);
   void conv2ds(const Instruction& instruction);
 
   void secure_shuffle(const Instruction& instruction);
-  size_t generate_secure_shuffle(const Instruction& instruction);
-  void apply_shuffle(const Instruction& instruction, int handle);
-  void delete_shuffle(int handle);
+  size_t generate_secure_shuffle(const Instruction& instruction,
+      ShuffleStore& shuffle_store);
+  void apply_shuffle(const Instruction& instruction, int handle,
+          ShuffleStore& shuffle_store);
   void inverse_permutation(const Instruction& instruction);
 
   void input_personal(const vector<int>& args);
@@ -116,7 +118,7 @@ public:
 class ArithmeticProcessor : public ProcessorBase
 {
 protected:
-  CheckVector<long long> Ci;
+  CheckVector<Integer> Ci;
 
   ofstream public_output;
   ofstream binary_output;
@@ -162,13 +164,13 @@ public:
     return thread_num;
   }
 
-  const long long& read_Ci(size_t i) const
+  long read_Ci(size_t i) const
+    { return Ci[i].get(); }
+  Integer& get_Ci_ref(size_t i)
     { return Ci[i]; }
-  long long& get_Ci_ref(size_t i)
-    { return Ci[i]; }
-  void write_Ci(size_t i, const long long& x)
+  void write_Ci(size_t i, const long& x)
     { Ci[i]=x; }
-  CheckVector<long long>& get_Ci()
+  CheckVector<Integer>& get_Ci()
     { return Ci; }
 
   virtual ofstream& get_public_output()

@@ -60,11 +60,21 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 {
   OnlineOptions::singleton = opts;
 
-  if (N.num_players() == 1 and sint::is_real)
+  int min_players = 3 - sint::dishonest_majority;
+  if (sint::is_real)
     {
-      cerr << "Need more than one player to run a protocol." << endl;
-      cerr << "Use 'emulate.x' for just running the virtual machine" << endl;
-      exit(1);
+      if (N.num_players() == 1)
+        {
+          cerr << "Need more than one player to run a protocol." << endl;
+          cerr << "Use 'emulate.x' for just running the virtual machine" << endl;
+          exit(1);
+        }
+      else if (N.num_players() < min_players)
+        {
+          cerr << "Need at least " << min_players << " players for this protocol."
+              << endl;
+          exit(1);
+        }
     }
 
   // Set the prime modulus from command line or program if applicable
@@ -78,7 +88,7 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 
   string id = "machine";
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
   P = new WebPlayer(N, id);
 #else
   if (use_encryption)
@@ -88,9 +98,9 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 #endif
 
   if (opts.live_prep)
-  {
-    sint::LivePrep::basic_setup(*P);
-  }
+    {
+      sint::LivePrep::basic_setup(*P);
+    }
 
   // Set the prime modulus if not done earlier
   if (not sint::clear::length())
@@ -147,7 +157,6 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::prepare(const string& progname_str)
 {
-  cerr << "Size checks: long" << sizeof(long) << " int " << sizeof(int) << " long long " << sizeof(long long) << endl;
   int old_n_threads = nthreads;
   progs.clear();
   load_schedule(progname_str);
@@ -165,12 +174,12 @@ void Machine<sint, sgf2n>::prepare(const string& progname_str)
           ifstream pers(filename);
           try
           {
-            check_file_signature<sint>(pers, filename);
+              check_file_signature<sint>(pers, filename);
           }
           catch (signature_mismatch&)
           {
-            ofstream pers(filename, ios::binary);
-            file_signature<sint>().output(pers);
+              ofstream pers(filename, ios::binary);
+              file_signature<sint>().output(pers);
           }
           break;
         }
@@ -227,9 +236,7 @@ size_t Machine<sint, sgf2n>::load_program(const string& threadname,
 {
   progs.push_back(N.num_players());
   int i = progs.size() - 1;
-  cerr << "Machine::load_program() - parse()" << endl;
   progs[i].parse(filename);
-  cerr << "Machine::load_program() - parse() done" << endl;
   M2.minimum_size(SGF2N, CGF2N, progs[i], threadname);
   Mp.minimum_size(SINT, CINT, progs[i], threadname);
   Mi.minimum_size(NONE, INT, progs[i], threadname);
@@ -447,7 +454,6 @@ pair<DataPositions, NamedCommStats> Machine<sint, sgf2n>::stop_threads()
 template<class sint, class sgf2n>
 void Machine<sint, sgf2n>::run(const string& progname)
 {
-  std::cerr << "Machine::run()" << std::endl;
   prepare(progname);
 
   Timer proc_timer(CLOCK_PROCESS_CPUTIME_ID);
@@ -489,8 +495,10 @@ void Machine<sint, sgf2n>::run(const string& progname)
 
   if (opts.verbose)
     {
-      cerr << "Communication details "
-          "(rounds in parallel threads counted double):" << endl;
+      cerr << "Communication details";
+      if (multithread)
+        cerr << " (rounds in parallel threads counted double)";
+      cerr << ":" << endl;
       comm_stats.print();
       cerr << "CPU time = " <<  proc_timer.elapsed();
       if (multithread)
@@ -555,6 +563,14 @@ void Machine<sint, sgf2n>::run(const string& progname)
     }
 
   suggest_optimizations();
+
+  if (N.num_players() > 4)
+    {
+      string alt = sint::alt();
+      if (alt.size())
+        cerr << "This protocol doesn't scale well with the number of parties, "
+            << "have you considered using " << alt << " instead?" << endl;
+    }
 
 #ifdef VERBOSE
   cerr << "End of prog" << endl;

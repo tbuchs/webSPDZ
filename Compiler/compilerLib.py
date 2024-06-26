@@ -13,12 +13,28 @@ from .program import Program, defaults
 
 
 class Compiler:
-    def __init__(self, custom_args=None, usage=None, execute=False):
+    def __init__(self, custom_args=None, usage=None, execute=False,
+                 split_args=False):
         if usage:
             self.usage = usage
         else:
             self.usage = "usage: %prog [options] filename [args]"
         self.execute = execute
+        self.runtime_args = []
+
+        if split_args:
+            if custom_args is None:
+                args = sys.argv
+            else:
+                args = custom_args
+            try:
+                split = args.index('--')
+            except ValueError:
+                split = len(args)
+
+            custom_args = args[1:split]
+            self.runtime_args = args[split + 1:]
+
         self.custom_args = custom_args
         self.build_option_parser()
         self.VARS = {}
@@ -148,7 +164,8 @@ class Compiler:
             "--prime",
             dest="prime",
             default=defaults.prime,
-            help="prime modulus (default: not specified)",
+            help="use bit decomposition with a specifed prime modulus "
+            "for non-linear computation (default: use the masking approach)",
         )
         parser.add_option(
             "-I",
@@ -235,13 +252,31 @@ class Compiler:
                 dest="hostfile",
                 help="hosts to execute with",
             )
+        else:
+            parser.add_option(
+                "-E",
+                "--execute",
+                dest="execute",
+                help="protocol to optimize for",
+            )
         self.parser = parser
 
     def parse_args(self):
         self.options, self.args = self.parser.parse_args(self.custom_args)
         if self.execute:
             if not self.options.execute:
-                raise CompilerError("must give name of protocol with '-E'")
+                if len(self.args) > 1:
+                    self.options.execute = self.args.pop(0)
+                else:
+                    self.parser.error("missing protocol name")
+            if self.options.hostfile:
+                try:
+                    open(self.options.hostfile)
+                except:
+                    print('hostfile %s not found' % self.options.hostfile,
+                          file=sys.stderr)
+                    exit(1)
+        if self.options.execute:
             protocol = self.options.execute
             if protocol.find("ring") >= 0 or protocol.find("2k") >= 0 or \
                protocol.find("brain") >= 0 or protocol == "emulate":
@@ -268,14 +303,14 @@ class Compiler:
 
     def build_program(self, name=None):
         self.prog = Program(self.args, self.options, name=name)
-        if self.execute:
+        if self.options.execute:
             if self.options.execute in \
                ("emulate", "ring", "rep-field", "rep4-ring"):
                 self.prog.use_trunc_pr = True
             if self.options.execute in ("ring", "ps-rep-ring", "sy-rep-ring"):
                 self.prog.use_split(3)
             if self.options.execute in ("semi2k",):
-                self.prog.use_split(2)
+                self.prog.use_split(int(os.getenv("PLAYERS", 2)))
             if self.options.execute in ("rep4-ring",):
                 self.prog.use_split(4)
 
@@ -318,8 +353,8 @@ class Compiler:
 
         self.VARS["program"] = self.prog
         if self.options.binary:
-            self.VARS["sint"] = GC_types.sbitintvec.get_type(int(self.options.binary))
-            self.VARS["sfix"] = GC_types.sbitfixvec
+            self.sint = GC_types.sbitintvec.get_type(int(self.options.binary))
+            self.sfix = GC_types.sbitfixvec
             for i in [
                 "cint",
                 "cfix",
@@ -334,6 +369,12 @@ class Compiler:
                 "squant",
             ]:
                 del self.VARS[i]
+        else:
+            self.sint = types.sint
+            self.sfix = types.sfix
+
+        self.VARS["sint"] = self.sint
+        self.VARS["sfix"] = self.sfix
 
     def prep_compile(self, name=None, build=True):
         self.parse_args()
@@ -353,6 +394,8 @@ class Compiler:
         If options.merge_opens is set to True, will attempt to merge any
         parallelisable open instructions."""
         print("Compiling file", self.prog.infile)
+        self.prog.sint = self.sint
+        self.prog.sfix = self.sfix
 
         with open(self.prog.infile, "r") as f:
             changed = False
@@ -476,7 +519,9 @@ class Compiler:
         else:
             return protocol + "-party.x"
 
-    def local_execution(self, args=[]):
+    def local_execution(self, args=None):
+        if args is None:
+            args = self.runtime_args
         executable = self.executable_from_protocol(self.options.execute)
         if not os.path.exists("%s/%s" % (self.root, executable)):
             print("Creating binary for virtual machine...")
@@ -488,9 +533,13 @@ class Compiler:
                     "Note that compilation requires a few GB of RAM.")
         vm = "%s/Scripts/%s.sh" % (self.root, self.options.execute)
         sys.stdout.flush()
+        print("Compilation finished, running program...", file=sys.stderr)
+        sys.stderr.flush()
         os.execl(vm, vm, self.prog.name, *args)
 
-    def remote_execution(self, args=[]):
+    def remote_execution(self, args=None):
+        if args is None:
+            args = self.runtime_args
         vm = self.executable_from_protocol(self.options.execute)
         hosts = list(x.strip()
                      for x in filter(None, open(self.options.hostfile)))
@@ -557,11 +606,15 @@ class Compiler:
             party0 = hostnames[0].split('@')[1]
         else:
             party0 = hostnames[0]
+        if 'rep' not in vm and 'yao' not in vm:
+            N = ['-N', str(len(connections))]
+        else:
+            N = []
         for i in range(len(connections)):
             run = lambda i: connections[i].run(
                 "cd %s; ./%s -p %d %s -h %s -pn %d %s" % \
                 (destinations[i], vm, i, self.prog.name, party0, port,
-                 ' '.join(args)))
+                 ' '.join(args + N)))
             threads.append(threading.Thread(target=run, args=(i,)))
         for thread in threads:
             thread.start()

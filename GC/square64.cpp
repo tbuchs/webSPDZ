@@ -12,91 +12,92 @@
 #include <assert.h>
 using namespace std;
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 #include <emmintrin.h>
 #endif
 
-// union matrix32x8
-// {
-//     __m256i whole;
-//     octet rows[32];
+#ifndef __EMSCRIPTEN__
+union matrix32x8
+{
+    __m256i whole;
+    octet rows[32];
 
-//     matrix32x8(const __m256i& x = _mm256_setzero_si256()) : whole(x) {}
+    matrix32x8(const __m256i &x = _mm256_setzero_si256()) : whole(x) {}
 
-//     matrix32x8(square64& input, int x, int y)
-//     {
-//         for (int l = 0; l < 32; l++)
-//             rows[l] = input.bytes[32*x+l][y];
-//     }
+    matrix32x8(square64 &input, int x, int y)
+    {
+        for (int l = 0; l < 32; l++)
+            rows[l] = input.bytes[32 * x + l][y];
+    }
 
-//     void transpose(square64& output, int x, int y)
-//     {
-// #if defined(__AVX2__) || !defined(__x86_64__)
-//         if (cpu_has_avx2())
-//         {
-//             for (int j = 0; j < 8; j++)
-//             {
-//                 int row = _mm256_movemask_epi8(whole);
-//                 whole = _mm256_slli_epi64(whole, 1);
+    void transpose(square64 &output, int x, int y)
+    {
+#if defined(__AVX2__) || !defined(__x86_64__)
+        if (cpu_has_avx2())
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                int row = _mm256_movemask_epi8(whole);
+                whole = _mm256_slli_epi64(whole, 1);
 
-//                 // _mm_movemask_epi8 uses most significant bit, hence +7-j
-//                 output.halfrows[8*x+7-j][y] = row;
-//             }
-//         }
-//         else
-// #endif
-//         {
-//             (void) output, (void) x, (void) y;
-//             throw runtime_error("need AVX2 support");
-//         }
-//     }
-// };
+                // _mm_movemask_epi8 uses most significant bit, hence +7-j
+                output.halfrows[8 * x + 7 - j][y] = row;
+            }
+        }
+        else
+#endif
+        {
+            (void)output, (void)x, (void)y;
+            throw runtime_error("need AVX2 support");
+        }
+    }
+};
 
 #ifdef DEBUG_TRANS
-ostream& operator<<(ostream& os, const __m256i& x)
+ostream &operator<<(ostream &os, const __m256i &x)
 {
     for (int i = 0; i < 4; i++)
-        os << hex << " " << ((long*)&x)[i];
+        os << hex << " " << ((long *)&x)[i];
     os << dec;
     return os;
 }
 #endif
 
+#define ZIP_CASE(I, LOWS, HIGHS, A, B)        \
+    case I:                                   \
+        LOWS = _mm256_unpacklo_epi##I(A, B);  \
+        HIGHS = _mm256_unpackhi_epi##I(A, B); \
+        break;
 
-// #define ZIP_CASE(I, LOWS, HIGHS, A, B) \
-// case I: \
-//     LOWS = _mm256_unpacklo_epi##I(A, B); \
-//     HIGHS = _mm256_unpackhi_epi##I(A, B); \
-//     break;
-
-// void zip(int chunk_size, __m256i& lows, __m256i& highs,
-//         const __m256i& a, const __m256i& b)
-// {
-// #if defined(__AVX2__) || !defined(__x86_64__)
-//     if (cpu_has_avx2())
-//     {
-//         switch (chunk_size)
-//         {
-//         ZIP_CASE(8, lows, highs, a, b);
-//         ZIP_CASE(16, lows, highs, a, b);
-//         ZIP_CASE(32, lows, highs, a, b);
-//         ZIP_CASE(64, lows, highs, a, b);
-//         case 128:
-//             lows = a;
-//             highs = b;
-//             swap(((__m128i*)&lows)[1], ((__m128i*)&highs)[0]);
-//             break;
-//         default:
-//             throw invalid_argument("not supported");
-//         }
-//     }
-//     else
-// #endif
-//     {
-//         (void) chunk_size, (void) lows, (void) highs, (void) a, (void) b;
-//         throw runtime_error("need AVX2 support");
-//     }
-// }
+void zip(int chunk_size, __m256i &lows, __m256i &highs,
+         const __m256i &a, const __m256i &b)
+{
+#if defined(__AVX2__) || !defined(__x86_64__)
+    if (cpu_has_avx2())
+    {
+        switch (chunk_size)
+        {
+            ZIP_CASE(8, lows, highs, a, b);
+            ZIP_CASE(16, lows, highs, a, b);
+            ZIP_CASE(32, lows, highs, a, b);
+            ZIP_CASE(64, lows, highs, a, b);
+        case 128:
+            lows = a;
+            highs = b;
+            swap(((__m128i *)&lows)[1], ((__m128i *)&highs)[0]);
+            break;
+        default:
+            throw invalid_argument("not supported");
+        }
+    }
+    else
+#endif
+    {
+        (void)chunk_size, (void)lows, (void)highs, (void)a, (void)b;
+        throw runtime_error("need AVX2 support");
+    }
+}
+#endif
 
 void square64::transpose(int n_rows, int n_cols)
 {
@@ -132,13 +133,13 @@ void square64::transpose(int n_rows, int n_cols)
             {
                 cout << "transpose k " << k << " j " << j << ": ";
                 for (int i = 0; i < 4; i++)
-                    cout << hex << " " << ((long*)&x[j])[i];
+                    cout << hex << " " << ((long *)&x[j])[i];
                 cout << dec << endl;
             }
 #endif
         for (int chunk_size = 128; chunk_size >= 64; chunk_size /= 2)
         {
-            for (int j = 0; j < 4; j ++)
+            for (int j = 0; j < 4; j++)
             {
                 int a, b;
                 if (chunk_size > 64)
@@ -165,16 +166,16 @@ void square64::transpose(int n_rows, int n_cols)
                 if (not _mm256_testz_si256(x[j], x[j]))
                 {
                     cout << "transpose k " << k << " chunk " << chunk_size
-                            << " j " << j << ": ";
+                         << " j " << j << ": ";
                     for (int i = 0; i < 4; i++)
-                        cout << hex << " " << ((long*)&x[j])[i];
+                        cout << hex << " " << ((long *)&x[j])[i];
                     cout << dec << endl;
                 }
 #endif
         }
         for (int chunk_size = 8; chunk_size < 128; chunk_size *= 2)
         {
-            for (int j = 0; j < 4; j ++)
+            for (int j = 0; j < 4; j++)
             {
                 int a = j / 2 * 2 + j;
                 int b = a + 2;
@@ -203,15 +204,15 @@ void square64::transpose(int n_rows, int n_cols)
                 if (not _mm256_testz_si256(x[j], x[j]))
                 {
                     cout << "transpose k " << k << " chunk " << chunk_size
-                            << " j " << j << ": ";
+                         << " j " << j << ": ";
                     for (int i = 0; i < 4; i++)
-                        cout << hex << " " << ((long*)&x[j])[i];
+                        cout << hex << " " << ((long *)&x[j])[i];
                     cout << dec << endl;
                 }
 #endif
         }
 
-        int perm[] = { 0, 4, 2, 6, 1, 5, 3, 7 };
+        int perm[] = {0, 4, 2, 6, 1, 5, 3, 7};
         for (int i = 0; i < DIV_CEIL(n_cols, 8); i++)
         {
             matrix32x8(x[perm[i]]).transpose(*this, i, k);
@@ -224,14 +225,13 @@ void square64::transpose(int n_rows, int n_cols)
 #endif
 }
 
-bool square64::operator !=(const square64& other)
+bool square64::operator!=(const square64 &other)
 {
     for (int i = 0; i < 64; i++)
         if (rows[i] != other.rows[i])
             return false;
     return true;
 }
-
 
 void square64::print()
 {

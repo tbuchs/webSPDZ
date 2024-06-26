@@ -15,13 +15,10 @@
 void Encrypt_Rq_Element(Ciphertext& c,const Rq_Element& mess, const Random_Coins& rc,
         const FHE_PK& pk)
 {
-    Rq_Element ed, edd, c0, c1;
-    mul(c1, pk.a(), rc.u());
-    mul(ed, rc.v(), pk.p());
-    add(c1, c1, ed);
+    auto c1 = pk.a() * rc.u() + rc.v() * pk.p();
+    auto c0 = pk.b() * rc.u();
+    auto edd = rc.w() * pk.p();
 
-    mul(c0, pk.b(), rc.u());
-    mul(edd, rc.w(), pk.p());
     edd.change_rep(evaluation,evaluation);
     add(edd,edd,mess);
     add(c0,c0,edd);

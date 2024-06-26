@@ -20,7 +20,7 @@ import sys
 from functools import reduce
 
 from Compiler.types import *
-from Compiler.types import _secret
+from Compiler.types import _secret, _register
 from Compiler.library import *
 from Compiler.program import Program
 from Compiler import floatingpoint,comparison,permutation
@@ -77,8 +77,8 @@ class intBlock(Block):
             self.lower, self.shift = \
                 floatingpoint.Trunc(self.value, self.n_bits, self.start, \
                                     Program.prog.security, True)
-            trunc = (self.value - self.lower) / self.shift
-        self.slice = trunc.mod2m(length, self.n_bits, False)
+            trunc = (self.value - self.lower).field_div(self.shift)
+        self.slice = trunc.mod2m(length, self.n_bits, signed=False)
         self.upper = (trunc - self.slice) * self.shift
     def get_slice(self):
         total_length = sum(self.lengths)
@@ -89,13 +89,11 @@ class intBlock(Block):
             res = []
             remainder = self.slice
             for length,start in zip(self.lengths[:-1],series(self.lengths)):
-                res.append(remainder.mod2m(length, total_length - start, False))
+                res.append(remainder.mod2m(length, total_length - start,
+                                           signed=False))
                 remainder -= res[-1]
-                if Program.prog.options.ring:
-                    remainder = remainder.trunc_zeros(length,
-                                                      total_length - start, False)
-                else:
-                    remainder /= floatingpoint.two_power(length)
+                remainder = remainder.trunc_zeros(length,
+                                                  total_length - start, False)
             res.append(remainder)
             return res
     def set_slice(self, value):
@@ -208,23 +206,39 @@ def demux_list(x):
     return res
 
 def demux_array(x, res=None):
+    tmp = demux_matrix(x).array
+    if res:
+        try:
+            assert issubclass(x.value_type, _register)
+            res[:] = tmp[:]
+        except:
+            @for_range(len(res))
+            def _(i):
+                res[i] = tmp[i]
+    else:
+        res = tmp
+    return res
+
+def demux_matrix(x, n_threads=None):
     n = len(x)
-    if res is None:
-        res = Array(2**n, type(x[0]))
+    if n == 0:
+        return [1]
+    m = len(x[0])
+    t = type(x[0])
+    res = Matrix(2**n, m, type(x[0]))
     if n == 1:
         res[0] = 1 - x[0]
         res[1] = x[0]
     else:
-        a = Array(2**(n//2), type(x[0]))
+        a = Matrix(2**(n//2), m, type(x[0]))
         a.assign(demux(x[:n//2]))
-        b = Array(2**(n-n//2), type(x[0]))
+        b = Matrix(2**(n-n//2), m, type(x[0]))
         b.assign(demux(x[n//2:]))
-        @for_range_multithread(get_n_threads(len(res)), \
-                                   max(1, n_parallel // len(b)), len(a))
+        @for_range_opt_multithread(n_threads, len(a))
         def f(i):
-            @for_range_parallel(n_parallel, len(b))
+            @for_range_opt(len(b))
             def f(j):
-                res[j * len(a) + i] = a[i] * b[j]
+                res[j * len(a) + i][:] = a[i][:] * b[j][:]
     return res
 
 def get_first_one(x):
@@ -397,7 +411,7 @@ class RefRAM(object):
         print('init ram')
         for a,value in zip(self.l, list(empty_entry.defaults.values())):
             # don't use threads if n_threads explicitly set to 1
-            a.assign_all(value, n_threads != 1, conv=False)
+            a.assign_all(value, n_threads=n_threads, conv=False)
     def get_empty_bits(self):
         return self.l[0]
     def get_indices(self):
@@ -1243,7 +1257,7 @@ class TreeORAM(AbstractORAM):
         depth = log2(m)
         leaves = self.value_type.Array(m)
         indexed_values = \
-            self.value_type.Matrix(m, len(util.tuplify(values[0])) + 1)
+            self.value_type.Matrix(m, len(values[0]) + 1)
 
         # assign indices 0, ..., m-1
         @for_range(m)
@@ -1251,8 +1265,7 @@ class TreeORAM(AbstractORAM):
             value = values[i]
             index = MemValue(self.value_type.hard_conv(i))
             new_value = [MemValue(self.value_type.hard_conv(v)) \
-                         for v in (value if isinstance(value, (tuple, list)) \
-                                       else (value,))]
+                         for v in value]
             indexed_values[i] = [index] + new_value
 
         entries = sint.Matrix(self.bucket_size * 2 ** self.D,
@@ -1270,7 +1283,7 @@ class TreeORAM(AbstractORAM):
                 self.value_type.hard_conv(False), value_type=self.value_type)
         
         # save unsorted leaves for position map
-        unsorted_leaves = [MemValue(self.value_type(leaf)) for leaf in leaves]
+        unsorted_leaves = Array.create_from(leaves)
         leaves.sort()
 
         bucket_sz = 0
@@ -1373,7 +1386,7 @@ class TreeORAM(AbstractORAM):
             bucket.bucket.ram[bucket_sizes[leaf]] = Entry(entries[k])
             bucket_sizes[leaf] += 1
 
-        self.index.batch_init([leaf.read() for leaf in unsorted_leaves])
+        self.index.batch_init(unsorted_leaves)
 
     def check(self, index=None):
         if debug:
@@ -1717,7 +1730,8 @@ class BinaryORAM:
 
 def OptimalORAM(size,*args,**kwargs):
     """ Create an ORAM instance suitable for the size based on
-    experiments.
+    experiments. This uses the approach by `Keller and Scholl
+    <https://eprint.iacr.org/2014/137>`_.
 
     :param size: number of elements
     :param value_type: :py:class:`sint` (default) / :py:class:`sg2fn` /

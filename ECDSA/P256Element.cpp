@@ -166,13 +166,3 @@ bool P256Element::operator !=(const P256Element& other) const
 {
     return not (*this == other);
 }
-
-octetStream P256Element::hash(size_t n_bytes) const
-{
-    octetStream os;
-    pack(os);
-    auto res = os.hash();
-    assert(n_bytes >= res.get_length());
-    res.resize_precise(n_bytes);
-    return res;
-}

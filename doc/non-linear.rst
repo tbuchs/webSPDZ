@@ -25,6 +25,9 @@ Unknown prime modulus
     parameter. It has the downside that there is implicit enforcement
     of the cleartext range.
 
+    If you want to use this approach with a given prime, do *not*
+    specify the prime during compilation but during execution.
+
 Known prime modulus
     `Damgård et al. <https://doi.org/10.1007/11681878_15>`_ have
     proposed non-linear computation that involves an exact prime
@@ -40,6 +43,8 @@ Known prime modulus
     al. <https://eprint.iacr.org/2021/119>`_, namely that a random
     :math:`k`-bit number is indistinguishable from a random number
     modulo :math:`p` if the latter is close enough to :math:`2^k`.
+
+    This approach is used if you specify a prime during compilation.
 
 Power-of-two modulus
     In the context of non-linear computation, there are two important

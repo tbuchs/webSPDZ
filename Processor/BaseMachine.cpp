@@ -8,6 +8,7 @@
 #include "Math/Setup.h"
 #include "Tools/Bundle.h"
 
+#include "Instruction.hpp"
 #include "Protocols/ShuffleSacrifice.hpp"
 
 #include <iostream>
@@ -39,11 +40,26 @@ bool BaseMachine::has_program()
 
 int BaseMachine::edabit_bucket_size(int n_bits)
 {
+  size_t usage = 0;
+  if (has_program())
+    usage = s().progs[0].get_offline_data_used().total_edabits(n_bits);
+  return bucket_size(usage);
+}
+
+int BaseMachine::triple_bucket_size(DataFieldType type)
+{
+  size_t usage = 0;
+  if (has_program())
+    usage = s().progs[0].get_offline_data_used().files[type][DATA_TRIPLE];
+  return bucket_size(usage);
+}
+
+int BaseMachine::bucket_size(size_t usage)
+{
   int res = OnlineOptions::singleton.bucket_size;
 
-  if (has_program())
+  if (usage)
     {
-      auto usage = s().progs[0].get_offline_data_used().total_edabits(n_bits);
       for (int B = res; B <= 5; B++)
         if (ShuffleSacrifice(B).minimum_n_outputs() < usage * .9)
           break;
@@ -71,12 +87,8 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
 #endif
   ifstream inpf;
   inpf.open(fname);
-  if(inpf.fail())
-  {
-    // Print system error message
-    std::perror("Error: ");
-    throw file_error("Missing '" + fname + "'. Did you compile '" + progname + "'?");
-  }
+  if (inpf.fail()) { throw file_error("Missing '" + fname + "'. Did you compile '" + progname + "'?"); }
+
   int nprogs;
   inpf >> nthreads;
   inpf >> nprogs;
@@ -95,7 +107,7 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
   string threadname;
   for (int i=0; i<nprogs; i++)
     { inpf >> threadname;
-      size_t split = threadname.find(":");
+      size_t split = threadname.find_last_of(":");
       long expected = -1;
       if (split != string::npos)
         {
@@ -129,6 +141,7 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
   getline(inpf, compiler);
   getline(inpf, domain);
   getline(inpf, relevant_opts);
+  getline(inpf, security);
   inpf.close();
 }
 
@@ -188,17 +201,19 @@ string BaseMachine::memory_filename(const string& type_short, int my_number)
 
 string BaseMachine::get_domain(string progname)
 {
-  if (singleton)
-  {
-    assert(s().progname == progname);
-    return s().domain;
-  }
+  return get_basics(progname).domain;
+}
 
-  assert(not singleton);
+BaseMachine BaseMachine::get_basics(string progname)
+{
+  if (singleton and s().progname == progname)
+    return s();
+
+  auto backup = singleton;
   BaseMachine machine;
-  singleton = 0;
+  singleton = backup;
   machine.load_schedule(progname, false);
-  return machine.domain;
+  return machine;
 }
 
 int BaseMachine::ring_size_from_schedule(string progname)
@@ -230,6 +245,15 @@ bigint BaseMachine::prime_from_schedule(string progname)
     return 0;
 }
 
+int BaseMachine::security_from_schedule(string progname)
+{
+  string sec = get_basics(progname).security;
+  if (sec.substr(0, 4).compare("sec:") == 0)
+    return stoi(sec.substr(4));
+  else
+    return 0;
+}
+
 NamedCommStats BaseMachine::total_comm()
 {
   NamedCommStats res;
@@ -252,7 +276,7 @@ void BaseMachine::print_global_comm(Player& P, const NamedCommStats& stats)
   P.Broadcast_Receive_no_stats(bundle);
   size_t global = 0;
   for (auto& os : bundle)
-    global += os.get_int(sizeof(size_t));
+    global += os.get_int(8);
   cerr << "Global data sent = " << global / 1e6 << " MB (all parties)" << endl;
 }
 

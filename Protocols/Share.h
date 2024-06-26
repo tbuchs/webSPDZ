@@ -85,12 +85,10 @@ class Share_ : public ShareInterface
    void assign(const char* buffer)
      { a.assign(buffer); mac.assign(buffer + T::size()); }
    void assign_zero()
-     { a.assign_zero(); 
-       mac.assign_zero(); 
-     }
+     { *this = {}; }
    void assign(const open_type& aa, int my_num, const typename V::Scalar& alphai);
 
-   Share_()                   { assign_zero(); }
+   Share_()                   {}
    template<class U, class W>
    Share_(const Share_<U, W>& S) { assign(S); }
    Share_(const open_type& aa, int my_num, const typename V::Scalar& alphai)

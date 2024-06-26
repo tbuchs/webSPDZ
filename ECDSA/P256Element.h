@@ -56,14 +56,8 @@ public:
     bool operator==(const P256Element& other) const;
     bool operator!=(const P256Element& other) const;
 
-    void assign_zero() { *this = {}; }
-    bool is_zero() { return *this == P256Element(); }
-    void add(octetStream& os, int = -1) { *this += os.get<P256Element>(); }
-
     void pack(octetStream& os, int = -1) const;
     void unpack(octetStream& os, int = -1);
-
-    octetStream hash(size_t n_bytes) const;
 
     friend ostream& operator<<(ostream& s, const P256Element& x);
 };

@@ -64,14 +64,14 @@ RUN pip install --upgrade pip ipython
 
 COPY . .
 
-ARG arch=native
+ARG arch=
 ARG cxx=clang++-11
 ARG use_ntl=0
 ARG prep_dir="Player-Data"
 ARG ssl_dir="Player-Data"
 
-RUN echo "ARCH = -march=${arch}" >> CONFIG.mine \
-        && echo "CXX = ${cxx}" >> CONFIG.mine \
+RUN if test -n "${arch}"; then echo "ARCH = -march=${arch}" >> CONFIG.mine; fi
+RUN echo "CXX = ${cxx}" >> CONFIG.mine \
         && echo "USE_NTL = ${use_ntl}" >> CONFIG.mine \
         && echo "MY_CFLAGS += -I/usr/local/include" >> CONFIG.mine \
         && echo "MY_LDLIBS += -Wl,-rpath -Wl,/usr/local/lib -L/usr/local/lib" \
@@ -81,11 +81,11 @@ RUN echo "ARCH = -march=${arch}" >> CONFIG.mine \
         && echo "SSL_DIR = '-DSSL_DIR=\"${ssl_dir}/\"'" >> CONFIG.mine
 
 # ssl keys
-ARG cryptoplayers=0
+ARG cryptoplayers=
 ENV PLAYERS ${cryptoplayers}
-RUN ./Scripts/setup-ssl.sh ${cryptoplayers} ${ssl_dir}
+RUN ./Scripts/setup-ssl.sh "${cryptoplayers}" ${ssl_dir}
 
-RUN make boost libote
+RUN make clean-deps boost libote
 
 ###############################################################################
 # Use this stage to a build a specific virtual machine. For example:          #

@@ -3,6 +3,9 @@
  *
  */
 
+#ifndef PROTOCOLS_MALICIOUS_SHAMIR_PO_HPP_
+#define PROTOCOLS_MALICIOUS_SHAMIR_PO_HPP_
+
 #include "MaliciousShamirPO.h"
 
 template<class T>
@@ -46,3 +49,5 @@ typename T::clear MaliciousShamirPO<T>::finalize(const T& secret)
 
     return MC.reconstruct(shares);
 }
+
+#endif

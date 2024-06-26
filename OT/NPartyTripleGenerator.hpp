@@ -106,6 +106,12 @@ OTTripleGenerator<T>::OTTripleGenerator(const OTTripleSetup& setup,
     baseSenderInputs = setup.baseSenderInputs;
     players.resize(n-1);
 
+    // copy base OT inputs + outputs
+    for (int j = 0; j < 128; j++)
+    {
+        baseReceiverInput.set_bit(j, (unsigned int)setup.get_base_receiver_input(j));
+    }
+
     for (int i = 0; i < n-1; i++)
     {
         // i for indexing, other_player is actual number
@@ -114,12 +120,6 @@ OTTripleGenerator<T>::OTTripleGenerator(const OTTripleSetup& setup,
             other_player = i + 1;
         else
             other_player = i;
-
-        // copy base OT inputs + outputs
-        for (int j = 0; j < 128; j++)
-        {
-            baseReceiverInput.set_bit(j, (unsigned int)setup.get_base_receiver_input(j));
-        }
 
         players[i] = new VirtualTwoPartyPlayer(globalPlayer, other_player);
     }

@@ -79,14 +79,6 @@ ProtocolBase<T>::~ProtocolBase()
 }
 
 template<class T>
-void ProtocolBase<T>::muls(const vector<int>& reg,
-        SubProcessor<T>& proc, typename T::MAC_Check& MC, int size)
-{
-    (void)MC;
-    proc.muls(reg, size);
-}
-
-template<class T>
 void ProtocolBase<T>::mulrs(const vector<int>& reg,
         SubProcessor<T>& proc)
 {

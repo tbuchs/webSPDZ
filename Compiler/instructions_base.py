@@ -67,6 +67,7 @@ opcodes = dict(
     USE_EDABIT = 0xE5,
     USE_MATMUL = 0x1F,
     ACTIVE = 0xE9,
+    CMDLINEARG = 0xEB,
     # Addition
     ADDC = 0x20,
     ADDS = 0x21,
@@ -152,7 +153,7 @@ opcodes = dict(
     LISTEN = 0x6c,
     ACCEPTCLIENTCONNECTION = 0x6d,
     CLOSECLIENTCONNECTION = 0x6e,
-    READCLIENTPUBLICKEY = 0x6f,
+    INITCLIENTCONNECTION = 0x6f,
     # Bitwise logic
     ANDC = 0x70,
     XORC = 0x71,
@@ -196,6 +197,7 @@ opcodes = dict(
     PRINTREG = 0XB1,
     RAND = 0xB2,
     PRINTREGPLAIN = 0xB3,
+    PRINTREGPLAINS = 0xEA,
     PRINTCHR = 0xB4,
     PRINTSTR = 0xB5,
     PUBINPUT = 0xB6,
@@ -422,28 +424,31 @@ def gf2n(instruction):
 class Mergeable:
     pass
 
-def cisc(function):
+def cisc(function, n_outputs=1):
     class MergeCISC(Mergeable):
         instructions = {}
+        functions = {}
 
         def __init__(self, *args, **kwargs):
             self.args = args
             self.kwargs = kwargs
-            self.security = program.security
+            self.security = program._security
             self.calls = [(args, kwargs)]
             self.params = []
             self.used = []
-            for arg in self.args[1:]:
+            for arg in self.args[n_outputs:]:
                 if isinstance(arg, program.curr_tape.Register):
                     self.used.append(arg)
                     self.params.append(type(arg))
                 else:
                     self.params.append(arg)
             self.function = function
+            self.caller = None
             program.curr_block.instructions.append(self)
 
         def get_def(self):
-            return [call[0][0] for call in self.calls]
+            return sum(([call[0][i] for call in self.calls]
+                        for i in range(n_outputs)), [])
 
         def get_used(self):
             return self.used
@@ -460,7 +465,7 @@ def cisc(function):
             self.used += other.used
 
         def get_size(self):
-            return self.args[0].size
+            return self.args[0].vector_size()
 
         def new_instructions(self, size, regs):
             if self.merge_id() not in self.instructions:
@@ -474,11 +479,11 @@ def cisc(function):
                 args = []
                 for arg in self.args:
                     try:
-                        args.append(type(arg)(size=None))
+                        args.append(arg.new_vector(size=None))
                     except:
                         args.append(arg)
                 program.options.cisc = False
-                old_security = program.security
+                old_security = program._security
                 program.security = self.security
                 self.function(*args, **self.kwargs)
                 program.security = old_security
@@ -490,7 +495,8 @@ def cisc(function):
                 from Compiler.allocator import Merger
                 merger = Merger(block, program.options,
                                 tuple(program.to_merge))
-                args[0].can_eliminate = False
+                for i in range(n_outputs):
+                    args[i].can_eliminate = False
                 merger.eliminate_dead_code()
                 assert int(program.options.max_parallel_open) == 0, \
                     'merging restriction not compatible with ' \
@@ -501,12 +507,56 @@ def cisc(function):
                                                      n_rounds
             template, args, self.n_rounds = self.instructions[self.merge_id()]
             subs = util.dict_by_id()
+            from Compiler import types
             for arg, reg in zip(args, regs):
-                subs[arg] = reg
+                if isinstance(arg, program.curr_tape.Register):
+                    subs[arg] = reg
             set_global_vector_size(size)
             for inst in template:
                 inst.copy(size, subs)
             reset_global_vector_size()
+
+        def expand_to_function(self, size, new_regs):
+            key = size, program.curr_tape, \
+                tuple(arg for arg, reg in zip(self.args, new_regs) if reg is None), \
+                tuple(type(reg) for reg in new_regs)
+            if key not in self.functions:
+                from Compiler import library, types
+                from Compiler.GC.types import bits
+                class Arg:
+                    def __init__(self, reg):
+                        self.type = type(reg)
+                        self.binary = isinstance(reg, bits)
+                        self.reg = reg
+                        # if reg is not None:
+                        #     program.base_addresses[reg] = None
+                    def new(self):
+                        if self.binary:
+                            return self.type()
+                        else:
+                            return self.type(size=size)
+                    def load(self):
+                        return self.reg
+                    def store(self, reg):
+                        if self.type != type(None):
+                            self.reg.update(reg)
+                args = [Arg(x) for x in new_regs]
+                @library.function_block
+                def f():
+                    res = [arg.new() for arg in args[:n_outputs]]
+                    self.new_instructions(size,
+                                          res + [arg.load() for arg in args[n_outputs:]])
+                    for reg, arg in zip(res, args):
+                        arg.store(reg)
+                f.name =  '_'.join(['%s(%d)' % (function.__name__, size)] +
+                                   [str(x) for x in key[2]])
+                self.functions[key] = f, args
+            f, args = self.functions[key]
+            for i in range(len(new_regs) - n_outputs):
+                args[n_outputs + i].store(new_regs[n_outputs + i])
+            f()
+            for i in range(n_outputs):
+                new_regs[i].link(args[i].load())
 
         def expand_merged(self, skip):
             if function.__name__ in skip:
@@ -514,39 +564,48 @@ def cisc(function):
                 for call in self.calls:
                     if not good:
                         break
-                    for arg in call[0]:
-                        if isinstance(arg, program.curr_tape.Register) and \
-                           not issubclass(type(self.calls[0][0][0]), type(arg)):
-                            good = False
+                    for i in range(n_outputs):
+                        for arg in call[0]:
+                            if isinstance(arg, program.curr_tape.Register) and \
+                               not issubclass(type(self.calls[0][0][0]),
+                                              type(arg)):
+                                good = False
                 if good:
-                    return [self], 0
+                    return program.curr_block.instructions.append(self)
+            if program.verbose:
+                print('expanding', self.function.__name__)
             tape = program.curr_tape
-            block = tape.BasicBlock(tape, None, None)
-            tape.active_basicblock = block
-            size = sum(call[0][0].size for call in self.calls)
+            tape.start_new_basicblock()
+            size = sum(call[0][0].vector_size() for call in self.calls)
             new_regs = []
             for i, arg in enumerate(self.args):
                 try:
-                    if i == 0:
-                        new_regs.append(type(arg)(size=size))
+                    if i < n_outputs:
+                        new_regs.append(arg.new_vector(size=size))
                     else:
                         new_regs.append(type(arg).concat(
                             call[0][i] for call in self.calls))
-                        assert len(new_regs[-1]) == size
+                        assert new_regs[-1].vector_size() == size
                 except (TypeError, AttributeError):
-                    if not isinstance(arg, int):
+                    if not isinstance(arg, (int, type(None))):
                         raise
-                    break
+                    new_regs.append(None)
                 except:
-                    print([call[0][0].size for call in self.calls])
+                    print([call[0][0].vector_size() for call in self.calls])
                     raise
-            self.new_instructions(size, new_regs)
+            if program.cisc_to_function and \
+               (program.curr_tape.singular or program.n_running_threads):
+                self.expand_to_function(size, new_regs)
+            else:
+                self.new_instructions(size, new_regs)
+                program.curr_block.n_rounds += self.n_rounds - 1
             base = 0
             for call in self.calls:
-                reg = call[0][0]
-                reg.copy_from_part(new_regs[0], base, reg.size)
-                base += reg.size
-            return block.instructions, self.n_rounds - 1
+                for i in range(n_outputs):
+                    reg = call[0][i]
+                    reg.copy_from_part(new_regs[i], base, reg.vector_size())
+                base += reg.vector_size()
+            tape.start_new_basicblock()
 
         def add_usage(self, *args):
             pass
@@ -605,10 +664,10 @@ def ret_cisc(function):
         from Compiler import types
         if not (program.options.cisc and isinstance(args[0], types._register)):
             return function(*args, **kwargs)
-        if isinstance(args[0], types._clear):
-            res_type = type(args[1])
-        else:
-            res_type = type(args[0])
+        for arg in args:
+            if isinstance(arg, types._secret):
+                res_type = type(arg)
+                break
         res = res_type(size=args[0].size)
         instruction(res, *args, **kwargs)
         return res
@@ -640,6 +699,24 @@ def sfix_cisc(function):
         else:
             return function(*args, **kwargs)
     copy_doc(wrapper, function)
+    return wrapper
+
+bit_instructions = {}
+
+def bit_cisc(function):
+    def wrapper(a, k, m, *args, **kwargs):
+        key = function, m
+        if key not in bit_instructions:
+            def instruction(*args, **kwargs):
+                res = function(*args[m:], **kwargs)
+                for x, y in zip(res, args):
+                    x.mov(y, x)
+            instruction.__name__ = '%s(%d)' % (function.__name__, m)
+            bit_instructions[key] = cisc(instruction, m)
+        from Compiler.types import sintbit
+        res = [sintbit() for i in range(m)]
+        bit_instructions[function, m](*res, a, k, m, *args, **kwargs)
+        return res
     return wrapper
 
 class RegType(object):
@@ -793,6 +870,23 @@ class String(ArgFormat):
     def __str__(self):
         return self.str
 
+class VarString(ArgFormat):
+    @classmethod
+    def check(cls, arg):
+        if not isinstance(arg, str):
+            raise ArgumentError(arg, 'Argument is not string')
+
+    @classmethod
+    def encode(cls, arg):
+        return int_to_bytes(len(arg)) + list(bytearray(arg, 'ascii'))
+
+    def __init__(self, f):
+        length = IntArgFormat(f).i
+        self.str = str(f.read(length), 'ascii')
+
+    def __str__(self):
+        return self.str
+
 ArgFormats = {
     'c': ClearModpAF,
     's': SecretModpAF,
@@ -810,6 +904,7 @@ ArgFormats = {
     'long': LongArgFormat,
     'p': PlayerNoAF,
     'str': String,
+    'varstr': VarString,
 }
 
 def format_str_is_reg(format_str):
@@ -930,7 +1025,7 @@ class Instruction(object):
             self.args += other.args
 
     def expand_vector_args(self):
-        if self.is_vec():
+        if self.is_vec() and self.get_size() != 1:
             for arg in self.args:
                 arg.create_vector_elements()
                 res = sum(list(zip(*self.args)), ())
@@ -939,7 +1034,7 @@ class Instruction(object):
             return self.args
 
     def expand_merged(self, skip):
-        return [self], 0
+        program.curr_block.instructions.append(self)
 
     def get_new_args(self, size, subs):
         new_args = []
@@ -955,6 +1050,10 @@ class Instruction(object):
                 else:
                     new_args.append(arg)
         return new_args
+
+    def copy(self, *args, **kwargs):
+        raise CompilerError("%s instruction not compatible with CISC-style "
+                            "merging. Compile with '-O'." % type(self))
 
     @staticmethod
     def get_usage(args):
@@ -990,9 +1089,9 @@ class ParsedInstruction:
                             pass
         read = lambda: struct.unpack('>I', f.read(4))[0]
         full_code = struct.unpack('>Q', f.read(8))[0]
-        code = full_code % (1 << Instruction.code_length)
+        self.code = full_code % (1 << Instruction.code_length)
         self.size = full_code >> Instruction.code_length
-        self.type = cls.reverse_opcodes[code]
+        self.type = cls.reverse_opcodes[self.code]
         t = self.type
         name = t.__name__
         try:
@@ -1043,6 +1142,10 @@ class VectorInstruction(Instruction):
 
     def get_code(self):
         return super(VectorInstruction, self).get_code(len(self.args[0]))
+
+class Ciscable(Instruction):
+    def copy(self, size, subs):
+        return type(self)(*self.get_new_args(size, subs), copying=True)
 
 class DynFormatInstruction(Instruction):
     __slots__ = []

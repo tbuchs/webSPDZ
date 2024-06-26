@@ -528,7 +528,7 @@ void EdabitShuffleSacrifice<T>::edabit_sacrifice_buckets(vector<edabit<T>>& to_c
             sum <<= n_shift;
         if (single != sum)
         {
-            cout << hex << single << " vs " << (sum << n_shift) << "/" << sum
+            cout << hex << single << " vs " << sum
                     << endl;
             throw Offline_Check_Error("edabit shuffle bucket opening");
         }

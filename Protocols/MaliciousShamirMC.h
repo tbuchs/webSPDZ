@@ -37,7 +37,7 @@ public:
             MaliciousShamirMC()
     { (void)_; (void)__; (void)___; (void)____; }
 
-    void init_open(Player& P, int n = 0);
+    void init_open(const Player& P, int n = 0);
     typename T::open_type finalize_raw();
 
     typename T::open_type reconstruct(const vector<open_type>& shares);

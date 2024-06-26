@@ -1,5 +1,7 @@
 #include "Processor/ExternalClients.h"
+#include "Processor/OnlineOptions.h"
 #include "Networking/ServerSocket.h"
+#include "Networking/ssl_sockets.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <thread>
@@ -25,6 +27,8 @@ ExternalClients::~ExternalClients()
   }
   if (ctx)
     delete ctx;
+  for (auto it = peer_ctxs.begin(); it != peer_ctxs.end(); it++)
+    delete it->second;
 }
 
 void ExternalClients::start_listening(int portnum_base)
@@ -32,8 +36,9 @@ void ExternalClients::start_listening(int portnum_base)
   ScopeLock _(lock);
   client_connection_servers[portnum_base] = new AnonymousServerSocket(portnum_base + get_party_num());
   client_connection_servers[portnum_base]->init();
-  cerr << "Start listening on thread " << this_thread::get_id() << endl;
-  cerr << "Party " << get_party_num() << " is listening on port " << (portnum_base + get_party_num())
+  if (OnlineOptions::singleton.verbose)
+    cerr << "Party " << get_party_num() << " is listening on port "
+        << (portnum_base + get_party_num())
         << " for external client connections." << endl;
 }
 
@@ -46,7 +51,6 @@ int ExternalClients::get_client_connection(int portnum_base)
     cerr << "Thread " << this_thread::get_id() << " didn't find server." << endl; 
     throw runtime_error("No connection on port " + to_string(portnum_base));
   }
-  cerr << "Thread " << this_thread::get_id() << " found server." << endl; 
   int client_id, socket;
   string client;
   socket = client_connection_servers[portnum_base]->get_connection_socket(
@@ -57,8 +61,36 @@ int ExternalClients::get_client_connection(int portnum_base)
   external_client_sockets[client_id] = new client_socket(io_service, *ctx, socket,
       "C" + to_string(client_id), "P" + to_string(get_party_num()), false);
   client_ports[client_id] = portnum_base;
-  cerr << "Party " << get_party_num() << " received external client connection from client id: " << dec << client_id << endl;
+  if (OnlineOptions::singleton.verbose)
+    cerr << "Party " << get_party_num()
+        << " received external client connection from client id: " << dec
+        << client_id << endl;
   return client_id;
+}
+
+int ExternalClients::init_client_connection(const string& host, int portnum,
+    int my_client_id)
+{
+  ScopeLock _(lock);
+  int plain_socket;
+  set_up_client_socket(plain_socket, host.c_str(), portnum);
+  octetStream(to_string(my_client_id)).Send(plain_socket);
+  string my_client_name = "C" + to_string(my_client_id);
+  if (peer_ctxs.find(my_client_id) == peer_ctxs.end())
+    peer_ctxs[my_client_id] = new client_ctx(my_client_name);
+  auto socket = new client_socket(io_service, *peer_ctxs[my_client_id],
+      plain_socket, "P" + to_string(party_num), "C" + to_string(my_client_id),
+      true);
+  if (party_num == 0)
+    {
+      octetStream specification;
+      specification.Receive(socket);
+    }
+  int id = -1;
+  if (not external_client_sockets.empty())
+    id = min(id, external_client_sockets.begin()->first);
+  external_client_sockets[id] = socket;
+  return id;
 }
 
 void ExternalClients::close_connection(int client_id)

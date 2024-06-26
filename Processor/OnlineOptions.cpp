@@ -22,12 +22,13 @@ OnlineOptions::OnlineOptions() : playerno(-1)
     interactive = false;
     lgp = gfp0::MAX_N_BITS;
     live_prep = true;
-    batch_size = 10000;
+    batch_size = 1000;
     memtype = "empty";
     bits_from_squares = false;
     direct = false;
     bucket_size = 4;
     security_parameter = DEFAULT_SECURITY;
+    use_security_parameter = false;
     cmd_private_input_file = "Player-Data/Input";
     cmd_private_output_file = "";
     file_prep_per_thread = false;
@@ -46,6 +47,8 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
         const char** argv, bool security) :
         OnlineOptions()
 {
+    use_security_parameter = security;
+
     opt.syntax = std::string(argv[0]) + " [OPTIONS] [<playerno>] <progname>";
 
     opt.add(
@@ -125,7 +128,7 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
             0, // Required?
             1, // Number of args expected.
             0, // Delimiter if expecting multiple args.
-            ("Security parameter (default: " + to_string(security_parameter)
+            ("Statistical ecurity parameter (default: " + to_string(security_parameter)
                     + ")").c_str(), // Help description.
             "-S", // Flag token.
             "--security" // Flag token.
@@ -147,7 +150,6 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
     if (security)
     {
         opt.get("-S")->getInt(security_parameter);
-        cerr << "Using security parameter " << security_parameter << endl;
         if (security_parameter <= 0)
         {
             cerr << "Invalid security parameter: " << security_parameter << endl;
@@ -289,7 +291,7 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
 }
 
 void OnlineOptions::finalize(ez::ezOptionParser& opt, int argc,
-        const char** argv)
+        const char** argv, bool networking)
 {
     opt.resetArgs();
     opt.parse(argc, argv);
@@ -301,17 +303,21 @@ void OnlineOptions::finalize(ez::ezOptionParser& opt, int argc,
     vector<string> badOptions;
     unsigned int i;
 
-    opt.footer += "\nSee also https://mp-spdz.readthedocs.io/en/latest/networking.html "
-            "for documentation on the networking setup.\n";
+    if (networking)
+        opt.footer += "See also "
+                "https://mp-spdz.readthedocs.io/en/latest/networking.html "
+                "for documentation on the networking setup.\n\n";
 
-    if (allArgs.size() != 3u - opt.isSet("-p"))
+    size_t name_index = 1 + networking - opt.isSet("-p");
+
+    if (allArgs.size() < name_index + 1)
     {
+        opt.getUsage(usage);
+        cout << usage;
         cerr << "ERROR: incorrect number of arguments to " << argv[0] << endl;
         cerr << "Arguments given were:\n";
         for (unsigned int j = 1; j < allArgs.size(); j++)
             cout << "'" << *allArgs[j] << "'" << endl;
-        opt.getUsage(usage);
-        cout << usage;
         exit(1);
     }
     else
@@ -320,25 +326,25 @@ void OnlineOptions::finalize(ez::ezOptionParser& opt, int argc,
             opt.get("-p")->getInt(playerno);
         else
             sscanf((*allArgs[1]).c_str(), "%d", &playerno);
-        progname = *allArgs[2 - opt.isSet("-p")];
+        progname = *allArgs.at(name_index);
     }
 
     if (!opt.gotRequired(badOptions))
     {
-        for (i = 0; i < badOptions.size(); ++i)
-            cerr << "ERROR: Missing required option " << badOptions[i] << ".";
         opt.getUsage(usage);
         cout << usage;
+        for (i = 0; i < badOptions.size(); ++i)
+            cerr << "ERROR: Missing required option " << badOptions[i] << ".";
         exit(1);
     }
 
     if (!opt.gotExpected(badOptions))
     {
+        opt.getUsage(usage);
+        cout << usage;
         for (i = 0; i < badOptions.size(); ++i)
             cerr << "ERROR: Got unexpected number of arguments for option "
                     << badOptions[i] << ".";
-        opt.getUsage(usage);
-        cout << usage;
         exit(1);
     }
 
@@ -354,6 +360,22 @@ void OnlineOptions::finalize(ez::ezOptionParser& opt, int argc,
         }
         if (schedule_prime != 0)
             prime = schedule_prime;
+    }
+
+    for (size_t i = name_index + 1; i < allArgs.size(); i++)
+    {
+        try
+        {
+            args.push_back(stol(*allArgs[i]));
+        }
+        catch (exception& e)
+        {
+            opt.getUsage(usage);
+            cerr << usage;
+            cerr << "Additional argument has to be integer: " << *allArgs[i]
+                    << endl;
+            exit(1);
+        }
     }
 
     // ignore program if length explicitly set from command line
@@ -376,7 +398,29 @@ void OnlineOptions::finalize(ez::ezOptionParser& opt, int argc,
     if (o)
         o->getInt(max_broadcast);
 
+    o = opt.get("--disk-memory");
+    if (o)
+        o->getString(disk_memory);
+
     receive_threads = opt.isSet("--threads");
+
+    if (use_security_parameter)
+    {
+        int program_sec = BaseMachine::security_from_schedule(progname);
+
+        if (program_sec > 0)
+        {
+            if (not opt.isSet("-S"))
+                security_parameter = program_sec;
+            if (program_sec < security_parameter)
+            {
+                cerr << "Security parameter used in compilation is insufficient" << endl;
+                exit(1);
+            }
+        }
+
+        cerr << "Using statistical security parameter " << security_parameter << endl;
+    }
 }
 
 void OnlineOptions::set_trunc_error(ez::ezOptionParser& opt)

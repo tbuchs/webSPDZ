@@ -202,6 +202,8 @@ public:
 	template <typename T>
 	BlackHole& operator<<(T) { return *this; }
 	BlackHole& operator<<(BlackHole& (*__pf)(BlackHole&)) { (void)__pf; return *this; }
+	void fill(char) {}
+	void width(int) {}
 	void activate(bool) {}
 	void redirect_to_file(ostream&) {}
 };

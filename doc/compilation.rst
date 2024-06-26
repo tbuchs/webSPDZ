@@ -3,7 +3,7 @@ Compilation Process
 
 The easiest way of using MP-SPDZ is using ``compile.py`` as
 described below. If you would like to run compilation directly from
-Python, see :ref:`Direct Compilation in Python`.
+Python, see :ref:`direct-compilation`.
 
 After putting your code in ``Program/Source/<progname>.[mpc|py]``, run the
 compiler from the root directory as follows
@@ -36,14 +36,17 @@ The following options influence the computation domain:
 .. cmdoption:: -P <prime>
 	       --prime=<prime>
 
-   Specify a concrete prime modulus for computation. This can be used
+   Use bit decomposition by `Nishide and Ohta
+   <https://doi.org/10.1007/978-3-540-71677-8_23>`_ with a concrete
+   prime modulus for non-linear computation. This can be used
    together with :option:`-F`, in which case *integer length* has to
    be at most the prime length minus two. The security implications of
    overflows in the secrets do not go beyond incorrect results. You
    can use prime order domains without specifying this option.
    Using this option involves algorithms for non-linear computation
    which are generally more expensive but allow for integer lengths
-   that are close to the bit length of the prime.
+   that are close to the bit length of the prime. See
+   :ref:`nonlinear` for more details
 
 .. cmdoption:: -R <ring size>
 	       --ring=<ring size>
@@ -134,6 +137,8 @@ computation:
    :py:func:`~Compiler.library.for_range_opt` and defer if statements
    to the run time.
 
+
+.. _direct-compilation:
 
 Direct Compilation in Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

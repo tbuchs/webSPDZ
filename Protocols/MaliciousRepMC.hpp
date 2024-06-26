@@ -38,7 +38,7 @@ void MaliciousRepMC<T>::POpen(vector<typename T::open_type>&,
 }
 
 template<class T>
-void MaliciousRepMC<T>::Check( Player& P)
+void MaliciousRepMC<T>::Check(Player& P)
 {
     (void)P;
     throw runtime_error("use subclass");

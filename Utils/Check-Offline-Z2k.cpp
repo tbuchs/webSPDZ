@@ -57,7 +57,7 @@ void check_triples_Z2k(int n_players, string type_char = "")
         check_share<T, V>(cs, c, mac, n_players, keyp);
         
         prod = (a * b);
-        if (typename W::clear(prod) != c)
+        if (typename W::clear(prod) != typename W::clear(c))
         {
           cout << j << ": " << c << " != " << prod << " = " << a << " * " << b << endl;
           throw bad_value();

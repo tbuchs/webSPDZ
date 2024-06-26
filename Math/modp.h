@@ -150,7 +150,7 @@ inline void modp_<L>::pack(octetStream& o,const Zp_Data& ZpD) const
 template<int L>
 void assignZero(modp_<L>& x,const Zp_Data& ZpD)
 {
-  if (sizeof(x.x) <= 3 * 16)
+  if (sizeof(x.x) <= 3 * 16 or ZpD.pr_byte_length == 0)
     // use memset to allow the compiler to optimize
     // if x.x is at most 3*128 bits
     avx_memzero(x.x, sizeof(x.x));

@@ -41,15 +41,16 @@ template<template<int L> class U, template<class T> class V, class W>
 RingMachine<U, V, W>::RingMachine(int argc, const char** argv,
         ez::ezOptionParser& opt, OnlineOptions& online_opts, int nplayers)
 {
+    assert(nplayers or U<64>::variable_players);
     RingOptions opts(opt, argc, argv);
     W machine(argc, argv, opt, online_opts, gf2n(), nplayers);
     int R = opts.ring_size_from_opts_or_schedule(online_opts.progname);
-    switch (R)
-    {
 #define X(L) \
-    case L: \
+    if (R == L) \
+    { \
         machine.template run<U<L>, V<gf2n>>(); \
-        break;
+        return; \
+    }
     X(64)
 #ifndef FEWER_RINGS
     X(72) X(128) X(192)
@@ -58,27 +59,23 @@ RingMachine<U, V, W>::RingMachine(int argc, const char** argv,
     X(RING_SIZE)
 #endif
 #undef X
-    default:
-        ring_domain_error(R);
-    }
+    ring_domain_error(R);
 }
 
 template<template<int K, int S> class U, template<class T> class V>
 HonestMajorityRingMachineWithSecurity<U, V>::HonestMajorityRingMachineWithSecurity(
         int argc, const char** argv, ez::ezOptionParser& opt)
 {
-    OnlineOptions online_opts(opt, argc, argv);
+    OnlineOptions online_opts(opt, argc, argv, U<64, 40>());
     RingOptions opts(opt, argc, argv);
     HonestMajorityMachine machine(argc, argv, opt, online_opts);
     int R = opts.ring_size_from_opts_or_schedule(online_opts.progname);
-    switch (R)
-    {
 #define Y(K, S) \
     case S: \
         machine.run<U<K, S>, V<gf2n>>(); \
         break;
 #define X(K) \
-    case K: \
+    if (R == K) \
     { \
         int S = online_opts.security_parameter; \
         switch (S) \
@@ -90,7 +87,7 @@ HonestMajorityRingMachineWithSecurity<U, V>::HonestMajorityRingMachineWithSecuri
             cerr << "or compile with -DDEFAULT_SECURITY=" << S << endl; \
             exit(1); \
         } \
-        break; \
+        return; \
     }
     X(64)
 #ifdef RING_SIZE
@@ -100,9 +97,7 @@ HonestMajorityRingMachineWithSecurity<U, V>::HonestMajorityRingMachineWithSecuri
     X(72) X(128)
 #endif
 #undef X
-    default:
-        ring_domain_error(R);
-    }
+    ring_domain_error(R);
 }
 
 #endif /* PROCESSOR_RINGMACHINE_HPP_ */

@@ -32,6 +32,7 @@ class ExternalClients
 
   ssl_service io_service;
   client_ctx* ctx;
+  map<int, client_ctx*> peer_ctxs;
 
   Lock lock;
 
@@ -43,6 +44,7 @@ class ExternalClients
   void start_listening(int portnum_base);
 
   int get_client_connection(int portnum_base);
+  int init_client_connection(const string& host, int portnum, int my_client_id);
 
   void close_connection(int client_id);
 

@@ -13,6 +13,45 @@
 #include <algorithm>
 
 template<class T>
+void ShuffleStore<T>::lock()
+{
+    store_lock.lock();
+}
+
+template<class T>
+void ShuffleStore<T>::unlock()
+{
+    store_lock.unlock();
+}
+
+template<class T>
+int ShuffleStore<T>::add()
+{
+    lock();
+    int res = shuffles.size();
+    shuffles.push_back({});
+    unlock();
+    return res;
+}
+
+template<class T>
+typename ShuffleStore<T>::shuffle_type& ShuffleStore<T>::get(int handle)
+{
+    lock();
+    auto& res = shuffles.at(handle);
+    unlock();
+    return res;
+}
+
+template<class T>
+void ShuffleStore<T>::del(int handle)
+{
+    lock();
+    shuffles.at(handle) = {};
+    unlock();
+}
+
+template<class T>
 SecureShuffle<T>::SecureShuffle(SubProcessor<T>& proc) :
         proc(proc), unit_size(0), n_shuffle(0), exact(false)
 {
@@ -33,13 +72,12 @@ SecureShuffle<T>::SecureShuffle(vector<T>& a, size_t n, int unit_size,
 
 template<class T>
 void SecureShuffle<T>::apply(vector<T>& a, size_t n, int unit_size, size_t output_base,
-        size_t input_base, int handle, bool reverse)
+        size_t input_base, shuffle_type& shuffle, bool reverse)
 {
     this->unit_size = unit_size;
 
     pre(a, n, input_base);
 
-    auto& shuffle = shuffles.at(handle);
     assert(shuffle.size() == proc.protocol.get_relevant_players().size());
 
     if (reverse)
@@ -135,12 +173,6 @@ void SecureShuffle<T>::inverse_permutation(vector<T> &stack, size_t n, size_t ou
 }
 
 template<class T>
-void SecureShuffle<T>::del(int handle)
-{
-    shuffles.at(handle).clear();
-}
-
-template<class T>
 void SecureShuffle<T>::pre(vector<T>& a, size_t n, size_t input_base)
 {
     n_shuffle = n / unit_size;
@@ -230,11 +262,10 @@ void SecureShuffle<T>::player_round(int config_player) {
 }
 
 template<class T>
-int SecureShuffle<T>::generate(int n_shuffle)
+int SecureShuffle<T>::generate(int n_shuffle, store_type& store)
 {
-    int res = shuffles.size();
-    shuffles.push_back({});
-    auto& shuffle = shuffles.back();
+    int res = store.add();
+    auto& shuffle = store.get(res);
 
     for (auto i: proc.protocol.get_relevant_players()) {
         vector<int> perm;

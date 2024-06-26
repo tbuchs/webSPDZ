@@ -65,6 +65,11 @@ public:
         return "Shamir " + T::type_string();
     }
 
+    static string alt()
+    {
+        return "ATLAS";
+    }
+
     static int threshold(int)
     {
         return ShamirMachine::s().threshold;

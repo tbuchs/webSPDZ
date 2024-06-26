@@ -89,14 +89,19 @@ functions are available for :py:class:`~Compiler.types.sfix` and
 See also :ref:`client ref` below.
 
 
+.. _persistence:
+
 Secret Shares
 ~~~~~~~~~~~~~
 
 :py:func:`Compiler.types.sint.read_from_file` and
 :py:func:`Compiler.types.sint.write_to_file` allow reading and writing
 secret shares to and from files. These instructions use
-``Persistence/Transactions-P<playerno>.data``. The format depends on
-the protocol with the following principles.
+``Persistence/Transactions-P<playerno>.data``. This files use the same
+header as :ref:`preprocessing files <prep-files>`. The format for the
+shares data depends on the protocol and is created by the ``output``
+member function of the relevant :ref:`share type <share-type-reference>`. It
+follows the following principles:
 
 - One share follows the other without metadata.
 - If there is a MAC, it comes after the share.

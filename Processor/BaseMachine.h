@@ -32,9 +32,12 @@ protected:
     string compiler;
     string domain;
     string relevant_opts;
+    string security;
 
     virtual size_t load_program(const string& threadname,
             const string& filename);
+
+    static BaseMachine get_basics(string progname);
 
 public:
     static thread_local int thread_num;
@@ -58,12 +61,15 @@ public:
     static int ring_size_from_schedule(string progname);
     static int prime_length_from_schedule(string progname);
     static bigint prime_from_schedule(string progname);
+    static int security_from_schedule(string progname);
 
     template<class T>
     static int batch_size(Dtype type, int buffer_size = 0, int fallback = 0);
     template<class T>
     static int edabit_batch_size(int n_bits, int buffer_size = 0);
     static int edabit_bucket_size(int n_bits);
+    static int triple_bucket_size(DataFieldType type);
+    static int bucket_size(size_t usage);
 
     BaseMachine();
     virtual ~BaseMachine() {}

@@ -8,17 +8,18 @@
 
 #include <stdexcept>
 
-inline bool check_cpu([[maybe_unused]]int func, [[maybe_unused]]bool ecx, [[maybe_unused]]int feature)
+inline bool check_cpu(int func, bool ecx, int feature)
 {
-#ifdef __aarch64__
-    (void) func, (void) ecx, (void) feature;
+#ifdef __EMSCRIPTEN__
+    (void)func, (void)ecx, (void)feature;
+    return false;
+#elif __aarch64__
+    (void)func, (void)ecx, (void)feature;
     throw std::runtime_error("only for x86");
 #else
-    // int ax = func, bx, cx = 0, dx;
-    // __asm__ __volatile__ ("cpuid":
-    //         "+a" (ax), "=b" (bx), "+c" (cx), "=d" (dx));
-    // return ((ecx ? cx : bx) >> feature) & 1;
-    return true;
+    int ax = func, bx, cx = 0, dx;
+    __asm__ __volatile__("cpuid" : "+a"(ax), "=b"(bx), "+c"(cx), "=d"(dx));
+    return ((ecx ? cx : bx) >> feature) & 1;
 #endif
 }
 
@@ -51,7 +52,7 @@ inline bool cpu_has_avx2()
 
 inline bool cpu_has_avx(bool force = false)
 {
-    (void) force;
+    (void)force;
 #ifndef CHECK_AVX
     if (force)
 #endif

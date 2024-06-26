@@ -1,5 +1,8 @@
 ROOT = .
 
+# compile for web usage
+WEB = 1
+
 OPTIM= -O3
 #PROF = -pg
 #DEBUG = -DDEBUG
@@ -67,7 +70,7 @@ endif
 USE_KOS = 0
 
 # allow to set compiler in CONFIG.mine
-ifeq ($(WEB),1)
+ifeq ($(WEB), 1)
 CXX = emcc
 else
 CXX = clang++
@@ -92,7 +95,7 @@ endif
 
 LDLIBS = -lgmpxx -lgmp -lsodium $(MY_LDLIBS) -lssl -lcrypto 
 
-ifeq ($(WEB),1)
+ifeq ($(WEB), 1)
 LDLIBS += -lwebsocket.js -ldatachannel-wasm
 LDLIBS += -I $(CURDIR)/local/lib -L $(CURDIR)/local/lib
 else
@@ -118,7 +121,7 @@ else
 BOOST = -lboost_thread $(MY_BOOST)
 endif
 
-ifeq ($(WEB))
+ifeq ($(WEB), 1)
 CFLAGS += -sUSE_BOOST_HEADERS
 endif
 

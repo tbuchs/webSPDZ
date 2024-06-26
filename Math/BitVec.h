@@ -56,13 +56,6 @@ public:
 
     void extend_bit(BitVec_& res, int) const { res = extend_bit(); }
 
-    void add(octetStream& os, int n_bits)
-    {
-        BitVec_ tmp;
-        tmp.unpack(os, n_bits);
-        *this += tmp;
-    }
-
     void mul(const BitVec_& a, const BitVec_& b) { *this = a * b; }
 
     void randomize(PRNG& G, int n = n_bits) { super::randomize(G); *this = this->mask(n); }

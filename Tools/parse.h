@@ -50,4 +50,13 @@ inline void get_vector(int m, vector<int>& start, istream& s)
     start[i] = be32toh(start[i]);
 }
 
+inline void get_string(string& res, istream& s)
+{
+  unsigned size = get_int(s);
+  char* buf = new char[size];
+  s.read(buf, size);
+  res.assign(buf, size);
+  delete[] buf;
+}
+
 #endif /* TOOLS_PARSE_H_ */

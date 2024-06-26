@@ -7,6 +7,7 @@
 #define PROTOCOLS_MALREPRINGPREP_H_
 
 #include "Protocols/ReplicatedPrep.h"
+#include "Protocols/MaliciousRepPrep.h"
 
 /**
  * Generate random triples with malicious security modulo a power two,
@@ -15,6 +16,9 @@
 template<class T>
 class MalRepRingPrep : public virtual BufferPrep<T>
 {
+    DataPositions dummy_pos;
+    MaliciousRepPrep<typename T::prep_type> prep;
+
 public:
     MalRepRingPrep(SubProcessor<T>* proc, DataPositions& usage);
 
@@ -37,8 +41,15 @@ public:
 template<class T>
 class RingOnlyBitsFromSquaresPrep : public virtual BufferPrep<T>
 {
+    typedef typename T::SquareToBitShare BitShare;
+    DataPositions dummy_pos;
+    typename BitShare::SquarePrep prep;
+    SubProcessor<BitShare>* bit_proc;
+    typename BitShare::MAC_Check* bit_MC;
+
 public:
     RingOnlyBitsFromSquaresPrep(SubProcessor<T>* proc, DataPositions& usage);
+    ~RingOnlyBitsFromSquaresPrep();
 
     void buffer_bits();
 };

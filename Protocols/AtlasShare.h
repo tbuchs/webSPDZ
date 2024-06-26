@@ -29,8 +29,16 @@ public:
     typedef ShamirMC<This> Direct_MC;
     typedef ::PrivateOutput<This> PrivateOutput;
     typedef AtlasPrep<This> LivePrep;
+    typedef LivePrep TriplePrep;
 
+#ifndef NO_MIXED_CIRCUITS
     typedef GC::AtlasSecret bit_type;
+#endif
+
+    static string alt()
+    {
+        return "";
+    }
 
     AtlasShare()
     {

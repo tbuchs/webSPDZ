@@ -44,6 +44,10 @@ public:
     // default private output facility (using input tuples)
     typedef ::PrivateOutput<NoShare> PrivateOutput;
 
+    // indicate whether protocol allows dishonest majority and variable players
+    static const bool dishonest_majority = true;
+    static const bool variable_players = true;
+
     // description used for debugging output
     static string type_string()
     {
@@ -166,9 +170,10 @@ public:
             throw runtime_error("no human-readable input");
         else
         {
-            char buf[size()];
+            char* buf = new char[size()];
             is.read(buf, size());
             assign(buf);
+            delete[] buf;
         }
     }
 
@@ -186,5 +191,12 @@ public:
         }
     }
 };
+
+template<class T>
+inline ostream& operator<<(ostream& o, NoShare<T>)
+{
+    throw runtime_error("no output");
+    return o;
+}
 
 #endif /* PROTOCOLS_NOSHARE_H_ */

@@ -149,12 +149,13 @@ CFLAGS += -fPIC
 LDLIBS += -Wl,-rpath -Wl,$(CURDIR)
 endif
 
+ifeq ($(WEB), 1)
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
-	ifeq ($(WEB), 1)
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)
-	else
+else
+$(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
-	endif
+endif
 
 $(FHEOFFLINE): $(FHEOBJS) $(SHAREDLIB)
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
@@ -219,18 +220,18 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 %.x: Utils/%.o $(COMMON)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
+ifeq ($(WEB), 1)
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	ifeq ($(WEB), 1)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Programs --embed-file Player-Data
-	else
+else
+%.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB)
-	endif
+endif
 
 %-ecdsa-party.x: ECDSA/%-ecdsa-party.o ECDSA/P256Element.o $(VM)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS)
 
 replicated-bin-party.x: GC/square64.o
-replicated-ring-party.x: GC/square64.o
 replicated-field-party.x: GC/square64.o
 brain-party.x: GC/square64.o
 malicious-rep-bin-party.x: GC/square64.o

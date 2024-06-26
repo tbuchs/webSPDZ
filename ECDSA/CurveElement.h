@@ -50,7 +50,6 @@ public:
 
     void assign_zero() { *this = 0; }
     bool is_zero() { return *this == 0; }
-    void add(octetStream& os) { *this += os.get<CurveElement>(); }
 
     void pack(octetStream& os) const;
     void unpack(octetStream& os);

@@ -1,4 +1,6 @@
-This directory contains the code used for the benchmarks by [Dalskov
+### Threshold ECDSA
+
+The ECDSA directory contains the code used for the benchmarks by [Dalskov
 et al.](https://eprint.iacr.org/2019/889) `*-ecdsa-party.cpp`
 contains the high-level programs while the two phases are implemented
 in `preprocessing.hpp` and `sign.hpp`, respectively.
@@ -10,7 +12,8 @@ in `preprocessing.hpp` and `sign.hpp`, respectively.
 
 #### Running
 
-The following binaries have been used for the paper:
+The following binaries are available, of which the first few have been
+used for the paper:
 
 | Protocol | Binary |
 | --- | --- |
@@ -20,6 +23,10 @@ The following binaries have been used for the paper:
 | Semi-honest Shamir | `shamir-ecdsa-party.x` |
 | Malicious replicated | `mal-rep-ecdsa-party.x` |
 | Semi-honest replicated | `rep-ecdsa-party.x` |
+| --- | --- |
+| ATLAS | `atlas-ecdsa-party.x` |
+| SPDZ-wise replicated | `sy-rep-ecdsa-party.x` |
+| Rep4 | `rep4-ecdsa-party.x` |
 
 All binaries offer the same interface. With MASCOT for example, run
 the following:

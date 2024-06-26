@@ -13,13 +13,15 @@
 namespace GC
 {
 
+class Rep4Prep;
+
 class Rep4Secret : public RepSecretBase<Rep4Secret, 3>
 {
     typedef RepSecretBase<Rep4Secret, 3> super;
     typedef Rep4Secret This;
 
 public:
-    typedef DummyLivePrep<This> LivePrep;
+    typedef Rep4Prep LivePrep;
     typedef Rep4<This> Protocol;
     typedef Rep4MC<This> MC;
     typedef MC MAC_Check;

@@ -60,6 +60,7 @@ CryptoPlayer::CryptoPlayer(const Names& Nms, const string& id_base) :
     receivers.resize(num_players());
 
     vector<int> plaintext_sockets[2];
+
     for (int i = 0; i < 2; i++)
     {
         PlainPlayer player(Nms, id_base + (i ? "recv" : ""));

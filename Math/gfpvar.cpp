@@ -296,12 +296,6 @@ bool gfpvar_<X, L>::operator !=(const gfpvar_<X, L>& other) const
 }
 
 template<int X, int L>
-void gfpvar_<X, L>::add(octetStream& other, int)
-{
-    *this += other.get<gfpvar_<X, L>>();
-}
-
-template<int X, int L>
 void gfpvar_<X, L>::negate()
 {
     *this = gfpvar_<X, L>() - *this;

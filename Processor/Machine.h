@@ -20,6 +20,8 @@
 #include "Tools/time-func.h"
 #include "Tools/ExecutionStats.h"
 
+#include "Protocols/SecureShuffle.h"
+
 #include <vector>
 #include <map>
 #include <atomic>
@@ -69,6 +71,8 @@ class Machine : public BaseMachine
   ExecutionStats stats;
 
   ExternalClients external_clients;
+
+  typename sint::Protocol::Shuffler::store_type shuffle_store;
 
   static void init_binary_domains(int security_parameter, int lg2);
 

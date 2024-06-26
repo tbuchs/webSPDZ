@@ -31,6 +31,11 @@ public:
     static const bool needs_ot = false;
     static const bool local_mul = false;
 
+    static string alt()
+    {
+        return "";
+    }
+
     TemiShare()
     {
     }

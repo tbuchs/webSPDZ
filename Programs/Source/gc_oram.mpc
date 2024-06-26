@@ -5,6 +5,8 @@ prog.options.binary = -1
 from Compiler.GC.types import *
 from Compiler.GC.instructions import *
 
+sbits.dynamic_array = DynamicArray
+
 bits.unit = 64
 
 from Compiler.circuit_oram import *

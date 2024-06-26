@@ -33,7 +33,7 @@ typename T::MatrixPrep& Hemi<T>::get_matrix_prep(const array<int, 3>& dims,
 }
 
 template<class T>
-void Hemi<T>::matmulsm(SubProcessor<T>& processor, CheckVector<T>& source,
+void Hemi<T>::matmulsm(SubProcessor<T>& processor, MemoryPart<T>& source,
         const Instruction& instruction, int a, int b)
 {
     if (HemiOptions::singleton.plain_matmul
@@ -61,16 +61,16 @@ void Hemi<T>::matmulsm(SubProcessor<T>& processor, CheckVector<T>& source,
     for (int i = 0; i < dim[0]; i++)
         for (int k = 0; k < dim[1]; k++)
         {
-            auto kk = Proc->get_Ci().at(dim[4] + k);
-            auto ii = Proc->get_Ci().at(dim[3] + i);
+            auto kk = Proc->get_Ci().at(dim[4] + k).get();
+            auto ii = Proc->get_Ci().at(dim[3] + i).get();
             A.entries.v.push_back(source.at(a + ii * dim[7] + kk));
         }
 
     for (int k = 0; k < dim[1]; k++)
         for (int j = 0; j < dim[2]; j++)
         {
-            auto jj = Proc->get_Ci().at(dim[6] + j);
-            auto ll = Proc->get_Ci().at(dim[5] + k);
+            auto jj = Proc->get_Ci().at(dim[6] + j).get();
+            auto ll = Proc->get_Ci().at(dim[5] + k).get();
             B.entries.v.push_back(source.at(b + ll * dim[8] + jj));
         }
 

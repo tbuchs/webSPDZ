@@ -105,7 +105,6 @@ void BaseInstruction::parse_operands(istream& s, int pos, int file_pos)
       case STMCBI:
       case MOVC:
       case MOVS:
-      case MOVSB:
       case MOVINT:
       case LDMINTI:
       case STMINTI:
@@ -131,6 +130,7 @@ void BaseInstruction::parse_operands(istream& s, int pos, int file_pos)
       case SHUFFLE:
       case ACCEPTCLIENTCONNECTION:
       case PREFIXSUMS:
+      case CMDLINEARG:
         get_ints(r, s, 2);
         break;
       // instructions with 1 register operand
@@ -139,12 +139,14 @@ void BaseInstruction::parse_operands(istream& s, int pos, int file_pos)
       case RANDOMFULLS:
       case PRINTREGPLAIN:
       case PRINTREGPLAINB:
+      case PRINTREGPLAINS:
       case LDTN:
       case LDARG:
       case STARG:
       case JMPI:
       case GBIT:
       case GPRINTREGPLAIN:
+      case GPRINTREGPLAINS:
       case JOIN_TAPE:
       case PUSHINT:
       case POPINT:
@@ -316,12 +318,9 @@ void BaseInstruction::parse_operands(istream& s, int pos, int file_pos)
       case TRUNC_PR:
       case RUN_TAPE:
       case CONV2DS:
+      case MATMULS:
         num_var_args = get_int(s);
         get_vector(num_var_args, start, s);
-        break;
-      case MATMULS:
-        get_ints(r, s, 3);
-        get_vector(3, start, s);
         break;
       case MATMULSM:
         get_ints(r, s, 3);
@@ -358,7 +357,10 @@ void BaseInstruction::parse_operands(istream& s, int pos, int file_pos)
         n = get_int(s);
         get_vector(num_var_args, start, s);
         break;
-      case READCLIENTPUBLICKEY:
+      case INITCLIENTCONNECTION:
+        get_ints(r, s, 3);
+        get_string(str, s);
+        break;
       case INITSECURESOCKET:
       case RESPSECURESOCKET:
         throw runtime_error("VM-controlled encryption not supported any more");
@@ -459,6 +461,7 @@ void BaseInstruction::parse_operands(istream& s, int pos, int file_pos)
       case CONVCBIT2S:
       case NOTS:
       case NOTCB:
+      case MOVSB:
         n = get_int(s);
         get_ints(r, s, 2);
         break;
@@ -566,7 +569,7 @@ int BaseInstruction::get_reg_type() const
     case MOVINT:
     case READSOCKETINT:
     case WRITESOCKETINT:
-    case READCLIENTPUBLICKEY:
+    case INITCLIENTCONNECTION:
     case INITSECURESOCKET:
     case RESPSECURESOCKET:
     case LDARG:
@@ -584,6 +587,7 @@ int BaseInstruction::get_reg_type() const
     case INTOUTPUT:
     case ACCEPTCLIENTCONNECTION:
     case GENSECSHUFFLE:
+    case CMDLINEARG:
       return INT;
     case PREP:
     case GPREP:
@@ -723,6 +727,15 @@ unsigned BaseInstruction::get_max_reg(int reg_type) const
       return res;
   }
   case MATMULS:
+  {
+      int res = 0;
+      for (auto it = start.begin(); it < start.end(); it += 6)
+      {
+          int tmp = *it + *(it + 3) * *(it + 5);
+          res = max(res, tmp);
+      }
+      return res;
+  }
   case MATMULSM:
       return r[0] + start[0] * start[2];
   case CONV2DS:
@@ -817,7 +830,7 @@ unsigned BaseInstruction::get_max_reg(int reg_type) const
       while (it < start.end())
       {
           int n = *it - n_prefix;
-          int size = DIV_CEIL(*(it + 1), 64);
+          size = max((long long) size, DIV_CEIL(*(it + 1), 64));
           it += n_prefix;
           assert(it + n <= start.end());
           for (int i = 0; i < n; i++)
@@ -922,15 +935,9 @@ inline void Instruction::execute(Processor<sint, sgf2n>& Proc) const
         Proc.write_Cp(r[0],Proc.machine.Mp.read_C(n));
         n++;
         break;
-      case LDMCI:
-        Proc.write_Cp(r[0], Proc.machine.Mp.read_C(Proc.read_Ci(r[1])));
-        break;
       case STMC:
         Proc.machine.Mp.write_C(n,Proc.read_Cp(r[0]));
         n++;
-        break;
-      case STMCI:
-        Proc.machine.Mp.write_C(Proc.read_Ci(r[1]), Proc.read_Cp(r[0]));
         break;
       case MOVC:
         Proc.write_Cp(r[0],Proc.read_Cp(r[1]));
@@ -1089,10 +1096,10 @@ inline void Instruction::execute(Processor<sint, sgf2n>& Proc) const
         Proc.Proc2.POpen(*this);
         return;
       case MULS:
-        Proc.Procp.muls(start, size);
+        Proc.Procp.muls(start);
         return;
       case GMULS:
-        Proc.Proc2.protocol.muls(start, Proc.Proc2, Proc.MC2, size);
+        Proc.Proc2.muls(start);
         return;
       case MULRS:
         Proc.Procp.mulrs(start);
@@ -1107,7 +1114,7 @@ inline void Instruction::execute(Processor<sint, sgf2n>& Proc) const
         Proc.Proc2.dotprods(start, size);
         return;
       case MATMULS:
-        Proc.Procp.matmuls(Proc.Procp.get_S(), *this, r[1], r[2]);
+        Proc.Procp.matmuls(Proc.Procp.get_S(), *this);
         return;
       case MATMULSM:
         Proc.Procp.protocol.matmulsm(Proc.Procp, Proc.machine.Mp.MS, *this,
@@ -1126,13 +1133,15 @@ inline void Instruction::execute(Processor<sint, sgf2n>& Proc) const
         Proc.Proc2.secure_shuffle(*this);
         return;
       case GENSECSHUFFLE:
-        Proc.write_Ci(r[0], Proc.Procp.generate_secure_shuffle(*this));
+        Proc.write_Ci(r[0], Proc.Procp.generate_secure_shuffle(*this,
+            Proc.machine.shuffle_store));
         return;
       case APPLYSHUFFLE:
-        Proc.Procp.apply_shuffle(*this, Proc.read_Ci(start.at(3)));
+        Proc.Procp.apply_shuffle(*this, Proc.read_Ci(start.at(3)),
+            Proc.machine.shuffle_store);
         return;
       case DELSHUFFLE:
-        Proc.Procp.delete_shuffle(Proc.read_Ci(r[0]));
+        Proc.machine.shuffle_store.del(Proc.read_Ci(r[0]));
         return;
       case INVPERM:
         Proc.Procp.inverse_permutation(*this);
@@ -1169,6 +1178,12 @@ inline void Instruction::execute(Processor<sint, sgf2n>& Proc) const
         break;
       case PRINTREGPLAIN:
         print(Proc.out, &Proc.read_Cp(r[0]));
+        return;
+      case PRINTREGPLAINS:
+        Proc.out << Proc.read_Sp(r[0]);
+        return;
+      case GPRINTREGPLAINS:
+        Proc.out << Proc.read_S2(r[0]);
         return;
       case CONDPRINTPLAIN:
         if (not Proc.read_Cp(r[0]).is_zero())
@@ -1237,6 +1252,19 @@ inline void Instruction::execute(Processor<sint, sgf2n>& Proc) const
       case PLAYERID:
         Proc.write_Ci(r[0], Proc.P.my_num());
         break;
+      case CMDLINEARG:
+        {
+          size_t idx = Proc.read_Ci(r[1]);
+          auto& args = OnlineOptions::singleton.args;
+          if (idx < args.size())
+              Proc.write_Ci(r[0], args[idx]);
+          else
+            {
+              cerr << idx << "-th command-line argument not given" << endl;
+              exit(1);
+            }
+          break;
+        }
       // ***
       // TODO: read/write shared GF(2^n) data instructions
       // ***
@@ -1255,11 +1283,17 @@ inline void Instruction::execute(Processor<sint, sgf2n>& Proc) const
           octetStream os;
           os.store(int(sint::open_type::type_char()));
           sint::specification(os);
+          sint::clear::specification(os);
           os.Send(Proc.external_clients.get_socket(client_handle));
         }
         Proc.write_Ci(r[0], client_handle);
         break;
       }
+      case INITCLIENTCONNECTION:
+        Proc.write_Ci(r[0],
+            Proc.external_clients.init_client_connection(str,
+                Proc.read_Ci(r[1]), Proc.read_Ci(r[2])));
+        break;
       case CLOSECLIENTCONNECTION:
         Proc.external_clients.close_connection(Proc.read_Ci(r[0]));
         break;

@@ -834,7 +834,7 @@ class Dense(DenseBase):
             prod = MultiArray([N, self.d, self.d_out], sfix)
         else:
             prod = self.f_input
-        max_size = program.Program.prog.budget // self.d_out
+        max_size = get_program().budget // self.d_out
         @multithread(self.n_threads, N, max_size)
         def _(base, size):
             X_sub = sfix.Matrix(self.N, self.d_in, address=self.X.address)
@@ -1038,16 +1038,16 @@ class ElementWiseLayer(NoVariableLayer):
         self.inputs = inputs
 
     def f_part(self, base, size):
-        return self.f(self.X.get_part_vector(base, size))
+        return self.f(self.X.get_vector(base, size))
 
     def f_prime_part(self, base, size):
         return self.f_prime(self.Y.get_vector(base, size))
 
     def _forward(self, batch=[0]):
         n_per_item = reduce(operator.mul, self.X.sizes[1:])
-        @multithread(self.n_threads, len(batch), max(1, 1000 // n_per_item))
+        @multithread(self.n_threads, len(batch) * n_per_item)
         def _(base, size):
-            self.Y.assign_part_vector(self.f_part(base, size), base)
+            self.Y.assign_vector(self.f_part(base, size), base)
 
         if self.debug_output:
             name = self
@@ -1095,9 +1095,9 @@ class Relu(ElementWiseLayer):
         self.comparisons = MultiArray(shape, sint)
 
     def f_part(self, base, size):
-        x = self.X.get_part_vector(base, size)
+        x = self.X.get_vector(base, size)
         c = x > 0
-        self.comparisons.assign_part_vector(c, base)
+        self.comparisons.assign_vector(c, base)
         return c.if_else(x, 0)
 
     def f_prime_part(self, base, size):
@@ -1355,6 +1355,7 @@ class BatchNorm(Layer):
         else:
             print('Precise square root inverse in batch normalization')
             self.InvertSqrt = lambda x: 1 / mpc_math.sqrt(x)
+        self.is_trained = False
 
     def __repr__(self):
         return '%s(%s, approx=%s)' % \
@@ -1372,11 +1373,12 @@ class BatchNorm(Layer):
         @for_range_opt_multithread(self.n_threads,
                                    [len(batch), self.X.sizes[1]])
         def _(i, j):
-            tmp = self.weights[:] * (self.X[i][j][:] - self.mu[:]) * factor[:]
+            tmp = self.weights[:] * (self.X[i][j][:] - mu[:]) * factor[:]
             self.Y[i][j][:] = self.bias[:] + tmp
 
     def forward(self, batch, training=False):
-        if training:
+        if training or not self.is_trained:
+            self.is_trained = True
             d = self.X.sizes[1]
             d_in = self.X.sizes[2]
             s = sfix.Array(d_in)
@@ -1686,12 +1688,9 @@ class Conv2d(ConvBase):
         padding_h, padding_w = self.padding
 
         if self.use_conv2ds:
-            n_parts = max(1, round((self.n_threads or 1) / n_channels_out))
-            while len(batch) % n_parts != 0:
-                n_parts -= 1
-            print('Convolution in %d parts' % n_parts)
-            part_size = len(batch) // n_parts
-            @for_range_multithread(self.n_threads, 1, [n_parts, n_channels_out])
+            part_size = 1
+            @for_range_opt_multithread(self.n_threads,
+                                       [len(batch), n_channels_out])
             def _(i, j):
                 inputs = self.X.get_slice_vector(
                     batch.get_part(i * part_size, part_size))
@@ -2507,6 +2506,10 @@ class Optimizer:
                     loss = self.layers[-1].average_loss(N)
                     res = (loss < stop_on_loss) * (loss >= -1)
                     self.stopped_on_loss.write(1 - res)
+                    print_ln_if(
+                        self.stopped_on_loss,
+                        'aborting epoch because loss is outside range: %s',
+                        loss)
                     return res
             if self.print_losses:
                 print_ln()
@@ -2545,7 +2548,7 @@ class Optimizer:
         loss = MemValue(sfix(0))
         def f(start, batch_size, batch):
             batch.assign_vector(regint.inc(batch_size, start))
-            self.forward(batch=batch)
+            self.forward(batch=batch, run_last=False)
             part_truth = truth.get_part(start, batch_size)
             n_correct.iadd(
                 self.layers[-1].reveal_correctness(batch_size, part_truth))
@@ -2644,7 +2647,7 @@ class Optimizer:
                 batch = Array.create_from(regint.inc(batch_size))
                 self.forward(batch=batch, training=True)
                 self.backward(batch=batch)
-                self.update(0, batch=batch)
+                self.update(0, batch=batch, i_batch=0)
             return
         @for_range(n_runs)
         def _(i):
@@ -2697,6 +2700,8 @@ class Optimizer:
             if depreciation:
                 self.gamma.imul(depreciation)
                 print_ln('reducing learning rate to %s', self.gamma)
+            print_ln_if(self.stopped_on_low_loss,
+                        'aborting run because of low loss')
             return 1 - self.stopped_on_low_loss
         if self.missing_newline:
             print_ln('')
@@ -2962,11 +2967,11 @@ def apply_padding(input_shape, kernel_size, strides, padding):
     if isinstance(padding, int):
         padding = [padding, padding]
     if isinstance(padding, (tuple, list)):
-        input_shape = [x + sum(padding) for x in input_shape]
+        input_shape = [input_shape[i] + 2*padding[i] for i in range(len(input_shape))]
         padding = 'valid'
     if padding.lower() == 'valid':
-        res = (input_shape[0] - kernel_size[0] + 1) // strides[0], \
-            (input_shape[1] - kernel_size[1] + 1) // strides[1],
+        res = (input_shape[0] - kernel_size[0]) // strides[0] + 1, \
+            (input_shape[1] - kernel_size[1]) // strides[1] + 1,
         assert min(res) > 0, (input_shape, kernel_size, strides, padding)
         return res
     elif padding.lower() == 'same':
@@ -3261,6 +3266,12 @@ def layers_from_torch(sequence, data_input_shape, batch_size, input_via=None,
             pass
         elif name == 'BatchNorm2d':
             layers.append(BatchNorm(layers[-1].Y.sizes))
+            if input_via is not None:
+                layers[-1].epsilon = item.eps
+                layers[-1].weights = sfix.input_tensor_via(input_via,
+                                                           item.weight.detach())
+                layers[-1].bias = sfix.input_tensor_via(input_via,
+                                                        item.bias.detach())
         elif name == 'Dropout':
             layers.append(Dropout(input_shape[0], mul(layers[-1].Y.sizes[1:]),
                                   alpha=item.p))
@@ -3283,6 +3294,7 @@ class OneLayerSGD:
         self.n_epochs = n_epochs
         self.batch_size = batch_size
         self.program = program
+        Layer.back_batch_size = max(Layer.back_batch_size, batch_size)
 
     def fit(self, X_train, y_train):
         """ Train classifier.

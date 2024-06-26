@@ -11,13 +11,15 @@
 #include "Tools/int.h"
 #include "Tools/intrinsics.h"
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 #include <xmmintrin.h>
 #endif
 
 union square64
 {
-    //__m256i quadrows[16];
+#ifndef __EMSCRIPTEN__
+    __m256i quadrows[16];
+#endif
     __m128i doublerows[32];
     int64_t rows[64];
     int32_t halfrows[128][2];
@@ -29,11 +31,13 @@ union square64
     }
 
     bool get_bit(int x, int y)
-    { return (bytes[x][y/8] >> (y % 8)) & 1; }
+    {
+        return (bytes[x][y / 8] >> (y % 8)) & 1;
+    }
 
     void transpose(int n_rows, int n_cols);
 
-    bool operator!=(const square64& other);
+    bool operator!=(const square64 &other);
 
     void print();
 };

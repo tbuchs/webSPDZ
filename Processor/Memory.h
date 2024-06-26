@@ -14,34 +14,90 @@ template<class T> istream& operator>>(istream& s,Memory<T>& M);
 
 #include "Processor/Program.h"
 #include "Tools/CheckVector.h"
+#include "Tools/DiskVector.h"
 
 template<class T>
-class MemoryPart : public CheckVector<T>
+class MemoryPart
 {
 public:
-  template<class U>
-  static void check_index(const vector<U>& M, size_t i)
+  virtual ~MemoryPart() {}
+
+  virtual size_t size() const = 0;
+  virtual void resize(size_t) = 0;
+
+  virtual T* data() = 0;
+  virtual const T* data() const = 0;
+
+  void check_index(size_t i) const
     {
-      (void) M, (void) i;
+      (void) i;
 #ifndef NO_CHECK_INDEX
-      if (i >= M.size())
-        throw overflow(U::type_string() + " memory", i, M.size());
+      if (i >= this->size())
+        throw overflow(T::type_string() + " memory", i, this->size());
 #endif
+    }
+
+  virtual T& operator[](size_t i) = 0;
+  virtual const T& operator[](size_t i) const = 0;
+
+  virtual T& at(size_t i) = 0;
+  virtual const T& at(size_t i) const = 0;
+
+  template<class U>
+  void indirect_read(const Instruction& inst, vector<T>& regs,
+      const U& indices);
+  template<class U>
+  void indirect_write(const Instruction& inst, vector<T>& regs,
+      const U& indices);
+
+  void minimum_size(size_t size);
+};
+
+template<class T, template<class> class V>
+class MemoryPartImpl : public MemoryPart<T>, public V<T>
+{
+public:
+  size_t size() const
+    {
+      return V<T>::size();
+    }
+
+  void resize(size_t size)
+    {
+      V<T>::resize(size);
+    }
+
+  T* data()
+    {
+      return V<T>::data();
+    }
+
+  const T* data() const
+    {
+      return V<T>::data();
     }
 
   T& operator[](size_t i)
     {
-      check_index(*this, i);
-      return CheckVector<T>::operator[](i);
+      this->check_index(i);
+      return V<T>::operator[](i);
     }
 
   const T& operator[](size_t i) const
     {
-      check_index(*this, i);
-      return CheckVector<T>::operator[](i);
+      this->check_index(i);
+      return V<T>::operator[](i);
     }
 
-  void minimum_size(size_t size);
+  T& at(size_t i)
+    {
+      return V<T>::at(i);
+    }
+
+  const T& at(size_t i) const
+    {
+      return V<T>::at(i);
+    }
 };
 
 template<class T> 
@@ -49,8 +105,11 @@ class Memory
 {
   public:
 
-  MemoryPart<T> MS;
-  MemoryPart<typename T::clear> MC;
+  MemoryPart<T>& MS;
+  MemoryPartImpl<typename T::clear, CheckVector> MC;
+
+  Memory();
+  ~Memory();
 
   void resize_s(size_t sz)
     { MS.resize(sz); }

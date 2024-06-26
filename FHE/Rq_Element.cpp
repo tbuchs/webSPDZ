@@ -23,7 +23,7 @@ Rq_Element::Rq_Element(const vector<FFT_Data>& prd, RepType r0, RepType r1)
 
 void Rq_Element::set_data(const vector<FFT_Data>& prd)
 {
-    a.resize(prd.size());
+    a.resize(prd.size(), {});
     for(size_t i = 0; i < a.size(); i++)
         a[i].set_data(prd[i]);
     lev=n_mults();
@@ -50,7 +50,7 @@ void Rq_Element::assign_one()
 void Rq_Element::partial_assign(const Rq_Element& other)
 {
 	lev=other.lev;
-	a.resize(other.a.size());
+	a.resize(other.a.size(), {});
 }
 
 void Rq_Element::negate()
@@ -110,13 +110,6 @@ void mul(Rq_Element& ans,const Rq_Element& a,const bigint& b)
 	  to_modp(bp,b,a.a[i].get_prD());
 	  mul(ans.a[i],a.a[i],bp);
   }
-}
-
-void Rq_Element::add(octetStream& os, int)
-{
-  Rq_Element tmp(*this);
-  tmp.unpack(os);
-  *this += tmp;
 }
 
 void Rq_Element::randomize(PRNG& G,int l)

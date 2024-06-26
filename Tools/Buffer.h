@@ -184,11 +184,12 @@ inline void Buffer<T, U>::fill_buffer()
     }
   else
     {
-      char read_buffer[BUFFER_SIZE * T::size()];
+      char* read_buffer = new char[BUFFER_SIZE * T::size()];
       read(read_buffer);
       //memset(buffer, 0, sizeof(buffer));
       for (int i = 0; i < BUFFER_SIZE; i++)
         buffer[i].assign(&read_buffer[i*T::size()]);
+      delete[] read_buffer;
     }
 }
 

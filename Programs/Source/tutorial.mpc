@@ -1,4 +1,5 @@
 # sint: secret integers
+# see also https://mp-spdz.readthedocs.io/en/latest/Compiler.html#Compiler.types.sint
 
 # you can assign public numbers to sint
 
@@ -14,6 +15,7 @@ def test(actual, expected):
 
 # private inputs are read from Player-Data/Input-P<i>-0
 # or from standard input if using command-line option -I
+# see https://mp-spdz.readthedocs.io/en/latest/io.html for more options
 
 for i in 0, 1:
     print_ln('got %s from player %s', sint.get_input_from(i).reveal(), i)
@@ -62,6 +64,7 @@ test(a[99], 99 * 98)
 # test(a, 99)
 
 # sfix: fixed-point numbers
+# see also https://mp-spdz.readthedocs.io/en/latest/Compiler.html#Compiler.types.sfix
 
 # set the precision after the dot and in total
 

@@ -51,11 +51,6 @@ public:
         return other * *this;
     }
 
-    void add(octetStream& os, int = -1)
-    {
-        *this += os.get<Bit>();
-    }
-
     void pack(octetStream& os, int = -1) const
     {
         super::pack(os, 1);

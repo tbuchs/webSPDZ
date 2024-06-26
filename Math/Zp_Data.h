@@ -136,7 +136,7 @@ inline void Zp_Data::Add<0>(mp_limb_t* ans,const mp_limb_t* x,const mp_limb_t* y
 template<>
 inline void Zp_Data::Add<1>(mp_limb_t* ans,const mp_limb_t* x,const mp_limb_t* y) const
 {
-#if defined(__clang__) || !defined(__x86_64__)
+#if defined(__clang__) || !defined(__x86_64__) || (__GNUC__ == 10)
   Add<0>(ans, x, y);
 #else
   *ans = *x + *y;

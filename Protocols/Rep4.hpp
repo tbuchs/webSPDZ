@@ -4,6 +4,7 @@
  */
 
 #include "Rep4.h"
+#include "GC/square64.h"
 #include "Processor/TruncPrTuple.h"
 
 template<class T>

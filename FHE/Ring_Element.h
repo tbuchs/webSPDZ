@@ -27,6 +27,8 @@ class RingReadIterator;
 
 class Ring_Element
 {
+  friend class Rq_Element;
+
   RepType rep;
 
   /* FFTD is defined as a pointer so each different Ring_Element
@@ -40,6 +42,9 @@ class Ring_Element
    */
 
   vector<modp> element; 
+
+  /* Careful calling this one, as FFTD will not be defined */
+  Ring_Element(RepType r=polynomial) : FFTD(0) { rep=r; }
 
   public:
 
@@ -62,9 +67,6 @@ class Ring_Element
 
   void assign_zero();
   void assign_one();
-
-  /* Careful calling this one, as FFTD will not be defined */
-  Ring_Element(RepType r=polynomial) : FFTD(0) { rep=r; }
 
   Ring_Element(const FFT_Data& prd,RepType r=polynomial);
 

@@ -72,6 +72,7 @@ enum
     USE_EDABIT = 0xE5,
     USE_MATMUL = 0x1F,
     ACTIVE = 0xE9,
+    CMDLINEARG = 0xEB,
     // Addition
     ADDC = 0x20,
     ADDS = 0x21,
@@ -153,7 +154,7 @@ enum
     LISTEN = 0x6c,
     ACCEPTCLIENTCONNECTION = 0x6d,
     CLOSECLIENTCONNECTION = 0x6e,
-    READCLIENTPUBLICKEY = 0x6f,
+    INITCLIENTCONNECTION = 0x6f,
     // Bitwise logic
     ANDC = 0x70,
     XORC = 0x71,
@@ -197,6 +198,7 @@ enum
     PRINTREG = 0XB1,
     RAND = 0xB2,
     PRINTREGPLAIN = 0xB3,
+    PRINTREGPLAINS = 0xEA,
     PRINTCHR = 0xB4,
     PRINTSTR = 0xB5,
     PUBINPUT = 0xB6,
@@ -301,6 +303,7 @@ enum
     GPRINTMEM = 0x1B0,
     GPRINTREG = 0X1B1,
     GPRINTREGPLAIN = 0x1B3,
+    GPRINTREGPLAINS = 0x1EA,
     GRAWOUTPUT = 0x1B7,
     GSTARTPRIVATEOUTPUT = 0x1B8,
     GSTOPPRIVATEOUTPUT = 0x1B9,
@@ -345,6 +348,7 @@ protected:
   int r[4];           // Fixed parameter registers
   size_t n;             // Possible immediate value
   vector<int>  start; // Values for a start/stop open
+  string str;
 
 public:
   virtual ~BaseInstruction() {};
@@ -387,7 +391,7 @@ public:
   void execute(Processor<sint, sgf2n>& Proc) const;
 
   template<class cgf2n>
-  void execute_clear_gf2n(vector<cgf2n>& registers, vector<cgf2n>& memory,
+  void execute_clear_gf2n(vector<cgf2n>& registers, MemoryPart<cgf2n>& memory,
       ArithmeticProcessor& Proc) const;
 
   template<class cgf2n>

@@ -15,6 +15,10 @@ memory usage for some malicious protocols with ``-B 5``.
 Furthermore, every computation thread requires
 separate resources, so consider reducing the number of threads with
 :py:func:`~Compiler.library.for_range_multithreads` and similar.
+Lastly, you can use ``--disk-memory <path>`` to use disk space instead
+of RAM for large programs.
+Use ``Scripts/memory-usage.py <program-with-args>`` to get an estimate
+of the memory usage of a specific program.
 
 
 List indices must be integers or slices
@@ -83,6 +87,12 @@ If the condition is secret, for example, :py:obj:`x` is an
 branching would reveal the secret. For the same reason,
 :py:func:`~Compiler.library.print_ln_if` doesn't work on secret values.
 
+Use ``bit_and`` etc. for more elaborate conditions::
+
+  @if_(a.bit_and(b.bit_or(c)))
+  def _():
+    ...
+
 
 Incorrect results when using :py:class:`~Compiler.types.sfix`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,7 +107,7 @@ to change the precision.
 Variable results when using :py:class:`~Compiler.types.sfix`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is caused the usage of probablistic rounding, which is used to
+This is caused the usage of probabilistic rounding, which is used to
 restore the representation after a multiplication. See `Catrina and Saxena
 <https://www.ifca.ai/pub/fc10/31_47.pdf>`_ for details. You can switch
 to deterministic rounding by calling ``sfix.round_nearest = True``.
@@ -114,6 +124,16 @@ guarantee that there will not. If you encounter such errors, you
 can fix this either with ``-M`` when compiling or enable memory
 protection (:py:func:`~Compiler.program.Program.protect_memory`)
 around specific memory accesses.
+
+
+High number of rounds or slow WAN execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can increase the optimization budget using ``--budget`` during
+compilation. The budget controls the trade-off between compilation
+speed/memory usage and communication rounds during execution. The
+default is 1000, but 100,000 might give better results while still
+keeping compilation manageable.
 
 
 Odd timings

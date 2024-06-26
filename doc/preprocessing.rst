@@ -29,6 +29,8 @@ using ``-b``, others mandate a batch size, which can be as large as a
 million.
 
 
+.. _prep-files:
+
 Separate preprocessing
 ======================
 
@@ -102,11 +104,22 @@ Modulo a prime
   with :math:`R` being the smallest power of :math:`2^{64}` larger than
   the prime. For example, :math:`R = 2^{128}` for a 128-bit prime.
   Furthermore, the values are stored in the smallest number of 8-byte
-  blocks necessary, all in little-endian order.
+  blocks necessary, all in little-endian order. As an example,
+  consider the default 128-bit prime
+  :math:`p = 170141183460469231731687303715885907969`. The Montgomery
+  representation of :math:`x` is :math:`xR \bmod p`. For :math:`x =
+  1`, this is 170141183460469231731687303715882303487 or
+  0x7fffffffffffffffffffffffffe47fff in hexadecimal. Using
+  to little-endian, ``hexdump -C`` would output the following::
+
+    ff 7f e4 ff ff ff ff ff ff ff ff ff ff ff ff 7f
 
 Modulo a power of two:
   Values are stored in the smallest number of 8-byte blocks necessary,
-  all in little-endian order.
+  all in little-endian order, so 1 with a modulus of :math:`2^{64}`
+  would result in the following ``hexdump -C`` output::
+
+    01 00 00 00 00 00 00 00
 
 :math:`GF(2^n)`
   Values are stored in blocks according to the storage size above,

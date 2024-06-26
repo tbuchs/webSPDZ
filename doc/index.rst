@@ -8,7 +8,7 @@ more information on multi-party computation.
 
 If you're new to MP-SPDZ, consider the following:
 
-1. `Quickstart tutorial <readme.html#tl-dr--binary-distribution-on-linux-or-source-distribution-on-macos->`_
+1. `Quickstart tutorial <readme.html#tl-dr-binary-distribution-on-linux-or-source-distribution-on-macos>`_
 2. :ref:`Machine learning quickstart <ml-quickstart>`
 3. `Implemented protocols <readme.html#protocols>`_
 4. :ref:`troubleshooting`
@@ -21,6 +21,8 @@ If you're new to MP-SPDZ, consider the following:
    readme
    compilation
    Compiler
+   utils
+   journey
    instructions
    low-level
    ml-quickstart
@@ -28,11 +30,13 @@ If you're new to MP-SPDZ, consider the following:
    networking
    io
    client-interface
+   multinode
    non-linear
    preprocessing
    lowest-level
    add-protocol
    homomorphic-encryption
+   ecdsa
    troubleshooting
 
 

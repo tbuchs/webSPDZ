@@ -51,7 +51,7 @@ except:
     pass
 
 layers = [
-    ml.FixConv2d([n_examples, 28, 28, 1], (16, 5, 5, 1), (16,), [n_examples, 24, 24, 16],
+    ml.FixConv2d([n_examples, 28, 28, 1], (16, 5, 5, 1), (16,), [N, 24, 24, 16],
                  (1, 1), 'VALID'),
     ml.MaxPool([N, 24, 24, 16]),
     ml.Relu([N, 12, 12, 16]),

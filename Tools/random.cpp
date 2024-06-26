@@ -244,7 +244,7 @@ void PRNG::get(bigint& res, int n_bits, bool positive)
   assert(n_bits > 0);
   int n_bytes = (n_bits + 7) / 8;
   int n_words = DIV_CEIL(n_bytes, sizeof(word));
-  word words[n_words];
+  auto words = new word[n_words];
   octet* bytes = (octet*) words;
   words[n_words - 1] = 0;
   get_octets(bytes, n_bytes);
@@ -255,4 +255,5 @@ void PRNG::get(bigint& res, int n_bits, bool positive)
   mpz_import(res.get_mpz_t(), n_words, -1, sizeof(word), -1, 0, bytes);
   if (not positive and (get_bit()))
     mpz_neg(res.get_mpz_t(), res.get_mpz_t());
+  delete[] words;
 }

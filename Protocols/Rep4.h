@@ -66,6 +66,8 @@ class Rep4 : public ProtocolBase<T>
     T finalize_mul(int n_bits, false_type);
 
 public:
+    static const bool uses_triples = false;
+
     prngs_type rep_prngs;
     Player& P;
 

@@ -421,7 +421,18 @@ typename Sub_Data_Files<T>::part_type& Sub_Data_Files<T>::get_part()
 template<class sint, class sgf2n>
 TimerWithComm Data_Files<sint, sgf2n>::total_time()
 {
-  return DataFp.prep_timer + DataF2.prep_timer + DataFb.prep_timer;
+  auto res = DataFp.prep_timer + DataF2.prep_timer + DataFb.prep_timer;
+  #ifdef __EMSCRIPTEN__
+    return res;
+  #endif
+  try
+  {
+    res += DataFb.get_part().prep_timer;
+  }
+  catch (...)
+  {
+  }
+  return res;
 }
 
 #endif

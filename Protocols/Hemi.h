@@ -33,7 +33,7 @@ public:
     ShareMatrix<T> matrix_multiply(const ShareMatrix<T>& A, const ShareMatrix<T>& B,
             SubProcessor<T>& processor);
 
-    void matmulsm(SubProcessor<T>& processor, CheckVector<T>& source,
+    void matmulsm(SubProcessor<T>& processor, MemoryPart<T>& source,
             const Instruction& instruction, int a, int b);
     void conv2ds(SubProcessor<T>& processor, const Instruction& instruction);
 };

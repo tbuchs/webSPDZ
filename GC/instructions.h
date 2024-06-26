@@ -65,7 +65,7 @@
     X(STMSBI, PROC.mem_op(SIZE, MMS, PROC.S, Ci[REG1], R0)) \
     X(LDMCBI, PROC.mem_op(SIZE, PROC.C, MMC, R0, Ci[REG1])) \
     X(STMCBI, PROC.mem_op(SIZE, MMC, PROC.C, Ci[REG1], R0)) \
-    X(MOVSB, S0 = PS1) \
+    X(MOVSB, PROC.movsb(INST)) \
     X(TRANS, T::trans(PROC, IMM, EXTRA)) \
     X(BITB, PROC.random_bit(S0)) \
     X(REVEAL, T::reveal_inst(PROC, EXTRA)) \
@@ -109,6 +109,7 @@
     X(SUBINT, I0 = PI1 - PI2) \
     X(MULINT, I0 = PI1 * PI2) \
     X(DIVINT, I0 = PI1 / PI2) \
+    X(INCINT, PROC.incint(instruction)) \
     X(JMP, PROC.PC += IMM) \
     X(JMPNZ, if (I0 != 0) PROC.PC += IMM) \
     X(JMPEQZ, if (I0 == 0) PROC.PC += IMM) \
@@ -123,7 +124,7 @@
     X(LDMINTI, I0 = MII) \
     X(STMINTI, MII = I0) \
     X(PUSHINT, PROC.pushi(I0.get())) \
-    X(POPINT, long x; PROC.popi(x); I0 = x) \
+    X(POPINT, PROC.popi(I0)) \
     X(MOVINT, I0 = PI1) \
     X(BITDECINT, PROC.bitdecint(EXTRA, I0)) \
     X(LDARG, I0 = PROC.get_arg()) \
