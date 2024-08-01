@@ -34,9 +34,12 @@ void Zp_Data::init(const bigint &p, bool mont)
   t = mpz_size(pr.get_mpz_t());
   if (t > MAX_MOD_SZ)
     throw max_mod_sz_too_small(t);
-#ifdef __EMSCRIPTEN__
-  montgomery = false;
-#endif
+
+  if(sizeof(unsigned long) != sizeof(mp_limb_t)){
+    cerr << "The underlying types of GMP mean we cannot use our Montgomery code" << endl;
+    montgomery = false;
+  }
+
   if (montgomery)
   {
     inline_mpn_zero(R, MAX_MOD_SZ);

@@ -1,4 +1,3 @@
-
 #include "Player.h"
 #include "ssl_sockets.h"
 #include "Tools/Exceptions.h"
@@ -281,8 +280,6 @@ void WebPlayer::send_message(int receiver, const octetStream *msg)
   {
     std::shared_ptr<rtc::DataChannel> data_channel = data_channels.at(receiver_key);
     void (*func_ptr)(void *) = callback_send_method;
-    // #define EM_FUNC_SIG_VPPI  (EM_FUNC_SIG_RETURN_VALUE_V | EM_FUNC_SIG_WITH_N_PARAMETERS(3) | EM_FUNC_SIG_SET_PARAM(0, EM_FUNC_SIG_PARAM_P) | EM_FUNC_SIG_SET_PARAM(1, EM_FUNC_SIG_PARAM_P) | EM_FUNC_SIG_SET_PARAM(2, EM_FUNC_SIG_PARAM_I))
-    // emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_VPPI, ptr, dc, data, size);
     em_proxying_queue *q = emscripten_proxy_get_system_queue();
     args *data_args = new args();
     data_args->dc_ = data_channel.get();

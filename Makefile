@@ -141,9 +141,9 @@ $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER
 	$(AR) -csr $@ $^
 
 ifeq ($(WEB), 1)
-CFLAGS += -fPIC -fsanitize=undefined -Wbad-function-cast -Wcast-function-type -sMEMORY64=1#-fsanitize-minimal-runtime
+CFLAGS += -fPIC #-fsanitize=undefined -Wbad-function-cast -Wcast-function-type -fsanitize-minimal-runtime
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sWASMFS -sASYNCIFY -sMEMORY64=1 -sWASM_BIGINT -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG
+LDFLAGS += -sWASMFS -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1
 else
 CFLAGS += -fPIC
 LDLIBS += -Wl,-rpath -Wl,$(CURDIR)

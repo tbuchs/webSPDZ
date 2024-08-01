@@ -188,6 +188,8 @@ void BaseMachine::print_timers()
     cerr << "ex";
   cerr << "cluding preprocessing (offline phase)." << endl;
   cerr << "Time = " << timer[0].elapsed() << " seconds " << endl;
+  cout << "Finished" << endl;
+  cout << "Time = " << timer[0].elapsed() << " seconds " << endl;
   timer.erase(0);
   for (auto it = timer.begin(); it != timer.end(); it++)
     cerr << "Time" << it->first << " = " << it->second.elapsed() << " seconds ("
