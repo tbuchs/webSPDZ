@@ -85,6 +85,13 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
 #ifdef DEBUG_FILES
   cerr << "Opening file " << fname << endl;
 #endif
+
+#ifdef EMSCRIPTEN
+  int result = emscripten_wget(fname.c_str(), fname.c_str());
+  if(result != 0)
+    throw runtime_error("Failed to download file");
+#endif
+  
   ifstream inpf;
   inpf.open(fname);
   if (inpf.fail()) { throw file_error("Missing '" + fname + "'. Did you compile '" + progname + "'?"); }

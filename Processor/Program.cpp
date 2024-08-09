@@ -29,6 +29,12 @@ void Program::compute_constants()
 
 void Program::parse(string filename)
 {
+#ifdef EMSCRIPTEN
+  int result = emscripten_wget(filename.c_str(), filename.c_str());
+  if(result != 0)
+    throw runtime_error("Failed to download file");
+#endif
+  
   ifstream pinp(filename);
   if (pinp.fail())
     throw file_error(filename);

@@ -143,7 +143,7 @@ $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER
 ifeq ($(WEB), 1)
 CFLAGS += -fPIC #-fsanitize=undefined -Wbad-function-cast -Wcast-function-type -fsanitize-minimal-runtime
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sWASMFS -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1
+LDFLAGS += -sWASMFS -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB -sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1
 else
 CFLAGS += -fPIC
 LDLIBS += -Wl,-rpath -Wl,$(CURDIR)
@@ -222,7 +222,7 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 
 ifeq ($(WEB), 1)
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Programs --embed-file Player-Data
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Player-Data
 else
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB)
