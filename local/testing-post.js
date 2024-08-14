@@ -1,5 +1,5 @@
 // inserted testing-post.js to allow testing without input variables, but reading from the URL
-arguments_ = ['-N', '3', '--ip-file-name', 'ip-file', '0', 'tutorial'];
+arguments_ = [];
 if(typeof window !== 'undefined')
 {
 	let searchParams = new URLSearchParams(window.location.search);

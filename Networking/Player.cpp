@@ -21,10 +21,11 @@
 using namespace std;
 
 // WebPlayer, no socket communication
-void Names::init(int player, int num_players)
+void Names::init(int player, int num_players, vector<string>* signaling_server_config)
 {
   player_no = player;
   nplayers = num_players;
+  signaling_server_url = signaling_server_config->at(0) + ":" + signaling_server_config->at(1); // ip:port
 }
 
 void Names::init(int player, int pnb, int my_port, const char *servername,
@@ -236,7 +237,7 @@ WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connecte
 
   EmscriptenWebSocketCreateAttributes attr;
   emscripten_websocket_init_create_attributes(&attr);
-  attr.url = "ws://localhost:8080"; //Todo change to not static
+  attr.url = ("ws://" + Nms.signaling_server_url).c_str();
   attr.createOnMainThread = true;
   websocket_conn = emscripten_websocket_new(&attr);
   if (websocket_conn <= 0)

@@ -117,9 +117,18 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
             0, // Required?
             0, // Number of args expected.
             0, // Delimiter if expecting multiple args.
-            "To Run the program in the web using WebRTC communication", // Help description.
+            "To run completely in the browser using WebRTC.", // Help description.
             "-w", // Flag token.
             "--web" // Flag token.
+    );
+    opt.add(
+            "localhost:8080", // Default.
+            0, // Required?
+            2, // Number of args expected.
+            ':', // Delimiter if expecting multiple args.
+            "For WebRTC connection establishment a central Signaling Server is needed (default: localhost:8080).", // Help description.
+            "-ss", // Flag token.
+            "--signaling-server" // Flag token.
     );
 
     if (security)
