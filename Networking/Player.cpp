@@ -11,7 +11,7 @@
 #include <utility>
 #include <assert.h>
 
-#ifdef __EMSCRIPTEN__
+#ifdef EMSCRIPTEN
 #include <emscripten/websocket.h>
 #include <emscripten/threading.h>
 #include <emscripten/proxying.h>
@@ -221,7 +221,7 @@ Player::Player(const Names &Nms) : PlayerBase(Nms.my_num()), N(Nms)
   player_no = Nms.player_no;
   thread_stats.resize(nplayers);
 }
-
+#ifdef EMSCRIPTEN
 WebPlayer::~WebPlayer() {}
 
 WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connected_users(0), id(id)
@@ -236,7 +236,7 @@ WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connecte
 
   EmscriptenWebSocketCreateAttributes attr;
   emscripten_websocket_init_create_attributes(&attr);
-  attr.url = "ws://localhost:8080";
+  attr.url = "ws://localhost:8080"; //Todo change to not static
   attr.createOnMainThread = true;
   websocket_conn = emscripten_websocket_new(&attr);
   if (websocket_conn <= 0)
@@ -378,6 +378,7 @@ void WebPlayer::Broadcast_Receive_no_stats(vector<octetStream> &o)
     receive_player_no_stats(receive_from, o[receive_from]);
   }
 }
+#endif
 
 template <class T>
 MultiPlayer<T>::MultiPlayer(const Names &Nms, const string &id) : Player(Nms), id(id), send_to_self_socket(0)

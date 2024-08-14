@@ -1,7 +1,7 @@
 ROOT = .
 
 # compile for web usage
-WEB = 1
+WEB = 0
 USE_WASM32 = 0
 
 OPTIM= -O3
@@ -109,7 +109,7 @@ LDLIBS += -lwebsocket.js -ldatachannel-wasm
 else
 LDLIBS += $(BREW_LDLIBS)
 LDLIBS +=  -Wl,-rpath -Wl,$(CURDIR)/local/lib -L$(CURDIR)/local/lib
-LDLIBS += - lboost_system -lboost_filesystem -lboost_iostreams
+LDLIBS += -lboost_system -lboost_filesystem -lboost_iostreams
 CFLAGS += -I./local/include
 endif
 

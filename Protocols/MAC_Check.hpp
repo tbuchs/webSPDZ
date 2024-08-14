@@ -86,7 +86,7 @@ Tree_MAC_Check<T>::~Tree_MAC_Check()
 }
 
 template<class U>
-void Tree_MAC_Check<U>::init_open(const Player&, int n)
+void Tree_MAC_Check<U>::init_open(Player&, int n)
 {
   macs.reserve(macs.size() + n);
   this->secrets.clear();
@@ -104,7 +104,7 @@ void Tree_MAC_Check<U>::prepare_open(const U& secret, int)
 }
 
 template<class U>
-void Tree_MAC_Check<U>::exchange(const Player& P)
+void Tree_MAC_Check<U>::exchange(Player& P)
 {
   this->run(this->values, P);
 
@@ -123,7 +123,7 @@ void Tree_MAC_Check<U>::AddToValues(vector<T>& values)
 
 
 template<class T>
-void Tree_MAC_Check<T>::CheckIfNeeded(const Player& P)
+void Tree_MAC_Check<T>::CheckIfNeeded(Player& P)
 {
   if (WaitingForCheck() >= POPEN_MAX)
     Check(P);
@@ -131,7 +131,7 @@ void Tree_MAC_Check<T>::CheckIfNeeded(const Player& P)
 
 
 template <class U>
-void Tree_MAC_Check<U>::AddToCheck(const U& share, const T& value, const Player& P)
+void Tree_MAC_Check<U>::AddToCheck(const U& share, const T& value, Player& P)
 {
   macs.push_back(share.get_mac());
   vals.push_back(value);
@@ -142,7 +142,7 @@ void Tree_MAC_Check<U>::AddToCheck(const U& share, const T& value, const Player&
 
 
 template<class U>
-void MAC_Check_<U>::Check(const Player& P)
+void MAC_Check_<U>::Check(Player& P)
 {
   assert(U::mac_type::invertible);
   check_field_size<typename U::mac_type>();
@@ -285,7 +285,7 @@ void MAC_Check_Z2k<T, U, V, W>::set_prep(Preprocessing<W>& prep)
 }
 
 template<class T, class U, class V, class W>
-void MAC_Check_Z2k<T, U, V, W>::Check(const Player& P)
+void MAC_Check_Z2k<T, U, V, W>::Check(Player& P)
 {
   if (this->WaitingForCheck() == 0)
     return;
@@ -355,7 +355,7 @@ Direct_MAC_Check<T>::~Direct_MAC_Check() {
 }
 
 template<class T>
-void direct_add_openings(vector<T>& values, const PlayerBase& P, vector<octetStream>& os)
+void direct_add_openings(vector<T>& values, PlayerBase& P, vector<octetStream>& os)
 {
   size_t n = P.num_players();
   size_t me = P.my_num();
@@ -367,7 +367,7 @@ void direct_add_openings(vector<T>& values, const PlayerBase& P, vector<octetStr
 }
 
 template<class T>
-void Direct_MAC_Check<T>::pre_exchange(const Player& P)
+void Direct_MAC_Check<T>::pre_exchange(Player& P)
 {
   oss.resize(P.num_players());
   oss[P.my_num()].reset_write_head();
@@ -380,7 +380,7 @@ void Direct_MAC_Check<T>::pre_exchange(const Player& P)
 
 
 template<class T>
-void Direct_MAC_Check<T>::exchange(const Player& P)
+void Direct_MAC_Check<T>::exchange(Player& P)
 {
   pre_exchange(P);
   P.unchecked_broadcast(oss);
@@ -396,7 +396,7 @@ void Direct_MAC_Check<T>::exchange(const Player& P)
 }
 
 template<class T>
-void Direct_MAC_Check<T>::init_open(const Player& P, int n)
+void Direct_MAC_Check<T>::init_open(Player& P, int n)
 {
   super::init_open(P, n);
 }

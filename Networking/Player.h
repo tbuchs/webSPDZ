@@ -442,6 +442,7 @@ public:
   NamedCommStats total_comm() const;
 };
 
+#ifdef EMSCRIPTEN
 /**
  * WebPlayer communication helper class
  *
@@ -513,6 +514,7 @@ private:
   map<string, std::deque<const octetStream *>> message_queue;
   string id;
 };
+#endif
 
 /**
  * Multi-player communication helper class.

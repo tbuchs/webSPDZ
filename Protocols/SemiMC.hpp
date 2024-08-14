@@ -11,7 +11,7 @@
 #include "MAC_Check.hpp"
 
 template<class T>
-void SemiMC<T>::init_open(const Player& P, int n)
+void SemiMC<T>::init_open(Player& P, int n)
 {
     MAC_Check_Base<T>::init_open(P, n);
     this->lengths.clear();
@@ -26,14 +26,14 @@ void SemiMC<T>::prepare_open(const T& secret, int n_bits)
 }
 
 template<class T>
-void SemiMC<T>::exchange(const Player& P)
+void SemiMC<T>::exchange(Player& P)
 {
     this->run(this->values, P);
 }
 
 template<class T>
 void DirectSemiMC<T>::POpen_(vector<typename T::open_type>& values,
-        const vector<T>& S, const PlayerBase& P)
+        const vector<T>& S, PlayerBase& P)
 {
     this->values.clear();
     this->values.reserve(S.size());
@@ -46,7 +46,7 @@ void DirectSemiMC<T>::POpen_(vector<typename T::open_type>& values,
 }
 
 template<class T>
-void DirectSemiMC<T>::exchange_(const PlayerBase& P)
+void DirectSemiMC<T>::exchange_(PlayerBase& P)
 {
     Bundle<octetStream> oss(P);
     oss.mine.reserve(this->values.size());
@@ -69,7 +69,7 @@ void DirectSemiMC<T>::exchange_(const PlayerBase& P)
 
 template<class T>
 void DirectSemiMC<T>::POpen_Begin(vector<typename T::open_type>& values,
-        const vector<T>& S, const Player& P)
+        const vector<T>& S, Player& P)
 {
     values.clear();
     values.insert(values.begin(), S.begin(), S.end());
@@ -81,7 +81,7 @@ void DirectSemiMC<T>::POpen_Begin(vector<typename T::open_type>& values,
 
 template<class T>
 void DirectSemiMC<T>::POpen_End(vector<typename T::open_type>& values,
-        const vector<T>&, const Player& P)
+        const vector<T>&, Player& P)
 {
     Bundle<octetStream> oss(P);
     P.receive_all(oss);
