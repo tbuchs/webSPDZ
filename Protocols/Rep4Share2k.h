@@ -58,7 +58,6 @@ public:
             const Rep4Share2* source, int n_inputs, Player& P)
     {
         int my_num = P.my_num();
-        assert(n_bits <= 64);
         assert(regs.size() / n_bits == 4);
         int unit = GC::Clear::N_BITS;
         for (int k = 0; k < DIV_CEIL(n_inputs, unit); k++)
@@ -71,19 +70,27 @@ public:
 
             for (int i = 0; i < 3; i++)
             {
-                square64 square;
-
-                for (int j = 0; j < m; j++)
-                    square.rows[j] = Integer(source[j + start][i]).get();
-
-                square.transpose(m, n_bits);
-
-                for (int j = 0; j < n_bits; j++)
+                for (int l = 0; l < n_bits; l += unit)
                 {
-                    auto &dest_reg = dest.at(
-                            regs.at(4 * j + ((my_num + i + 1) % 4)) + k);
-                    dest_reg = {};
-                    dest_reg[i] = square.rows[j];
+                    int base = l;
+                    int n_left = min(n_bits - base, unit);
+
+                    square64 square;
+
+                    for (int j = 0; j < m; j++)
+                        square.rows[j] = source[j + start][i].get_limb(
+                                l / unit);
+
+                    square.transpose(m, n_left);
+
+                    for (int j = 0; j < n_left; j++)
+                    {
+                        auto& dest_reg = dest.at(
+                                regs.at(4 * (base + j) + ((my_num + i + 1) % 4))
+                                        + k);
+                        dest_reg = {};
+                        dest_reg[i] = square.rows[j];
+                    }
                 }
             }
         }

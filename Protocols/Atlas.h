@@ -33,6 +33,8 @@ class Atlas : public ProtocolBase<T>
     array<T, 2> get_double_sharing();
 
 public:
+    static const bool uses_triples = false;
+
     Player& P;
 
     Atlas(Player& P) :

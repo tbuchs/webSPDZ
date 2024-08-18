@@ -26,6 +26,8 @@ def process(tapename, res, regs):
                 regs[type(arg)] = max(regs[type(arg)], arg.i + inst.size)
 
 tapes = Program.read_tapes(sys.argv[1])
+n_threads = Program.read_n_threads(sys.argv[1])
+domain_size = Program.read_domain_size(sys.argv[1]) or 8
 
 process(next(tapes), res, regs)
 
@@ -45,8 +47,10 @@ def output(data):
                 pass
 
 total = 0
-for x in res, regs, thread_regs:
+for x in res, regs:
     total += sum(x.values())
+
+thread_total = sum(thread_regs.values())
 
 print ('Memory:')
 output(regout(res))
@@ -58,5 +62,9 @@ if thread_regs:
     print ('Registers in other threads:')
     output(regout(thread_regs))
 
-print ('The program requires at the very least %f GB of RAM per party.' % \
-       (total * 8e-9))
+min = 1 * domain_size
+max = 3 * domain_size
+
+print ('The program requires at least an estimated %f-%f GB of RAM per party.'
+       % (min * (total + thread_total) * 1e-9,
+          max * ((total + (n_threads - 1) * thread_total) * 1e-9)))

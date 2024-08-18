@@ -54,6 +54,8 @@ public:
 
     static string type_short() { throw runtime_error("shorthand undefined"); }
 
+    static string alt() { return ""; }
+
     static bool real_shares(const Player&) { return true; }
 
     template<class T, class U>

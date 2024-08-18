@@ -916,6 +916,9 @@ template<int>
 void RingPrep<T>::buffer_edabits_without_check(int n_bits, vector<edabitvec<T>>& edabits,
         int buffer_size)
 {
+#ifdef VERBOSE_EDA
+    fprintf(stderr, "edabit buffer size %d\n", buffer_size);
+#endif
     auto stat = this->proc->P.total_comm();
     typedef typename T::bit_type::part_type bit_type;
     vector<vector<bit_type>> bits;
@@ -950,8 +953,11 @@ void RingPrep<T>::buffer_sedabits_from_edabits(int n_bits, false_type)
     assert(this->proc != 0);
     size_t buffer_size = DIV_CEIL(BaseMachine::edabit_batch_size<T>(n_bits),
             edabitvec<T>::MAX_SIZE);
+#ifdef VERBOSE_EDA
+    fprintf(stderr, "sedabit buffer size %zu\n", buffer_size);
+#endif
     auto& loose = this->edabits[{false, n_bits}];
-    BufferScope<T> scope(*this, buffer_size);
+    BufferScope<T> scope(*this, buffer_size * edabitvec<T>::MAX_SIZE);
     while (loose.size() < buffer_size)
         this->buffer_edabits(false, n_bits);
     sanitize<0>(loose, n_bits);

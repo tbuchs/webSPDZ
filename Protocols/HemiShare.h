@@ -34,6 +34,11 @@ public:
     static const bool local_mul = true;
     static true_type triple_matmul;
 
+    static string alt()
+    {
+        return "Temi";
+    }
+
     HemiShare()
     {
     }

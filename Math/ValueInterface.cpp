@@ -8,6 +8,8 @@
 
 #include <sys/stat.h>
 
+const false_type ValueInterface::binary;
+
 void ValueInterface::check_setup(const string& directory)
 {
     struct stat sb;

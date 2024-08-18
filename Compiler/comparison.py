@@ -65,6 +65,8 @@ def ld2i(c, n):
     movc(c, t1)
 
 def require_ring_size(k, op):
+    if not program.options.ring:
+        return
     if int(program.options.ring) < k:
         msg = 'ring size too small for %s, compile ' \
             'with \'-R %d\' or more' % (op, k)
@@ -140,7 +142,7 @@ def TruncRing(d, a, k, m, signed):
             high = sint.conv(carries[length])
         else:
             if m == 1:
-                low = x[1][1]
+                low = x[0][1]
                 high = sint.conv(CarryOutLE(x[1][:-1], x[0][:-1])) + \
                        sint.conv(x[0][-1])
             else:
@@ -181,7 +183,7 @@ def TruncLeakyInRing(a, k, m, signed):
     if k == m:
         return 0
     assert k > m
-    assert int(program.options.ring) >= k
+    require_ring_size(k, 'leaky truncation')
     from .types import sint, intbitint, cint, cgf2n
     n_bits = k - m
     n_shift = int(program.options.ring) - n_bits
@@ -228,7 +230,7 @@ def Mod2m(a_prime, a, k, m, kappa, signed):
     movs(a_prime, program.non_linear.mod2m(a, k, m, signed))
 
 def Mod2mRing(a_prime, a, k, m, signed):
-    assert(int(program.options.ring) >= k)
+    require_ring_size(k, 'modulo power of two')
     from Compiler.types import sint, intbitint, cint
     shift = int(program.options.ring) - m
     r_prime, r_bin = MaskingBitsInRing(m, True)
@@ -373,7 +375,7 @@ def BitLTC1(u, a, b, kappa):
     pre_input.reverse()
     if use_inv:
         if instructions_base.get_global_vector_size() == 1:
-            PreMulC_with_inverses_and_vectors(p, pre_input)
+            PreMulC_with_inverses(p, pre_input)
         else:
             if do_precomp:
                 PreMulC_with_inverses(p, pre_input)
@@ -404,7 +406,7 @@ def carry(b, a, compute_p=True):
         return b
     if b is None:
         return a
-    t = [program.curr_block.new_reg('s') for i in range(3)]
+    t = [None] * 3
     if compute_p:
         t[0] = a[0].bit_and(b[0])
     t[2] = a[0].bit_and(b[1]) + a[1]
@@ -540,6 +542,7 @@ def PreMulC_with_inverses(p, a):
     w[1][0] = r[0][0]
     for i in range(k):
         muls(t[0][i], w[1][i], a[i])
+    for i in range(k):
         asm_open(True, m[i], t[0][i])
     PreMulC_end(p, a, c, m, z)
 

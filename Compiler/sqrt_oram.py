@@ -141,7 +141,8 @@ class SqrtOram(Generic[T, B]):
         else:
             print('You are opting out of default initialization for SqrtORAM. Be sure to call refresh before using the SqrtORAM, otherwise the ORAM is not secure.')
         # Initialize position map (recursive oram)
-        self.position_map = PositionMap.create(self.permutation, k + 1, self.T)
+        self.position_map = PositionMap.create(self.permutation, k + 1,
+                                               self.T, initialize=initialize)
 
         # Initialize stash
         self.stash = MultiArray((self.T, entry_length), value_type=value_type)
@@ -577,7 +578,8 @@ class PositionMap(Generic[T, B]):
         ...
 
     @classmethod
-    def create(cls, permutation: Array, k: int, period: int, value_type: Type[T] = sint) -> PositionMap:
+    def create(cls, permutation: Array, k: int, period: int,
+               value_type: Type[T] = sint, **kwargs) -> PositionMap:
         """Creates a new PositionMap. This is the method one should call when
         needing a new position map. Depending on the size of the given data, it
         will either instantiate a RecursivePositionMap or
@@ -594,14 +596,16 @@ class PositionMap(Generic[T, B]):
             if debug:
                 lib.print_ln(
                     'Initializing RecursivePositionMap at depth %s of size %s', k, n)
-            res = RecursivePositionMap(permutation, period, value_type, k=k)
+            res = RecursivePositionMap(permutation, period, value_type, k=k,
+                                       **kwargs)
 
         return res
 
 
 class RecursivePositionMap(PositionMap[T, B], SqrtOram[T, B]):
 
-    def __init__(self, permutation: Array, period: int, value_type: Type[T] = sint, k: int = -1) -> None:
+    def __init__(self, permutation: Array, period: int,
+                 value_type: Type[T] = sint, k: int = -1, **kwargs) -> None:
         PositionMap.__init__(self, len(permutation), k=k)
         pack = PositionMap.PACK
 
@@ -614,7 +618,8 @@ class RecursivePositionMap(PositionMap[T, B], SqrtOram[T, B]):
                 permutation[i*pack:(i+1)*pack])
 
         SqrtOram.__init__(self, packed_structure, value_type=value_type,
-                          period=period, entry_length=pack, k=self.depth)
+                          period=period, entry_length=pack, k=self.depth,
+                          **kwargs)
 
         # Initialize random temp variables needed during the computation
         self.block_index_demux: Array = self.bit_type.Array(self.T)
@@ -633,7 +638,8 @@ class RecursivePositionMap(PositionMap[T, B], SqrtOram[T, B]):
         program = Program.prog
         h = MemValue(self.value_type.bit_compose(sbits.get_type(program.bit_length)(
             logical_address).right_shift(pack_log, program.bit_length)))
-        l = self.value_type.bit_compose(sbits(logical_address) & (pack - 1))
+        l = self.value_type.bit_compose(
+            sbits.get_type(program.bit_length)(logical_address) & (pack - 1))
 
         global trace
         if trace:

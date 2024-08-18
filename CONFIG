@@ -100,13 +100,7 @@ ifeq ($(OS), Linux)
 LDLIBS += -lrt
 endif
 
-ifeq ($(OS), Darwin)
-BOOST = -lboost_thread-mt $(MY_BOOST)
-else
-BOOST = -lboost_thread $(MY_BOOST)
-endif
-
-CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE) -Wno-vla-extension -sUSE_BOOST_HEADERS # -Werror
+CFLAGS += $(ARCH) $(MY_CFLAGS) $(GDEBUG) -Wextra -Wall $(OPTIM) -I$(ROOT) -I$(ROOT)/deps -pthread $(PROF) $(DEBUG) $(MOD) $(GF2N_LONG) $(PREP_DIR) $(SSL_DIR) $(SECURE) -Wno-vla-extension -sUSE_BOOST_HEADERS -fsanitize=undefined -Wbad-function-cast -Wcast-function-type # -Werror
 CFLAGS += $(BREW_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 LD = $(CXX)

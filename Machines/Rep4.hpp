@@ -7,6 +7,7 @@
 #define MACHINES_REP4_HPP_
 
 #include "GC/Rep4Secret.h"
+#include "GC/Rep4Prep.h"
 #include "Protocols/Rep4Share2k.h"
 #include "Protocols/Rep4Prep.h"
 #include "Protocols/Rep4.hpp"

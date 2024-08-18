@@ -93,7 +93,7 @@ void make_vector_share(T* Sa,const U& a,int N,const V& key,PRNG& G)
     Sa[i].resize_regs(length);
   for (int j = 0; j < length; j++)
     {
-      typename T::part_type shares[N];
+      vector<typename T::part_type> shares(N);
       make_share(shares, typename T::part_type::clear(a.get_bit(j)), N, key, G);
       for (int i = 0; i < N; i++)
         Sa[i].get_reg(j) = shares[i];
@@ -345,8 +345,7 @@ void read_mac_key(const string& directory, int player_num, int nplayers, U& key)
 #ifdef VERBOSE
       cerr << "Could not open MAC key file. Perhaps it needs to be generated?\n";
 #endif
-      return;
-      // throw mac_key_error(filename);
+      throw mac_key_error(filename);
     }
   inpf >> nn;
   if (nn!=nplayers)
@@ -361,13 +360,11 @@ void read_mac_key(const string& directory, int player_num, int nplayers, U& key)
   }
   catch(exception&)
   {
-      return;
-      //throw mac_key_error(filename);
+      throw mac_key_error(filename);
   }
 
   if (inpf.fail())
-    return;
-      //throw mac_key_error(filename);
+      throw mac_key_error(filename);
 
   inpf.close();
 }

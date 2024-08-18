@@ -17,14 +17,14 @@
 
 template<class T>
 void MaliciousRepMC<T>::POpen_Begin(vector<typename T::open_type>& values,
-        const vector<T>& S, Player& P)
+        const vector<T>& S, const Player& P)
 {
     super::POpen_Begin(values, S, P);
 }
 
 template<class T>
 void MaliciousRepMC<T>::POpen_End(vector<typename T::open_type>& values,
-        const vector<T>& S, Player& P)
+        const vector<T>& S, const Player& P)
 {
     (void)values, (void)S, (void)P;
     throw runtime_error("use subclass");
@@ -32,13 +32,13 @@ void MaliciousRepMC<T>::POpen_End(vector<typename T::open_type>& values,
 
 template<class T>
 void MaliciousRepMC<T>::POpen(vector<typename T::open_type>&,
-        const vector<T>&, Player&)
+        const vector<T>&, const Player&)
 {
     throw runtime_error("use subclass");
 }
 
 template<class T>
-void MaliciousRepMC<T>::Check( Player& P)
+void MaliciousRepMC<T>::Check(const Player& P)
 {
     (void)P;
     throw runtime_error("use subclass");
@@ -69,7 +69,7 @@ HashMaliciousRepMC<T>::~HashMaliciousRepMC()
 
 template<class T>
 void HashMaliciousRepMC<T>::POpen(vector<typename T::open_type>& values,
-        const vector<T>& S, Player& P)
+        const vector<T>& S, const Player& P)
 {
     ReplicatedMC<T>::POpen(values, S, P);
     finalize(values);
@@ -77,7 +77,7 @@ void HashMaliciousRepMC<T>::POpen(vector<typename T::open_type>& values,
 
 template<class T>
 void HashMaliciousRepMC<T>::POpen_End(vector<typename T::open_type>& values,
-        const vector<T>& S, Player& P)
+        const vector<T>& S, const Player& P)
 {
     ReplicatedMC<T>::POpen_End(values, S, P);
     finalize(values);
@@ -112,7 +112,7 @@ void HashMaliciousRepMC<T>::update()
 
 template<class T>
 void HashMaliciousRepMC<T>::CheckFor(const typename T::open_type& value,
-        const vector<T>& check_shares, Player& P)
+        const vector<T>& check_shares, const Player& P)
 {
     os.reset_write_head();
     for (auto& share : check_shares)
@@ -134,7 +134,7 @@ void HashMaliciousRepMC<T>::CheckFor(const typename T::open_type& value,
 }
 
 template<class T>
-void HashMaliciousRepMC<T>::Check(Player& P)
+void HashMaliciousRepMC<T>::Check(const Player& P)
 {
     if (needs_checking)
     {
@@ -150,7 +150,7 @@ void HashMaliciousRepMC<T>::Check(Player& P)
 
 template<class T>
 void CommMaliciousRepMC<T>::POpen(vector<typename T::clear>& values,
-        const vector<T>& S, Player& P)
+        const vector<T>& S, const Player& P)
 {
     POpen_Begin(values, S, P);
     POpen_End(values, S, P);
@@ -158,7 +158,7 @@ void CommMaliciousRepMC<T>::POpen(vector<typename T::clear>& values,
 
 template<class T>
 void CommMaliciousRepMC<T>::POpen_Begin(vector<typename T::clear>& values,
-        const vector<T>& S, Player& P)
+        const vector<T>& S, const Player& P)
 {
     assert(T::vector_length == 2);
     (void)values;
@@ -174,7 +174,7 @@ void CommMaliciousRepMC<T>::POpen_Begin(vector<typename T::clear>& values,
 
 template<class T>
 void CommMaliciousRepMC<T>::POpen_End(vector<typename T::clear>& values,
-        const vector<T>& S, Player& P)
+        const vector<T>& S, const Player& P)
 {
     (void) P;
     if (os[0] != os[1])
@@ -185,7 +185,7 @@ void CommMaliciousRepMC<T>::POpen_End(vector<typename T::clear>& values,
 }
 
 template<class T>
-void CommMaliciousRepMC<T>::Check(Player& P)
+void CommMaliciousRepMC<T>::Check(const Player& P)
 {
     (void)P;
 }

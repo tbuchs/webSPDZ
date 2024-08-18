@@ -104,7 +104,7 @@ void BufferBase::prune()
         ofstream tmp(tmp_name.c_str());
         size_t start = file->tellg();
         start -= element_length() * (BUFFER_SIZE - next);
-        char buf[header_length];
+        char* buf = new char[header_length];
         file->seekg(0);
         file->read(buf, header_length);
         tmp.write(buf, header_length);
@@ -118,6 +118,7 @@ void BufferBase::prune()
         file->close();
         rename(tmp_name.c_str(), filename.c_str());
         file->open(filename.c_str(), ios::in | ios::binary);
+        delete[] buf;
     }
 #ifdef VERBOSE
     else

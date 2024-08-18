@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import hashlib
+import random
 from collections import defaultdict, deque
 from functools import reduce
 
@@ -74,8 +75,8 @@ class Program(object):
     """A program consists of a list of tapes representing the whole
     computation.
 
-    When compiling an :file:`.mpc` file, the single instances is
-    available as :py:obj:`program` in order. When compiling directly
+    When compiling an :file:`.mpc` file, the single instance is
+    available as :py:obj:`program`. When compiling directly
     from Python code, an instance has to be created before running any
     instructions.
     """
@@ -89,6 +90,7 @@ class Program(object):
         self.name = name
         self.init_names(args)
         self._security = 40
+        self.used_security = 0
         self.prime = None
         self.tapes = []
         if sum(x != 0 for x in (options.ring, options.field, options.binary)) > 1:
@@ -113,7 +115,8 @@ class Program(object):
                 if not self.bit_length:
                     self.bit_length = 64
         print("Default bit length for compilation:", self.bit_length)
-        print("Default security parameter for compilation:", self.security)
+        if not (options.binary or options.garbled):
+            print("Default security parameter for compilation:", self._security)
         self.galois_length = int(options.galois)
         if self.verbose:
             print("Galois length:", self.galois_length)
@@ -185,10 +188,13 @@ class Program(object):
         self.relevant_opts = set()
         self.n_running_threads = None
         self.input_files = {}
-        self.base_addresses = {}
+        self.base_addresses = util.dict_by_id()
         self._protect_memory = False
+        self.mem_protect_stack = []
         self._always_active = True
         self.active = True
+        self.prevent_breaks = False
+        self.cisc_to_function = True
         if not self.options.cisc:
             self.options.cisc = not self.options.optimize_hard
 
@@ -249,7 +255,7 @@ class Program(object):
             else:
                 raise CompilerError(
                     "found none of the potential input files: " +
-                    ", ".join("'%s'" % x for x in [args[0]] + infiles))
+                    ", ".join("'%s'" % x for x in infiles))
         """
         self.name is input file name (minus extension) + any optional arguments.
         Used to generate output filenames
@@ -352,7 +358,8 @@ class Program(object):
         )
         self.curr_tape.start_new_basicblock(name="post-run_tape")
         for arg in args:
-            self.curr_tape.req_node.children.append(self.tapes[arg[0]].req_tree)
+            self.curr_block.req_node.children.append(
+                self.tapes[arg[0]].req_tree)
         return thread_numbers
 
     def join_tape(self, thread_number):
@@ -400,6 +407,7 @@ class Program(object):
             sch_file.write("lgp:%s" % req)
         sch_file.write("\n")
         sch_file.write("opts: %s\n" % " ".join(self.relevant_opts))
+        sch_file.write("sec:%d\n" % self.used_security)
         sch_file.close()
         h = hashlib.sha256()
         for tape in self.tapes:
@@ -433,7 +441,7 @@ class Program(object):
         """The basic block that is currently being created."""
         return self.curr_tape.active_basicblock
 
-    def malloc(self, size, mem_type, reg_type=None, creator_tape=None):
+    def malloc(self, size, mem_type, reg_type=None, creator_tape=None, use_freed=True):
         """Allocate memory from the top"""
         if not isinstance(size, int):
             raise CompilerError("size must be known at compile time")
@@ -456,7 +464,7 @@ class Program(object):
             else:
                 raise CompilerError("cannot allocate memory " "outside main thread")
         blocks = self.free_mem_blocks[mem_type]
-        addr = blocks.pop(size)
+        addr = blocks.pop(size) if use_freed else None
         if addr is not None:
             self.saved += size
         else:
@@ -469,11 +477,13 @@ class Program(object):
         self.allocated_mem_blocks[addr, mem_type] = size, self.curr_block.alloc_pool
         if single_size:
             from .library import get_thread_number, runtime_error_if
-
+            bak = self.curr_tape.active_basicblock
+            self.curr_tape.active_basicblock = self.curr_tape.basicblocks[0]
             tn = get_thread_number()
             runtime_error_if(tn > self.n_running_threads, "malloc")
             res = addr + single_size * (tn - 1)
-            self.base_addresses[str(res)] = addr
+            self.curr_tape.active_basicblock = bak
+            self.base_addresses[res] = addr
             return res
         else:
             return addr
@@ -482,7 +492,7 @@ class Program(object):
         """Free memory"""
         now = True
         if not util.is_constant(addr):
-            addr = self.base_addresses[str(addr)]
+            addr = self.base_addresses[addr]
             now = self.curr_tape == self.tapes[0]
         size, pool = self.allocated_mem_blocks[addr, mem_type]
         if self.curr_block.alloc_pool is not pool:
@@ -524,7 +534,8 @@ class Program(object):
             self.public_input_file.close()
 
     def finalize_memory(self):
-        self.curr_tape.start_new_basicblock(None, "memory-usage")
+        self.curr_tape.start_new_basicblock(None, "memory-usage",
+                                            req_node=self.curr_tape.req_tree)
         # reset register counter to 0
         if not self.options.noreallocate:
             self.curr_tape.init_registers()
@@ -575,6 +586,7 @@ class Program(object):
     def security(self):
         """The statistical security parameter for non-linear
         functions."""
+        self.used_security = max(self.used_security, self._security)
         return self._security
 
     @security.setter
@@ -701,8 +713,16 @@ class Program(object):
         """ Enable or disable memory protection. """
         self._protect_memory = status
 
+    def open_memory_scope(self, key=None):
+        self.mem_protect_stack.append(self._protect_memory)
+        self.protect_memory(key or object())
+
+    def close_memory_scope(self):
+        self.protect_memory(self.mem_protect_stack.pop())
+
     def use_cisc(self):
-        return self.options.cisc and (not self.prime or self.rabbit_gap())
+        return self.options.cisc and (not self.prime or self.rabbit_gap()) \
+            and not self.options.max_parallel_open
 
     def rabbit_gap(self):
         assert self.prime
@@ -724,7 +744,7 @@ class Program(object):
         self._always_active = False
 
     @staticmethod
-    def read_tapes(schedule):
+    def read_schedule(schedule):
         m = re.search(r"([^/]*)\.mpc", schedule)
         if m:
             schedule = m.group(1)
@@ -732,7 +752,7 @@ class Program(object):
             schedule = "Programs/Schedules/%s.sch" % schedule
 
         try:
-            lines = open(schedule).readlines()
+            return open(schedule).readlines()
         except FileNotFoundError:
             print(
                 "%s not found, have you compiled the program?" % schedule,
@@ -740,8 +760,24 @@ class Program(object):
             )
             sys.exit(1)
 
+    @classmethod
+    def read_tapes(cls, schedule):
+        lines = cls.read_schedule(schedule)
         for tapename in lines[2].split(" "):
             yield tapename.strip().split(":")[0]
+
+    @classmethod
+    def read_n_threads(cls, schedule):
+        return int(cls.read_schedule(schedule)[0])
+
+    @classmethod
+    def read_domain_size(cls, schedule):
+        from Compiler.instructions import reqbl_class
+        tapename = cls.read_schedule(schedule)[2].strip().split(":")[0]
+        for inst in Tape.read_instructions(tapename):
+            if inst.code == reqbl_class.code:
+                bl = inst.args[0]
+                return (abs(bl.i) + 63) // 64 * 8
 
 
 class Tape:
@@ -754,13 +790,12 @@ class Tape:
         self.init_names(name)
         self.init_registers()
         self.req_tree = self.ReqNode(name)
-        self.req_node = self.req_tree
         self.basicblocks = []
         self.purged = False
         self.block_counter = 0
         self.active_basicblock = None
         self.old_allocated_mem = program.allocated_mem.copy()
-        self.start_new_basicblock()
+        self.start_new_basicblock(req_node=self.req_tree)
         self._is_empty = False
         self.merge_opens = True
         self.if_states = []
@@ -773,7 +808,8 @@ class Tape:
         self.warned_about_mem = False
 
     class BasicBlock(object):
-        def __init__(self, parent, name, scope, exit_condition=None):
+        def __init__(self, parent, name, scope, exit_condition=None,
+                     req_node=None):
             self.parent = parent
             self.instructions = []
             self.name = name
@@ -793,6 +829,8 @@ class Tape:
             self.n_to_merge = 0
             self.rounds = Tape.ReqNum()
             self.warn_about_mem = parent.program.warn_about_mem[-1]
+            self.req_node = req_node
+            self.used_from_scope = set()
 
         def __len__(self):
             return len(self.instructions)
@@ -859,17 +897,25 @@ class Tape:
             req_node.num += self.rounds
 
         def expand_cisc(self):
-            new_instructions = []
             if self.parent.program.options.keep_cisc is not None:
-                skip = ["LTZ", "Trunc"]
+                skip = ["LTZ", "Trunc", "EQZ"]
                 skip += self.parent.program.options.keep_cisc.split(",")
             else:
                 skip = []
+            tape = self.parent
+            tape.start_new_basicblock(scope=self.scope, req_node=self.req_node,
+                                      name="cisc")
+            start_block = tape.basicblocks[-1]
+            start_block.alloc_pool = self.alloc_pool
             for inst in self.instructions:
-                new_inst, n_rounds = inst.expand_merged(skip)
-                new_instructions.extend(new_inst)
-                self.n_rounds += n_rounds
-            self.instructions = new_instructions
+                inst.expand_merged(skip)
+            self.instructions = tape.active_basicblock.instructions
+            if start_block == tape.basicblocks[-1]:
+                res = self
+            else:
+                res = start_block
+            tape.basicblocks[-1] = self
+            return res
 
         def __str__(self):
             return self.name
@@ -884,7 +930,8 @@ class Tape:
             self._is_empty = len(self.basicblocks) == 0
         return self._is_empty
 
-    def start_new_basicblock(self, scope=False, name=""):
+    def start_new_basicblock(self, scope=False, name="", req_node=None):
+        assert not self.program.prevent_breaks
         if self.program.verbose and self.active_basicblock and \
            self.program.allocated_mem != self.old_allocated_mem:
             print("New allocated memory in %s " % self.active_basicblock.name,
@@ -899,10 +946,12 @@ class Tape:
             scope = self.active_basicblock
         suffix = "%s-%d" % (name, self.block_counter)
         self.block_counter += 1
-        sub = self.BasicBlock(self, self.name + "-" + suffix, scope)
+        if req_node is None:
+            req_node = self.active_basicblock.req_node
+        sub = self.BasicBlock(self, self.name + "-" + suffix, scope,
+                              req_node=req_node)
         self.basicblocks.append(sub)
         self.active_basicblock = sub
-        self.req_node.add_block(sub)
         # print 'Compiling basic block', sub.name
 
     def init_registers(self):
@@ -1053,12 +1102,20 @@ class Tape:
                 print("Re-allocating...")
             allocator = al.StraightlineAllocator(REG_MAX, self.program)
 
+            # make addresses available in functions
+            for addr in self.program.base_addresses:
+                if addr.program == self and self.basicblocks:
+                    allocator.alloc_reg(addr, self.basicblocks[-1].alloc_pool)
+
+            seen = set()
+
             def alloc(block):
                 allocator.update_usage(block.alloc_pool)
                 for reg in sorted(
                     block.used_from_scope, key=lambda x: (x.reg_type, x.i)
                 ):
                     allocator.alloc_reg(reg, block.alloc_pool)
+                seen.add(block)
 
             def alloc_loop(block):
                 left = deque([block])
@@ -1066,7 +1123,8 @@ class Tape:
                     block = left.popleft()
                     alloc(block)
                     for child in block.children:
-                        left.append(child)
+                        if child not in seen:
+                            left.append(child)
 
             allocator.old_pool = None
             for i, block in enumerate(reversed(self.basicblocks)):
@@ -1100,6 +1158,8 @@ class Tape:
         # offline data requirements
         if self.program.verbose:
             print("Compile offline data requirements...")
+        for block in self.basicblocks:
+            block.req_node.add_block(block)
         self.req_num = self.req_tree.aggregate()
         if self.program.verbose:
             print("Tape requires", self.req_num)
@@ -1159,8 +1219,24 @@ class Tape:
 
     @unpurged
     def expand_cisc(self):
+        mapping = {None: None}
+        blocks = self.basicblocks[:]
+        self.basicblocks = []
+        for block in blocks:
+            expanded = block.expand_cisc()
+            mapping[block] = expanded
         for block in self.basicblocks:
-            block.expand_cisc()
+            if block not in mapping:
+                mapping[block] = block
+        for block in self.basicblocks:
+            block.exit_block = mapping[block.exit_block]
+            if block.exit_block is not None:
+                assert block.exit_block in self.basicblocks
+            if block.previous_block and mapping[block] != block:
+                mapping[block].previous_block = block.previous_block
+                mapping[block].sub_block = block.sub_block
+                block.previous_block = None
+                del block.sub_block
 
     @unpurged
     def _get_instructions(self):
@@ -1319,27 +1395,38 @@ class Tape:
             return repr(dict(self))
 
     class ReqNode(object):
-        __slots__ = ["num", "children", "name", "blocks"]
+        __slots__ = ["num", "_children", "name", "blocks", "aggregated"]
 
         def __init__(self, name):
-            self.children = []
+            self._children = []
             self.name = name
             self.blocks = []
+            self.aggregated = None
+
+        @property
+        def children(self):
+            self.aggregated = None
+            return self._children
 
         def aggregate(self, *args):
+            if self.aggregated is not None:
+                return self.aggregated
             self.num = Tape.ReqNum()
             for block in self.blocks:
                 block.add_usage(self)
             res = reduce(
                 lambda x, y: x + y.aggregate(self.name), self.children, self.num
             )
+            self.aggregated = res
             return res
 
         def increment(self, data_type, num=1):
             self.num[data_type] += num
+            self.aggregated = None
 
         def add_block(self, block):
             self.blocks.append(block)
+            self.aggregated = None
 
     class ReqChild(object):
         __slots__ = ["aggregator", "nodes", "parent"]
@@ -1368,18 +1455,18 @@ class Tape:
         def add_node(self, tape, name):
             new_node = Tape.ReqNode(name)
             self.nodes.append(new_node)
-            tape.req_node = new_node
+            return new_node
 
     def open_scope(self, aggregator, scope=False, name=""):
-        child = self.ReqChild(aggregator, self.req_node)
-        self.req_node.children.append(child)
-        child.add_node(self, "%s-%d" % (name, len(self.basicblocks)))
-        self.start_new_basicblock(name=name)
+        req_node = self.active_basicblock.req_node
+        child = self.ReqChild(aggregator, req_node)
+        req_node.children.append(child)
+        node = child.add_node(self, "%s-%d" % (name, len(self.basicblocks)))
+        self.start_new_basicblock(name=name, req_node=node)
         return child
 
     def close_scope(self, outer_scope, parent_req_node, name):
-        self.req_node = parent_req_node
-        self.start_new_basicblock(outer_scope, name)
+        self.start_new_basicblock(outer_scope, name, req_node=parent_req_node)
 
     def require_bit_length(self, bit_length, t="p"):
         if t == "p":
@@ -1552,7 +1639,7 @@ class Tape:
             diff_block = isinstance(other, Tape.Register) and self.block != other.block
             other = type(self)(other)
             if not diff_block:
-                self.program.start_new_basicblock()
+                self.program.start_new_basicblock(name="update")
             if self.program != other.program:
                 raise CompilerError(
                     'cannot update register with one from another thread')
@@ -1574,6 +1661,8 @@ class Tape:
             )
 
         def __str__(self):
-            return self.reg_type + str(self.i)
+            return self.reg_type + str(self.i) + \
+                ("(%d)" % self.size if self.size is not None and self.size > 1
+                 else "")
 
         __repr__ = __str__

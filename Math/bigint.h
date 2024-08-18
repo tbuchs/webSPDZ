@@ -82,7 +82,6 @@ public:
 
   bigint& operator=(int n);
   bigint& operator=(long n);
-  bigint& operator=(unsigned long int n);
   bigint& operator=(word n);
   bigint& operator=(double f);
   template<int X, int L>
@@ -102,8 +101,6 @@ public:
   int get_min_alloc() { return get_mpz_t()->_mp_alloc; }
 
   void mul(const bigint& x, const bigint& y) { *this = x * y; }
-
-  void add(octetStream& os, int = -1);
 
 #ifdef REALLOC_POLICE
   ~bigint() { lottery(); }
@@ -157,12 +154,6 @@ inline bigint& bigint::operator=(long n)
 }
 
 inline bigint& bigint::operator=(word n)
-{
-  mpz_class::operator=(n);
-  return *this;
-}
-
-inline bigint& bigint::operator=(unsigned long int n)
 {
   mpz_class::operator=(n);
   return *this;

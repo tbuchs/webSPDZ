@@ -15,6 +15,7 @@ using namespace std;
 #include "Tools/random.h"
 #include "Tools/PointerVector.h"
 #include "Networking/Player.h"
+#include "Processor/Memory.h"
 
 template<class T> class SubProcessor;
 template<class T> class ReplicatedMC;
@@ -68,8 +69,6 @@ public:
     ProtocolBase();
     virtual ~ProtocolBase();
 
-    void muls(const vector<int>& reg, SubProcessor<T>& proc, typename T::MAC_Check& MC,
-            int size);
     void mulrs(const vector<int>& reg, SubProcessor<T>& proc);
 
     void multiply(vector<T>& products, vector<pair<T, T>>& multiplicands,
@@ -111,7 +110,7 @@ public:
     virtual void randoms_inst(vector<T>&, const Instruction&);
 
     template<int = 0>
-    void matmulsm(SubProcessor<T> & proc, CheckVector<T>& source,
+    void matmulsm(SubProcessor<T> & proc, MemoryPart<T>& source,
             const Instruction& instruction, int a, int b)
     { proc.matmulsm(source, instruction, a, b); }
 

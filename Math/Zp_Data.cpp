@@ -73,7 +73,7 @@ void Zp_Data::init(const bigint& p,bool mont)
 
 void Zp_Data::Mont_Mult(mp_limb_t* z,const mp_limb_t* x,const mp_limb_t* y,int t) const
 {
-  mp_limb_t ans[2 * MAX_MOD_SZ + 1], u, yy[t + 1];
+  mp_limb_t ans[2 * MAX_MOD_SZ + 1], u, yy[MAX_MOD_SZ + 1];
   inline_mpn_copyi(yy, y, t);
   yy[t] = 0;
   // First loop

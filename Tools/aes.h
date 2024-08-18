@@ -59,24 +59,24 @@ __attribute__((optimize("unroll-loops")))
 #endif
 inline __m128i aes_128_encrypt(__m128i in, const octet* key)
 {
-#if defined(__AES__) //|| !defined(__x86_64__)
-    if (cpu_has_aes())
-    {
-        __m128i& tmp = in;
-        tmp = _mm_xor_si128 (tmp,((__m128i*)key)[0]);
-        int j;
-        for(j=1; j <10; j++)
-            tmp = _mm_aesenc_si128 (tmp,((__m128i*)key)[j]);
-        tmp = _mm_aesenclast_si128 (tmp,((__m128i*)key)[j]);
-        return tmp;
-    }
-    else
-#endif
-    {
+// #if defined(__AES__) || !defined(__x86_64__)
+//     if (cpu_has_aes())
+//     {
+//         __m128i& tmp = in;
+//         tmp = _mm_xor_si128 (tmp,((__m128i*)key)[0]);
+//         int j;
+//         for(j=1; j <10; j++)
+//             tmp = _mm_aesenc_si128 (tmp,((__m128i*)key)[j]);
+//         tmp = _mm_aesenclast_si128 (tmp,((__m128i*)key)[j]);
+//         return tmp;
+//     }
+//     else
+// #endif
+//    {
         __m128i tmp;
         aes_128_encrypt((octet*) &tmp, (octet*) &in, (uint*) key);
         return tmp;
-    }
+//    }
 }
 
 template <int N>
@@ -92,22 +92,22 @@ __attribute__((optimize("unroll-loops")))
 #endif
 inline void ecb_aes_128_encrypt(__m128i* out, const __m128i* in, const octet* key)
 {
-#if defined(__AES__) //|| !defined(__x86_64__)
-    if (cpu_has_aes())
-    {
-        __m128i tmp[N];
-        for (int i = 0; i < N; i++)
-            tmp[i] = _mm_xor_si128 (in[i],((__m128i*)key)[0]);
-        int j;
-        for(j=1; j <10; j++)
-            for (int i = 0; i < N; i++)
-                tmp[i] = _mm_aesenc_si128 (tmp[i],((__m128i*)key)[j]);
-        for (int i = 0; i < N; i++)
-            out[i] = _mm_aesenclast_si128 (tmp[i],((__m128i*)key)[j]);
-    }
-    else
-#endif
-        software_ecb_aes_128_encrypt<N>(out, in, (uint*) key);
+// #if defined(__AES__) || !defined(__x86_64__)
+//     if (cpu_has_aes())
+//     {
+//         __m128i tmp[N];
+//         for (int i = 0; i < N; i++)
+//             tmp[i] = _mm_xor_si128 (in[i],((__m128i*)key)[0]);
+//         int j;
+//         for(j=1; j <10; j++)
+//             for (int i = 0; i < N; i++)
+//                 tmp[i] = _mm_aesenc_si128 (tmp[i],((__m128i*)key)[j]);
+//         for (int i = 0; i < N; i++)
+//             out[i] = _mm_aesenclast_si128 (tmp[i],((__m128i*)key)[j]);
+//     }
+//     else
+// #endif
+    software_ecb_aes_128_encrypt<N>(out, in, (uint*) key);
 }
 
 template <int N>

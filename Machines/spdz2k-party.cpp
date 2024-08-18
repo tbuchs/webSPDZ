@@ -7,6 +7,7 @@
 #include "Processor/Machine.h"
 #include "Processor/RingOptions.h"
 #include "Protocols/Spdz2kShare.h"
+#include "Protocols/SPDZ2k.h"
 #include "Math/gf2n.h"
 #include "Networking/Server.h"
 
@@ -28,17 +29,13 @@ int main(int argc, const char** argv)
     opt.parse(argc, argv);
     int s;
     opt.get("-SP")->getInt(s);
+    cerr << "Using SPDZ2k security parameter " << s << endl;
     opt.resetArgs();
     RingOptions ring_options(opt, argc, argv);
     OnlineOptions& online_opts = OnlineOptions::singleton;
     online_opts = {opt, argc, argv, Spdz2kShare<64, 64>(), true};
     DishonestMajorityMachine machine(argc, argv, opt, online_opts, gf2n());
     int k = ring_options.ring_size_from_opts_or_schedule(online_opts.progname);
-
-#ifdef VERBOSE
-    cerr << "Using SPDZ2k with ring length " << k << " and security parameter "
-            << s << endl;
-#endif
 
 #undef Z
 #define Z(K, S) \
@@ -66,8 +63,10 @@ int main(int argc, const char** argv)
             cerr << "add Z(" << k << ", " << s << ") to " << __FILE__ << " at line "
                     << (__LINE__ - 11) << " and create Machines/SPDZ2^" << k << "+"
                     << s << ".cpp based on Machines/SPDZ2^72+64.cpp" << endl;
-            cerr << "Alternatively, compile with -DRING_SIZE=" << k
-                    << " and -DSPDZ2K_DEFAULT_SECURITY=" << s << endl;
+            cerr << "Alternatively, put 'MY_CFLAGS += -DRING_SIZE=" << k
+                    << " -DSPDZ2K_DEFAULT_SECURITY=" << s
+                    << "' in 'CONFIG.mine' before running 'make spdz2k-party.x'"
+                    << endl;
         }
         exit(1);
     }

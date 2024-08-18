@@ -12,6 +12,7 @@
 #include <set>
 #include <iostream>
 #include <fstream>
+#include <emscripten/websocket.h>
 using namespace std;
 
 #include "Tools/octetStream.h"
@@ -25,9 +26,9 @@ using namespace std;
 #include "Networking/PlayerBuffer.h"
 #include "Tools/Lock.h"
 
-#include "datachannel-wasm/wasm/include/rtc/datachannel.hpp"
-#include "datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
-#include "datachannel-wasm/wasm/include/rtc/configuration.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/datachannel.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/configuration.hpp"
 
 template<class T> class MultiPlayer;
 class Server;
@@ -167,7 +168,7 @@ struct CommStats
 class NamedCommStats : public map<string, CommStats>
 {
 public:
-  size_t sent;
+  word sent;
   string last;
 
   NamedCommStats();
@@ -196,7 +197,7 @@ class PlayerBase
 protected:
   int player_no;
 
-  size_t& sent;
+  word& sent;
   mutable NamedCommStats comm_stats;
 
 public:

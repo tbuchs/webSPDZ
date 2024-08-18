@@ -53,9 +53,9 @@ public:
 
   char* get_ptr() const     { return (char*)&a; }
 
-  unsigned long debug() const { return a; }
+  unsigned long long debug() const { return a; }
 
-  void assign(long x)       { *this = x; }
+  void assign(long long x)       { *this = x; }
   void assign(const void* buffer) { avx_memcpy(&a, buffer, sizeof(a)); }
   void assign_zero()        { a = 0; }
   void assign_one()         { a = 1; }
@@ -64,14 +64,14 @@ public:
   bool is_one() const       { return a == 1; }
   bool is_bit() const       { return is_zero() or is_one(); }
 
-  long operator>>(const IntBase<long>& other) const
+  long long operator>>(const IntBase<long long>& other) const
   {
     if (other.get() < N_BITS)
-      return (unsigned long) a >> other.get();
+      return (unsigned long long) a >> other.get();
     else
       return 0;
   }
-  long operator<<(const IntBase<long>& other) const
+  long long operator<<(const IntBase<long long>& other) const
   {
     if (other.get() < N_BITS)
       return a << other.get();
@@ -79,9 +79,9 @@ public:
       return 0;
   }
 
-  long operator^(const IntBase& other) const { return a ^ other.a; }
-  long operator&(const IntBase& other) const { return a & other.a; }
-  long operator|(const IntBase& other) const { return a | other.a; }
+  long long operator^(const IntBase& other) const { return a ^ other.a; }
+  long long operator&(const IntBase& other) const { return a & other.a; }
+  long long operator|(const IntBase& other) const { return a | other.a; }
 
   bool operator==(const IntBase& other) const { return a == other.a; }
   bool operator!=(const IntBase& other) const { return a != other.a; }
@@ -91,7 +91,7 @@ public:
   T& operator^=(const IntBase& other) { return a ^= other.a; }
   T& operator&=(const IntBase& other) { return a &= other.a; }
 
-  IntBase mask(int n) const { return n < N_BITS ? *this & ((1L << n) - 1) : *this; }
+  IntBase mask(int n) const { return n < N_BITS ? *this & ((1LL << n) - 1) : *this; }
   void mask(IntBase& res, int n) const { res = mask(n); }
 
   friend ostream& operator<<(ostream& s, const IntBase& x) { x.output(s, true); return s; }
@@ -108,7 +108,7 @@ public:
 };
 
 // Wrapper class for integer
-class Integer : public IntBase<long>
+class Integer : public IntBase<long long>
 {
   public:
 
@@ -128,7 +128,7 @@ class Integer : public IntBase<long>
   static Integer convert_unsigned(const Z2<K>& other);
 
   Integer()                 { a = 0; }
-  Integer(long a) : IntBase(a) {}
+  Integer(long long a) : IntBase(a) {}
   Integer(const bigint& x)  { *this = (x > 0) ? x.get_ui() : -x.get_ui(); }
   template<int K>
   Integer(const Z2<K>& x) : Integer(x.get_limb(0)) {}
@@ -142,21 +142,21 @@ class Integer : public IntBase<long>
 
   void convert_destroy(bigint& other) { *this = other.get_si(); }
 
-  long operator+(const Integer& other) const { return a + other.a; }
-  long operator-(const Integer& other) const { return a - other.a; }
-  long operator*(const Integer& other) const { return a * other.a; }
-  long operator/(const Integer& other) const { return a / other.a; }
+  long long operator+(const Integer& other) const { return a + other.a; }
+  long long operator-(const Integer& other) const { return a - other.a; }
+  long long operator*(const Integer& other) const { return a * other.a; }
+  long long operator/(const Integer& other) const { return a / other.a; }
 
   bool operator<(const Integer& other) const { return a < other.a; }
   bool operator<=(const Integer& other) const { return a <= other.a; }
   bool operator>(const Integer& other) const { return a > other.a; }
   bool operator>=(const Integer& other) const { return a >= other.a; }
 
-  long operator+=(const Integer& other) { return a += other.a; }
+  long long operator+=(const Integer& other) { return a += other.a; }
 
   friend unsigned int& operator+=(unsigned int& x, const Integer& other) { return x += other.a; }
 
-  long operator-() const { return -a; }
+  long long operator-() const { return -a; }
 };
 
 inline string to_string(const Integer& x)
@@ -165,7 +165,7 @@ inline string to_string(const Integer& x)
 }
 
 template<>
-inline void IntBase<long>::randomize(PRNG& G)
+inline void IntBase<long long>::randomize(PRNG& G)
 {
   a = G.get_word();
 }

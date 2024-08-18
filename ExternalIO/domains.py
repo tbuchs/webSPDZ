@@ -2,8 +2,12 @@ import struct
 
 class Domain:
     def __init__(self, value=0):
-        self.v = int(value % self.modulus)
+        self.v = int(round(value)) % self.modulus
         assert(self.v >= 0)
+
+    def __int__(self):
+        res = self.v % self.modulus
+        return res if res < self.modulus / 2 else res - self.modulus
 
     def __add__(self, other):
         try:

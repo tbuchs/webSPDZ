@@ -12,7 +12,6 @@
 #include "OnlineMachine.hpp"
 #include "OnlineOptions.hpp"
 
-
 template<template<class U> class T, class V>
 HonestMajorityFieldMachine<T, V>::HonestMajorityFieldMachine(int argc,
         const char **argv)
@@ -34,6 +33,7 @@ template<template<class U> class T, template<class U> class V, class W, class X>
 FieldMachine<T, V, W, X>::FieldMachine(int argc, const char** argv,
         ez::ezOptionParser& opt, OnlineOptions& online_opts, int nplayers)
 {
+    assert(nplayers or T<gfpvar>::variable_players);
     W machine(argc, argv, opt, online_opts, X(), nplayers);
     int n_limbs = online_opts.prime_limbs();
     switch (n_limbs)

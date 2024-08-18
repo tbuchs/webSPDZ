@@ -40,10 +40,10 @@ inline void avx_memcpy(void* dest, const void* source)
 	// 	_mm_storeu_si128(d2++, _mm_loadu_si128(s2++));
 	// 	length -= 16;
 	// }
-//#else
+// #else
 	void* d2 = dest;
 	const void* s2 = source;
-//#endif
+// #endif
 	switch (length)
 	{
 	case 0:

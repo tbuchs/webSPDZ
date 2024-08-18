@@ -106,3 +106,10 @@ prep_setup_error::prep_setup_error(const string& error, int nplayers,
                         + to_string(nplayers) + fake_opts + "'?")
 {
 }
+
+insufficient_shares::insufficient_shares(int expected, int actual, exception& e) :
+        runtime_error(
+                "expected " + to_string(expected) + " shares but only got "
+                        + to_string(actual) + " (" + e.what() + ")")
+{
+}

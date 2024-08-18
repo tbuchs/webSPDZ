@@ -8,6 +8,7 @@ the ones used below into ``Programs/Circuits`` as follows::
 .. _`Bristol Fashion`: https://homes.esat.kuleuven.be/~nsmart/MPC
 
 """
+import math
 
 from Compiler.GC.types import *
 from Compiler.library import function_block, get_tape
@@ -131,7 +132,10 @@ def sha3_256(x):
         c = sbitvec.from_hex('41fb')
         d = sbitvec.from_hex('1f877c')
         e = sbitvec.from_vec([sbit(0)] * 8)
-        for x in a, b, c, d, e:
+        f = sbitvec.from_hex('41fb6834928423874832892983984728289238949827929283743858382828372f17188141fb6834928423874832892983984728289238949827929283743858382828372f17188141fb6834928423874832892983984728289238949827')
+        g = sbitvec.from_hex('41fb6834928423874832892983984728289238949827929283743858382828372f17188141fb6834928423874832892983984728289238949827929283743858382828372f17188141fb6834928423874832892983984728289238949827929283743858382828372f17188141fb6834928423874832892983984728289238949827929283743858382828372f171881')
+        h = sbitvec.from_vec([sbit(0)] * 3000)
+        for x in a, b, c, d, e, f, g, h:
             sha3_256(x).reveal_print_hex()
 
     This should output the `test vectors
@@ -144,6 +148,10 @@ def sha3_256(x):
         Reg[0] = 0x39f31b6e653dfcd9caed2602fd87f61b6254f581312fb6eeec4d7148fa2e72aa #
         Reg[0] = 0xbc22345e4bd3f792a341cf18ac0789f1c9c966712a501b19d1b6632ccd408ec5 #
         Reg[0] = 0x5d53469f20fef4f8eab52b88044ede69c77a6a68a60728609fc4a65ff531e7d0 #
+        Reg[0] = 0xf5f673ec50d662039871fd53fae3ced069baf09030132d6d60d2ba7040b02b18 #
+        Reg[0] = 0xa8a42e808f9dc0f43366d5de91511f42e9c3f8f37de0307f010bf629401edd2a #
+        Reg[0] = 0xf722631013ecacd42b4c7259e9fe22b8c81a86e9fe0d4a626800e7f50c5a8978 #
+
 
     """
 
@@ -154,28 +162,24 @@ def sha3_256(x):
 
     # whole bytes
     assert len(x.v) % 8 == 0
-    # only one block
+    # rate
     r = 1088
-    assert len(x.v) < 1088
+    # round up to be multiple of rate
+    length_with_suffix = len(x.v) + 8 # to handle the case the fixed padding overflows the block
+    n_blocks = max(math.ceil(length_with_suffix / r), 1)
+    upper_block_length = n_blocks * r
+
     if x.v:
         n = x.v[0].n
     else:
         n = 1
     d = sbitvec([sbits.get_type(8)(0x06)] * n)
     sbn = sbits.get_type(n)
-    padding = [sbn(0)] * (r - 8 - len(x.v))
-    P_flat = x.v + d.v + padding
-    assert len(P_flat) == r
-    P_flat[-1] = ~P_flat[-1]
-    w = 64
-    P1 = [P_flat[i * w:(i + 1) * w] for i in range(r // w)]
+    padding = [sbn(0)] * (upper_block_length - 8 - len(x.v))
 
-    S = [[[sbn(0) for i in range(w)] for i in range(5)] for i in range(5)]
-    for x in range(5):
-        for y in range(5):
-            if x + 5 * y < r // w:
-                for i in range(w):
-                    S[x][y][i] ^= P1[x + 5 * y][i]
+    P_flat = x.v + d.v + padding
+    assert len(P_flat) == upper_block_length
+    P_flat[-1] = ~P_flat[-1] # set last bit to 1
 
     def flatten(S):
         res = [None] * 1600
@@ -191,18 +195,33 @@ def sha3_256(x):
         for y in range(5):
             for x in range(5):
                 for i in range(w):
-                    j = (5 * x + y) * w + i // 8 * 8 + 7 - i % 8
+                    j = (5 * y + x) * w + i // 8 * 8 + 7 - i % 8
                     res[x][y][i] = S_flat[1600 - 1 -j]
         return res
 
-    S = unflatten(Keccak_f(flatten(S)))
+    w = 64
+    # Initial state
+    S = [[[sbn(0) for i in range(w)] for i in range(5)] for i in range(5)]
+    def insert_block(local_S, local_P):
+        assert len(local_P) == r
+        P1 = [local_P[i * w:(i + 1) * w] for i in range(r // w)]
+        for x in range(5):
+            for y in range(5):
+                if x + 5 * y < r // w:
+                    for i in range(w):
+                        local_S[x][y][i] ^= P1[x + 5 * y][i]
+
+    for block_id in range(n_blocks):
+        block = P_flat[block_id * r:(block_id + 1) * r]
+        insert_block(S, block)
+        S = unflatten(Keccak_f(flatten(S)))
 
     Z = []
     while len(Z) <= 256:
         for y in range(5):
             for x in range(5):
                 if x + 5 * y < r // w:
-                    Z += S[y][x]
+                    Z += S[x][y]
         if len(Z) <= 256:
             S = unflatten(Keccak_f(flatten(S)))
     return sbitvec.from_vec(Z[:256])

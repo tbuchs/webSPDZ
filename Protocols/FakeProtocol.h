@@ -7,6 +7,7 @@
 #define PROTOCOLS_FAKEPROTOCOL_H_
 
 #include "Replicated.h"
+#include "SecureShuffle.h"
 #include "Math/Z2k.h"
 #include "Processor/Instruction.h"
 #include "Processor/TruncPrTuple.h"
@@ -17,6 +18,8 @@ template<class T>
 class FakeShuffle
 {
 public:
+    typedef ShuffleStore<int> store_type;
+
     FakeShuffle(SubProcessor<T>&)
     {
     }
@@ -27,9 +30,9 @@ public:
         apply(a, n, unit_size, output_base, input_base, 0, 0);
     }
 
-    size_t generate(size_t)
+    size_t generate(size_t, store_type& store)
     {
-        return 0;
+        return store.add();
     }
 
     void apply(vector<T>& a, size_t n, int unit_size, size_t output_base,
@@ -47,10 +50,6 @@ public:
             for (int i = 0; i < unit_size; i++)
                 swap(a[output_base + i], a[output_base + i + unit_size]);
         }
-    }
-
-    void del(size_t)
-    {
     }
 
     void inverse_permutation(vector<T>&, size_t, size_t, size_t)
@@ -277,6 +276,19 @@ public:
                     auto& res = processor.get_S()[args[i + 2] + j];
                     res = T(processor.get_S()[args[i + 3] + j]).get_bit(
                             args[i + 4] - 1);
+                }
+            }
+        }
+        else if (tag == string("EQZ\0", 4))
+        {
+            for (size_t i = 0; i < args.size(); i += args[i])
+            {
+                assert(i + args[i] <= args.size());
+                assert(args[i] == 6);
+                for (int j = 0; j < args[i + 1]; j++)
+                {
+                    auto& res = processor.get_S()[args[i + 2] + j];
+                    res = processor.get_S()[args[i + 3] + j] == 0;
                 }
             }
         }

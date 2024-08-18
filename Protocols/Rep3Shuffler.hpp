@@ -13,9 +13,10 @@ Rep3Shuffler<T>::Rep3Shuffler(vector<T>& a, size_t n, int unit_size,
         size_t output_base, size_t input_base, SubProcessor<T>& proc) :
         proc(proc)
 {
-    apply(a, n, unit_size, output_base, input_base, generate(n / unit_size),
+    store_type store;
+    int handle = generate(n / unit_size, store);
+    apply(a, n, unit_size, output_base, input_base, store.get(handle),
             false);
-    shuffles.pop_back();
 }
 
 template<class T>
@@ -25,10 +26,10 @@ Rep3Shuffler<T>::Rep3Shuffler(SubProcessor<T>& proc) :
 }
 
 template<class T>
-int Rep3Shuffler<T>::generate(int n_shuffle)
+int Rep3Shuffler<T>::generate(int n_shuffle, store_type& store)
 {
-    shuffles.push_back({});
-    auto& shuffle = shuffles.back();
+    int res = store.add();
+    auto& shuffle = store.get(res);
     for (int i = 0; i < 2; i++)
     {
         auto& perm = shuffle[i];
@@ -40,19 +41,22 @@ int Rep3Shuffler<T>::generate(int n_shuffle)
             swap(perm[k], perm[k + j]);
         }
     }
-    return shuffles.size() - 1;
+    return res;
 }
 
 template<class T>
 void Rep3Shuffler<T>::apply(vector<T>& a, size_t n, int unit_size,
-        size_t output_base, size_t input_base, int handle, bool reverse)
+        size_t output_base, size_t input_base, shuffle_type& shuffle,
+        bool reverse)
 {
     assert(proc.P.num_players() == 3);
     assert(not T::malicious);
     assert(not T::dishonest_majority);
     assert(n % unit_size == 0);
 
-    auto& shuffle = shuffles.at(handle);
+    if (shuffle.empty())
+        throw runtime_error("shuffle has been deleted");
+
     vector<T> to_shuffle;
     for (size_t i = 0; i < n; i++)
         to_shuffle.push_back(a[input_base + i]);
@@ -113,12 +117,6 @@ void Rep3Shuffler<T>::apply(vector<T>& a, size_t n, int unit_size,
 
     for (size_t i = 0; i < n; i++)
         a[output_base + i] = to_shuffle[i];
-}
-
-template<class T>
-void Rep3Shuffler<T>::del(int handle)
-{
-    shuffles.at(handle) = {};
 }
 
 template<class T>

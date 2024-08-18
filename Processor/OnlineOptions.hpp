@@ -11,7 +11,7 @@
 template<class T>
 OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
         const char** argv, T, bool default_live_prep) :
-        OnlineOptions(opt, argc, argv, T::dishonest_majority ? 1000 : 0,
+        OnlineOptions(opt, argc, argv, OnlineOptions(T()).batch_size,
                 default_live_prep, T::clear::prime_field)
 {
     if (T::has_trunc_pr)
@@ -56,13 +56,39 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
               "--max-broadcast" // Flag token.
         );
     }
+
+    if (not T::clear::binary)
+        opt.add(
+              "", // Default.
+              0, // Required?
+              1, // Number of args expected.
+              0, // Delimiter if expecting multiple args.
+              "Use directory on disk for memory (container data structures) "
+              "instead of RAM", // Help description.
+              "-D", // Flag token.
+              "--disk-memory" // Flag token.
+        );
+
+    if (T::variable_players)
+        opt.add(
+              T::dishonest_majority ? "2" : "3", // Default.
+              0, // Required?
+              1, // Number of args expected.
+              0, // Delimiter if expecting multiple args.
+              ("Number of players (default: "
+                      + (T::dishonest_majority ?
+                              to_string("2") : to_string("3")) + "). " +
+              "Ignored if external server is used.").c_str(), // Help description.
+              "-N", // Flag token.
+              "--nparties" // Flag token.
+        );
 }
 
 template<class T>
 OnlineOptions::OnlineOptions(T) : OnlineOptions()
 {
-    if (T::dishonest_majority)
-        batch_size = 1000;
+    if (not T::dishonest_majority)
+        batch_size = 10000;
 }
 
 #endif /* PROCESSOR_ONLINEOPTIONS_HPP_ */

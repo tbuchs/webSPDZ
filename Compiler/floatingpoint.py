@@ -286,6 +286,7 @@ def BitDecRingRaw(a, k, m):
         bits = r_bits[0].bit_adder(r_bits, masked.bit_decompose(m))
         return bits
 
+@instructions_base.bit_cisc
 def BitDecRing(a, k, m):
     bits = BitDecRingRaw(a, k, m)
     # reversing to reduce number of rounds
@@ -304,6 +305,7 @@ def BitDecFieldRaw(a, k, m, kappa, bits_to_compute=None):
     instructions_base.reset_global_vector_size()
     return res
 
+@instructions_base.bit_cisc
 def BitDecField(a, k, m, kappa, bits_to_compute=None):
     res = BitDecFieldRaw(a, k, m, kappa, bits_to_compute)
     return [types.sintbit.conv(bit) for bit in res]
@@ -358,7 +360,6 @@ def B2U_from_Pow2(pow2a, l, kappa):
 def Trunc(a, l, m, kappa=None, compute_modulo=False, signed=False):
     """ Oblivious truncation by secret m """
     prog = program.Program.prog
-    kappa = kappa or prog.security
     if util.is_constant(m) and not compute_modulo:
         # cheaper
         res = type(a)(size=a.size)
@@ -371,6 +372,8 @@ def Trunc(a, l, m, kappa=None, compute_modulo=False, signed=False):
             return a * (1 - m)
     if program.Program.prog.options.ring and not compute_modulo:
         return TruncInRing(a, l, Pow2(m, l, kappa))
+    else:
+        kappa = kappa or program.Program.prog.security
     r = [types.sint() for i in range(l)]
     r_dprime = types.sint(0)
     r_prime = types.sint(0)
@@ -409,6 +412,7 @@ def Trunc(a, l, m, kappa=None, compute_modulo=False, signed=False):
         b = shifted - d
     return b
 
+@instructions_base.ret_cisc
 def TruncInRing(to_shift, l, pow2m):
     n_shift = int(program.Program.prog.options.ring) - l
     bits = BitDecRing(to_shift, l, l)
@@ -433,11 +437,7 @@ def SplitInRing(a, l, m):
 def TruncRoundNearestAdjustOverflow(a, length, target_length, kappa):
     t = comparison.TruncRoundNearest(a, length, length - target_length, kappa)
     overflow = t.greater_equal(two_power(target_length), target_length + 1, kappa)
-    if program.Program.prog.options.ring:
-        s = (1 - overflow) * t + \
-            comparison.TruncLeakyInRing(overflow * t, length, 1, False)
-    else:
-        s = (1 - overflow) * t + overflow * t / 2
+    s = (1 - overflow) * t + overflow * t.trunc_zeros(1, length, False)
     return s, overflow
 
 def Int2FL(a, gamma, l, kappa=None):
@@ -555,7 +555,7 @@ def TruncPrField(a, k, m, kappa=None):
     c = (b + r).reveal(False)
     c_prime = c % two_to_m
     a_prime = c_prime - r_prime
-    d = (a - a_prime) / two_to_m
+    d = (a - a_prime).field_div(two_to_m)
     return d
 
 @instructions_base.ret_cisc

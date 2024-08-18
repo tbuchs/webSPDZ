@@ -4,6 +4,54 @@
 #include <fstream>
 
 template<class T>
+template<class U>
+void MemoryPart<T>::indirect_read(const Instruction& inst,
+    vector<T>& regs, const U& indices)
+{
+  size_t n = inst.get_size();
+  auto dest = regs.begin() + inst.get_r(0);
+  auto start = indices.begin() + inst.get_r(1);
+#ifdef CHECK_SIZE
+  assert(start + n <= indices.end());
+  assert(dest + n <= regs.end());
+#endif
+  long size = this->size();
+  const T* data = this->data();
+  for (auto it = start; it < start + n; it++)
+    {
+#ifndef NO_CHECK_SIZE
+      if (*it >= size)
+        throw overflow(T::type_string() + " memory read", it->get(), size);
+#endif
+      *dest++ = data[it->get()];
+    }
+}
+
+template<class T>
+template<class U>
+void MemoryPart<T>::indirect_write(const Instruction& inst,
+    vector<T>& regs, const U& indices)
+{
+  size_t n = inst.get_size();
+  auto source = regs.begin() + inst.get_r(0);
+  auto start = indices.begin() + inst.get_r(1);
+#ifdef CHECK_SIZE
+  assert(start + n <= indices.end());
+  assert(source + n <= regs.end());
+#endif
+  long size = this->size();
+  T* data = this->data();
+  for (auto it = start; it < start + n; it++)
+    {
+#ifndef NO_CHECK_SIZE
+      if (*it >= size)
+        throw overflow(T::type_string() + " memory write", it->get(), size);
+#endif
+      data[it->get()] = *source++;
+    }
+}
+
+template<class T>
 void Memory<T>::minimum_size(RegType secret_type, RegType clear_type,
     const Program &program, const string& threadname)
 {
@@ -27,6 +75,21 @@ void MemoryPart<T>::minimum_size(size_t size)
   {
       throw insufficient_memory(size, T::type_string());
   }
+}
+
+template<class T>
+Memory<T>::Memory() :
+    MS(
+        *(OnlineOptions::singleton.disk_memory.size() ?
+            static_cast<MemoryPart<T>*>(new MemoryPartImpl<T, DiskVector>) :
+            static_cast<MemoryPart<T>*>(new MemoryPartImpl<T, CheckVector>)))
+{
+}
+
+template<class T>
+Memory<T>::~Memory()
+{
+  delete &MS;
 }
 
 template<class T>

@@ -112,7 +112,7 @@ void OTVoleBase<T>::hash_row(__m128i res[2], const U& row,
 {
 	auto coeff_base = coefficients;
 	int num_blocks = DIV_CEIL(row.size() * T::size(), 16);
-	__m128i buffer[T::size()];
+	__m128i buffer[T::N_BYTES];
 	size_t next = 0;
 	while (next + 16 <= row.size())
 	{

@@ -1,7 +1,8 @@
 
 #include "Tools/time-func.h"
 #include "Tools/Exceptions.h"
-
+#include <limits.h>
+#include <iostream>
 #include <assert.h>
 
 long long timeval_diff(struct timeval *start_time, struct timeval *end_time)

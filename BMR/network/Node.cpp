@@ -167,7 +167,7 @@ void Node::Broadcast2(SendBuffer& msg) {
 }
 
 void Node::_identify() {
-	char msg[strlen(ID_HDR)+sizeof(_id)];
+	char* msg = new char[strlen(ID_HDR)+sizeof(_id)];
 	memcpy(msg, ID_HDR, strlen(ID_HDR));
 	memcpy(msg+strlen(ID_HDR), (const char *)&_id, sizeof(_id));
 	//printf("Node:: identifying myself:\n");
@@ -178,6 +178,7 @@ void Node::_identify() {
 	phex(buffer.data(), 4);
 #endif
 	_client->Broadcast(buffer);
+	delete[] msg;
 }
 
 void Node::_parse_map(const char* netmap_file, int num_parties) {

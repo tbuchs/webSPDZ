@@ -14,11 +14,12 @@ using namespace std;
 #include "Tools/ExecutionStats.h"
 #include "Tools/SwitchableOutput.h"
 #include "OnlineOptions.h"
+#include "Math/Integer.h"
 
 class ProcessorBase
 {
   // Stack
-  stack<long long> stacki;
+  stack<Integer> stacki;
 
   ifstream input_file;
   string input_filename;
@@ -26,7 +27,7 @@ class ProcessorBase
 
 protected:
   // Optional argument to tape
-  int arg;
+  Integer arg;
 
   string get_parameterized_filename(int my_num, int thread_num,
       const string& prefix);
@@ -38,15 +39,15 @@ public:
 
   ProcessorBase();
 
-  void pushi(long long x) { stacki.push(x); }
-  void popi(long long& x) { x = stacki.top(); stacki.pop(); }
+  void pushi(Integer x) { stacki.push(x); }
+  void popi(Integer& x) { x = stacki.top(); stacki.pop(); }
 
-  int get_arg() const
+  Integer get_arg() const
     {
       return arg;
     }
 
-  void set_arg(int new_arg)
+  void set_arg(Integer new_arg)
     {
       arg=new_arg;
     }

@@ -10,6 +10,7 @@
 #include "Math/gf2n.h"
 #include "Tools/ezOptionParser.h"
 #include "GC/Rep4Secret.h"
+#include "GC/Rep4Prep.h"
 #include "Processor/RingOptions.h"
 
 #include "Processor/RingMachine.hpp"

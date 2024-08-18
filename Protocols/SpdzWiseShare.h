@@ -40,6 +40,9 @@ public:
     typedef SpdzWiseInput<SpdzWiseShare> Input;
     typedef ::PrivateOutput<SpdzWiseShare> PrivateOutput;
 
+    typedef SpdzWiseShare Honest;
+    typedef LivePrep TriplePrep;
+
     typedef typename T::bit_type bit_type;
 
     static const bool expensive = true;
@@ -70,7 +73,8 @@ public:
     {
     }
 
-    SpdzWiseShare(const super& other) :
+    template<class U>
+    SpdzWiseShare(const Share_<U, U>& other) :
             super(other)
     {
     }

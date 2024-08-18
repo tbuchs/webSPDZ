@@ -67,20 +67,15 @@ void mul(Ciphertext& ans,const Ciphertext& c0,const Ciphertext& c1,
   cc0.Scale(pk.p()); cc1.Scale(pk.p());
   
   // Now do the multiply
-  Rq_Element d0,d1,d2;
-
-  mul(d0,cc0.cc0,cc1.cc0);
-  mul(d1,cc0.cc0,cc1.cc1);
-  mul(d2,cc0.cc1,cc1.cc0);
-  add(d1,d1,d2);
-  mul(d2,cc0.cc1,cc1.cc1); 
+  auto d0 = cc0.cc0 * cc1.cc0;
+  auto d1 = cc0.cc0 * cc1.cc1 + cc0.cc1 * cc1.cc0;
+  auto d2 = cc0.cc1 * cc1.cc1;
   d2.negate(); 
 
   // Now do the switch key
   d2.raise_level();
-  Rq_Element t;
   d0.mul_by_p1();
-  mul(t,pk.bs(),d2);
+  auto t =  pk.bs()* d2;
   add(d0,d0,t);
 
   d1.mul_by_p1();

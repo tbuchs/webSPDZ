@@ -89,9 +89,6 @@ class FHE_SK
 
   bool operator!=(const FHE_SK& x) const { return pr != x.pr or sk != x.sk; }
 
-  void add(octetStream& os, int = -1)
-  { FHE_SK tmp(*this); tmp.unpack(os); *this += tmp; }
-
   void check(const FHE_Params& params, const FHE_PK& pk, const bigint& pr) const;
 
   template<class FD>
@@ -120,10 +117,12 @@ class FHE_PK
   bigint p() const { return pr; }
 
   void assign(const Rq_Element& a,const Rq_Element& b,
-              const Rq_Element& sa = {},const Rq_Element& sb = {}
+              const Rq_Element& sa,const Rq_Element& sb
              )
 	{ a0=a; b0=b; Sw_a=sa; Sw_b=sb; }
 
+  void assign(const Rq_Element& a,const Rq_Element& b)
+        { a0=a; b0=b; }
 
   FHE_PK(const FHE_Params& pms);
 

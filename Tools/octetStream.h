@@ -156,31 +156,27 @@ class octetStream
   void store(unsigned int a) { store_int(a, 4); }
   /// Append 4-byte integer
   void store(int a);
-  /// Append 4-byte integer
-  void store(unsigned long a) { store_int(a, 4); }
   /// Read 4-byte integer
   void get(unsigned int& a) { a = get_int(4); }
   /// Read 4-byte integer
   void get(int& a);
-  /// Read 4-byte integer
-  void get(unsigned long& a) { a = get_int(4); }
 
   /// Append 8-byte integer
-  void store(uint64_t a) { store_int(a, 8); }
+  void store(word a) { store_int(a, 8); }
   /// Read 8-byte integer
-  void get(uint64_t& a) { a = get_int(8); }
+  void get(word& a) { a = get_int(8); }
 
   /// Append integer of ``n_bytes`` bytes
-  void store_int(uint64_t a, int n_bytes);
+  void store_int(word a, int n_bytes);
   /// Read integer of ``n_bytes`` bytes
-  uint64_t get_int(int n_bytes);
+  word get_int(int n_bytes);
 
   /// Append integer of ``N_BYTES`` bytes
   template<int N_BYTES>
-  void store_int(uint64_t a);
+  void store_int(word a);
   /// Read integer of ``N_BYTES`` bytes
   template<int N_BYTES>
-  uint64_t get_int();
+  word get_int();
 
   void store_bit(char a);
   char get_bit();
@@ -351,18 +347,18 @@ inline void octetStream::consume(octet* x,const size_t l)
   avx_memcpy(x, consume(l), l * sizeof(octet));
 }
 
-inline void octetStream::store_int(uint64_t l, int n_bytes)
+inline void octetStream::store_int(word l, int n_bytes)
 {
   encode_length(append(n_bytes), l, n_bytes);
 }
 
-inline uint64_t octetStream::get_int(int n_bytes)
+inline word octetStream::get_int(int n_bytes)
 {
   return decode_length(consume(n_bytes), n_bytes);
 }
 
 template<int N_BYTES>
-inline void octetStream::store_int(uint64_t l)
+inline void octetStream::store_int(word l)
 {
   assert(N_BYTES <= 8);
   uint64_t tmp = htole64(l);
@@ -370,10 +366,10 @@ inline void octetStream::store_int(uint64_t l)
 }
 
 template<int N_BYTES>
-inline uint64_t octetStream::get_int()
+inline word octetStream::get_int()
 {
   assert(N_BYTES <= 8);
-  uint64_t tmp = 0;
+  word tmp = 0;
   memcpy(&tmp, consume(N_BYTES), N_BYTES);
   return le64toh(tmp);
 }
@@ -455,7 +451,7 @@ inline int octetStream::get()
 template<class T>
 void octetStream::store(const vector<T>& v)
 {
-  store(v.size());
+  store((unsigned int)v.size());
   for (auto& x : v)
     store(x);
 }
@@ -463,7 +459,7 @@ void octetStream::store(const vector<T>& v)
 template<class T>
 void octetStream::get(vector<T>& v, const T& init)
 {
-  size_t size;
+  word size;
   get(size);
   v.reserve(size);
   for (size_t i = 0; i < size; i++)

@@ -138,12 +138,6 @@ public:
             v[i] = (x.v[i] * y.v[i]);
     }
 
-    void add(octetStream& os)
-    {
-        for (int i = 0; i < L; i++)
-            v[i].add(os);
-    }
-
     void negate()
     {
         for (auto& x : v)

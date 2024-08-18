@@ -45,6 +45,8 @@ union square128 {
     int16_t doublebytes[128][8];
     int32_t words[128][4];
 
+    square128() {}
+
     bool get_bit(int x, int y)
     { return (bytes[x][y/8] >> (y % 8)) & 1; }
 

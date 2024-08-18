@@ -186,7 +186,7 @@ void gf2n_<U>::init_multiplication()
 template<class U>
 void gf2n_<U>::specification(octetStream& os)
 {
-  os.store(sizeof(U));
+  os.store((unsigned int)sizeof(U));
   os.store(degree());
 }
 

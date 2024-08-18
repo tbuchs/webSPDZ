@@ -296,4 +296,10 @@ public:
     prep_setup_error(const string& error, int nplayers, const string& fake_opts);
 };
 
+class insufficient_shares : public runtime_error
+{
+public:
+    insufficient_shares(int expected, int actual, exception& e);
+};
+
 #endif

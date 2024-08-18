@@ -24,8 +24,8 @@ public:
 	Key(long long a, long long b) : r(_mm_set_epi64x(a, b)) {}
 	Key(__m128i r) : r(r) {}
 
-	bool operator==(const Key& other);
-	bool operator!=(const Key& other) { return !(*this == other); }
+	bool operator==(const Key& other) const;
+	bool operator!=(const Key& other) const { return !(*this == other); }
 
 	Key& operator-=(const Key& other);
 	Key& operator+=(const Key& other);
@@ -49,7 +49,7 @@ ostream& operator<<(ostream& o, const Key& key);
 ostream& operator<<(ostream& o, const __m128i& x);
 
 
-inline bool Key::operator==(const Key& other) {
+inline bool Key::operator==(const Key& other) const {
     return int128(r) == other.r;
 }
 

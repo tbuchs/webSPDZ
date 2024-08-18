@@ -8,8 +8,6 @@ if 'trunc_pr' in program.args:
 if 'split' in program.args:
     program.use_split(3)
 
-program.options.cisc = True
-
 try:
     n_threads = int(program.args[2])
 except:

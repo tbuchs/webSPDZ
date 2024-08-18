@@ -176,7 +176,7 @@ void MAC_Check_<U>::Check(const Player& P)
           for (auto& os : bundle)
             if (&os != &bundle.mine)
               delta += os.get<typename U::mac_type>();
-          if (not delta.is_zero())
+          if (delta != 0)
             throw mac_fail();
         }
     }
@@ -194,8 +194,6 @@ void MAC_Check_<U>::Check(const Player& P)
       typename U::mac_type a,gami,temp;
       typename U::mac_type::Scalar h;
       vector<typename U::mac_type> tau(P.num_players());
-      a.assign_zero();
-      gami.assign_zero();
       for (int i=0; i<popen_cnt; i++)
         {
           h.almost_randomize(G);
@@ -217,10 +215,10 @@ void MAC_Check_<U>::Check(const Player& P)
       //cerr << "\tFinal Check" << endl;
 
       typename U::mac_type t;
-      t.assign_zero();
       for (int i=0; i<P.num_players(); i++)
         { t += tau[i]; }
-      if (!t.is_zero()) { throw mac_fail(); }
+      if (t != 0)
+        throw mac_fail();
     }
 
   vals.erase(vals.begin(), vals.begin() + popen_cnt);

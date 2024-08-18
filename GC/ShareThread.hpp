@@ -142,7 +142,6 @@ void ShareThread<T>::andrsvec(Processor<T>& processor, const vector<int>& args)
         int size = *it++;
         it += n_args;
         int base = *it++;
-        assert(n_args <= N_BITS);
         for (int i = 0; i < size; i += N_BITS)
         {
             int n_ops = min(N_BITS, size - i);

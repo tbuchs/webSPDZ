@@ -222,14 +222,14 @@ inline __m128i software_clmul(__m128i a, __m128i b, int choice)
 template<int choice>
 inline __m128i clmul(__m128i a, __m128i b)
 {
-#if defined(__PCLMUL__)// || !defined(__x86_64__)
-    if (cpu_has_pclmul())
-    {
-        return _mm_clmulepi64_si128(a, b, choice);
-    }
-    else
-#endif
-        return software_clmul(a, b, choice);
+// #if defined(__PCLMUL__) || !defined(__x86_64__)
+//     if (cpu_has_pclmul())
+//     {
+//         return _mm_clmulepi64_si128(a, b, choice);
+//     }
+//     else
+// #endif
+  return software_clmul(a, b, choice);
 }
 
 inline void mul128(__m128i a, __m128i b, __m128i *res1, __m128i *res2)

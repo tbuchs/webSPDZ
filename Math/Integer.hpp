@@ -11,7 +11,7 @@ const int IntBase<T>::N_BITS;
 template<class T>
 inline void IntBase<T>::specification(octetStream& os)
 {
-  os.store(sizeof(T));
+  os.store((unsigned int)sizeof(T));
 }
 
 template<class T>

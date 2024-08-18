@@ -57,23 +57,23 @@ void thread_info<sint, sgf2n>::Sub_Main_Func()
 #else
   if (machine.use_encryption)
     {
-  #ifdef VERBOSE_OPTIONS
+#ifdef VERBOSE_OPTIONS
       cerr << "Using encrypted single-threaded communication" << endl;
-  #endif
+#endif
       player = new CryptoPlayer(*(tinfo->Nms), id);
     }
   else if (!opts.receive_threads or opts.direct)
     {
-  #ifdef VERBOSE_OPTIONS
+#ifdef VERBOSE_OPTIONS
       cerr << "Using single-threaded receiving" << endl;
-  #endif
+#endif
       player = new PlainPlayer(*(tinfo->Nms), id);
     }
   else
     {
-  #ifdef VERBOSE_OPTIONS
+#ifdef VERBOSE_OPTIONS
       cerr << "Using player-specific threads for receiving" << endl;
-  #endif
+#endif
       player = new ThreadPlayer(*(tinfo->Nms), id);
     }
 #endif
@@ -288,7 +288,9 @@ void thread_info<sint, sgf2n>::Sub_Main_Func()
 
           // prevent mangled output
           cout.flush();
+
           actual_usage.increase(Proc.DataF.get_usage());
+
          if (progs[program].usage_unknown())
            { // communicate file positions to main thread
              job.pos.increase(Proc.DataF.get_usage());
@@ -348,7 +350,6 @@ void thread_info<sint, sgf2n>::Sub_Main_Func()
   timer.stop(P.total_comm());
   queues->timers["online"] = online_timer - online_prep_timer - queues->wait_timer;
   queues->timers["prep"] = timer - queues->timers["wait"] - queues->timers["online"];
-  cerr << "Timer rcv: " << P.recv_timer.elapsed() << " vs " << P.wait_timer.elapsed() << endl;
 
   // prevent faulty usage message
   Proc.DataF.set_usage(actual_usage);

@@ -135,7 +135,7 @@ void YaoGarbleWire::and_(GC::Memory<GC::Secret<YaoGarbleWire> >& S,
 				for (int k = 0; k < left; k++)
 				{
 					auto& left_wire = S[*(it + 2) + j].get_reg(k);
-					auto& right_wire = S[*(it + 3) + j].get_reg(
+					auto& right_wire = S[*(it + 3) + (repeat ? 0 : j)].get_reg(
 							repeat ? 0 : k);
 					counter++;
 					YaoGate::E_inputs(labels, left_wire,

@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include <emscripten/websocket.h>
+#include <emscripten/threading.h>
 #include "WebConnection.h"
 
 using namespace std;
@@ -285,7 +286,6 @@ void WebPlayer::send_message(int receiver, const octetStream* msg)
     unsigned char* data = (unsigned char*)msg->get_data();
     int size = msg->get_length();
     emscripten_sync_run_in_main_runtime_thread(EM_FUNC_SIG_VIII, ptr, dc, data, size);
-    // emscripten_async_run_in_main_runtime_thread(EM_FUNC_SIG_VIII, ptr, dc, data, size);
   } else if(receiver == player_no) {
     // self send
     cerr << "Sending message to self" << endl;
@@ -428,14 +428,14 @@ PlayerBase::~PlayerBase()
 
 
 // Set up nmachines client and server sockets to send data back and fro
-//   A machine is a server between it and player i if i<=my_number
+//   A machine is a server between it and player i if i>=my_number
 //   Can also communicate with myself, but only with send_to and receive_from
 void PlainPlayer::setup_sockets(const vector<string>& names,
         const vector<int>& ports, const string& id_base, ServerSocket& server)
 {
     sockets.resize(nplayers);
     // Set up the client side
-    for (int i=player_no; i<nplayers; i++) {
+    for (int i=0; i<=player_no; i++) {
         auto pn=id_base+"P"+to_string(player_no);
         if (i==player_no) {
           const char* localhost = "127.0.0.1";
@@ -444,19 +444,19 @@ void PlainPlayer::setup_sockets(const vector<string>& names,
               "Setting up send to self socket to %s:%d with id %s\n",
               localhost, ports[i], pn.c_str());
 #endif
-            set_up_client_socket(sockets[i],localhost,ports[i]);
+          set_up_client_socket(sockets[i],localhost,ports[i]);
         } else {
 #ifdef DEBUG_NETWORKING
             fprintf(stderr, "Setting up client to %s:%d with id %s\n",
                 names[i].c_str(), ports[i], pn.c_str());
 #endif
-            set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
+          set_up_client_socket(sockets[i],names[i].c_str(),ports[i]);
         }
         octetStream(pn).Send(sockets[i]);
     }
     send_to_self_socket = sockets[player_no];
     // Setting up the server side
-    for (int i=0; i<=player_no; i++) {
+    for (int i=player_no; i<nplayers; i++) {
         auto id=id_base+"P"+to_string(i);
 #ifdef DEBUG_NETWORKING
         fprintf(stderr,

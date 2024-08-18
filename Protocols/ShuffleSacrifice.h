@@ -62,6 +62,7 @@ class TripleShuffleSacrifice : public ShuffleSacrifice
 public:
     TripleShuffleSacrifice();
     TripleShuffleSacrifice(int B, int C);
+    TripleShuffleSacrifice(DataFieldType type);
 
     void triple_sacrifice(vector<array<T, 3>>& triples,
             vector<array<T, 3>>& check_triples, Player& P,

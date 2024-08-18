@@ -9,18 +9,42 @@
 #include <vector>
 using namespace std;
 
+#include "Tools/Lock.h"
+
 template<class T> class SubProcessor;
+
+template<class T>
+class ShuffleStore
+{
+    typedef T shuffle_type;
+
+    deque<shuffle_type> shuffles;
+
+    Lock store_lock;
+
+    void lock();
+    void unlock();
+
+public:
+    int add();
+    shuffle_type& get(int handle);
+    void del(int handle);
+};
 
 template<class T>
 class SecureShuffle
 {
+public:
+    typedef vector<vector<vector<T>>> shuffle_type;
+    typedef ShuffleStore<shuffle_type> store_type;
+
+private:
     SubProcessor<T>& proc;
     vector<T> to_shuffle;
     vector<vector<T>> config;
     vector<T> tmp;
     int unit_size;
 
-    vector<vector<vector<vector<T>>>> shuffles;
     size_t n_shuffle;
     bool exact;
 
@@ -62,7 +86,7 @@ public:
 
     SecureShuffle(SubProcessor<T>& proc);
 
-    int generate(int n_shuffle);
+    int generate(int n_shuffle, store_type& store);
 
     /**
      *
@@ -73,12 +97,12 @@ public:
      *                  would result in [3,4,1,2]
      * @param output_base The starting address of the output vector (i.e. the location to write the inverted permutation to)
      * @param input_base The starting address of the input vector (i.e. the location from which to read the permutation)
-     * @param handle The integer identifying the preconfigured waksman network (shuffle) to use. Such a handle can be obtained from calling
+     * @param shuffle The preconfigured waksman network (shuffle) to use
      * @param reverse Boolean indicating whether to apply the inverse of the permutation
      * @see SecureShuffle::generate for obtaining a shuffle handle
      */
     void apply(vector<T>& a, size_t n, int unit_size, size_t output_base,
-            size_t input_base, int handle, bool reverse);
+            size_t input_base, shuffle_type& shuffle, bool reverse);
 
     /**
      * Calculate the secret inverse permutation of stack given secret permutation.
@@ -94,8 +118,6 @@ public:
      * @param input_base The starting address of the input vector (i.e. the location from which to read the permutation)
      */
     void inverse_permutation(vector<T>& stack, size_t n, size_t output_base, size_t input_base);
-
-    void del(int handle);
 };
 
 #endif /* PROTOCOLS_SECURESHUFFLE_H_ */

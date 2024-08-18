@@ -6,11 +6,17 @@
 #ifndef TOOLS_INT_H_
 #define TOOLS_INT_H_
 
+#include <stdint.h>
 
 typedef unsigned char octet;
 
 // Assumes word is a 64 bit value
-typedef unsigned long long word;
+#ifdef WIN32
+  typedef unsigned __int64 word;
+#else
+  typedef uint64_t word;
+  // typedef unsigned long word;
+#endif
 
 
 inline int CEIL_LOG2(int x)

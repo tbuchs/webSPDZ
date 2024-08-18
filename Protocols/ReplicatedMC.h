@@ -33,10 +33,10 @@ public:
     void POpen_Begin(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
     void POpen_End(vector<typename T::open_type>& values,const vector<T>& S, Player& P);
 
-    virtual void exchange( Player& P);
+    virtual void exchange(Player& P);
     virtual typename T::open_type finalize_raw();
 
-    void Check( Player& P) { (void)P; }
+    void Check(Player& P) { (void)P; }
 
     ReplicatedMC& get_part_MC()
     {

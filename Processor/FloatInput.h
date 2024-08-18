@@ -19,7 +19,7 @@ public:
 
     const static int TYPE = 2;
 
-    long long items[N_DEST];
+    long items[N_DEST];
 
     void read(std::istream& in, const int* params);
 };

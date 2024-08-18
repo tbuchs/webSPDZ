@@ -140,16 +140,12 @@ void ServerSocket::accept_clients()
       fprintf(stderr, "Accepting...\n");
 #endif
       int consocket;
-      for (int i = 0; i < 25; i++)
+      for (int i = 0; i < 1000; i++)
       {
         consocket = accept(main_socket, (struct sockaddr*) &dest,
           (socklen_t*) &socksize);
         if (consocket < 0)
-        {
-          cerr << "accept returned " << consocket << " (" << strerror(errno) << "), sleeping for " << (1 << i) << " ms" << endl;
-          emscripten_sleep(1 << i);
-        }
-          //usleep(1 << i);
+          usleep(min(1 << i, 1000));
         else
           break;
       }
@@ -208,8 +204,10 @@ int ServerSocket::get_connection_socket(const string& id)
 
   while (clients.find(id) == clients.end())
   {
-      if (data_signal.wait(60) == ETIMEDOUT)
-          throw runtime_error("No client after one minute");
+      if (data_signal.wait(CONNECTION_TIMEOUT) == ETIMEDOUT)
+          throw runtime_error("Timed out waiting for peer. See "
+                  "https://mp-spdz.readthedocs.io/en/latest/networking.html "
+                  "for details on networking.");
   }
 
   int client_socket = clients[id];
@@ -232,7 +230,7 @@ void AnonymousServerSocket::init()
 void AnonymousServerSocket::process_client(const string& client_id)
 {
   if (clients.find(client_id) != clients.end())
-    close_client_socket(clients[client_id]);
+    throw runtime_error("client " + client_id + " already connected");
   client_connection_queue.push(client_id);
 }
 
@@ -240,9 +238,14 @@ int AnonymousServerSocket::get_connection_socket(string& client_id)
 {
   data_signal.lock();
 
-  //while (clients.find(next_client_id) == clients.end())
   while (client_connection_queue.empty())
-      data_signal.wait();
+  {
+      int res = data_signal.wait(CONNECTION_TIMEOUT);
+      if (res == ETIMEDOUT)
+          throw runtime_error("timed out while waiting for client");
+      else if (res)
+          throw runtime_error("waiting error");
+  }
 
   client_id = client_connection_queue.front();
   client_connection_queue.pop();

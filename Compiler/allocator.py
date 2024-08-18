@@ -104,9 +104,10 @@ class AllocRange:
                 break
 
 class AllocPool:
-    def __init__(self):
+    def __init__(self, parent=None):
         self.ranges = defaultdict(lambda: [AllocRange()])
         self.by_base = {}
+        self.parent = parent
 
     def alloc(self, reg_type, size):
         for r in self.ranges[reg_type]:
@@ -116,8 +117,17 @@ class AllocPool:
                 return res
 
     def free(self, reg):
-        r = self.by_base.pop((reg.reg_type, reg.i))
-        r.free(reg.i, reg.size)
+        try:
+            r = self.by_base.pop((reg.reg_type, reg.i))
+            r.free(reg.i, reg.size)
+        except KeyError:
+            try:
+                self.parent.free(reg)
+            except:
+                if program.Program.prog.options.debug:
+                    print('Error with freeing register with trace:')
+                    print(util.format_trace(reg.caller))
+                    print()
 
     def new_ranges(self, min_usage):
         for t, n in min_usage.items():
@@ -133,7 +143,10 @@ class AllocPool:
                 rr.consolidate()
 
     def n_fragments(self):
-        return max(len(r) for r in self.ranges)
+        if self.ranges:
+            return max(len(r) for r in self.ranges)
+        else:
+            return 0
 
 class StraightlineAllocator:
     """Allocate variables in a straightline program using n registers.
@@ -146,6 +159,7 @@ class StraightlineAllocator:
         assert(n == REG_MAX)
         self.program = program
         self.old_pool = None
+        self.unused = defaultdict(lambda: 0)
 
     def alloc_reg(self, reg, free):
         base = reg.vectorbase
@@ -195,7 +209,8 @@ class StraightlineAllocator:
                 for x in itertools.chain(dup.duplicates, base.duplicates):
                     to_check.add(x)
 
-        free.free(base)
+        if reg not in self.program.base_addresses:
+            free.free(base)
         if inst.is_vec() and base.vector:
             self.defined[base] = inst
             for i in base.vector:
@@ -220,8 +235,11 @@ class StraightlineAllocator:
             if unused_regs and len(unused_regs) == len(list(i.get_def())) and \
                self.program.verbose:
                 # only report if all assigned registers are unused
-                print("Register(s) %s never used, assigned by '%s' in %s" % \
-                    (unused_regs,i,format_trace(i.caller)))
+                self.unused[type(i).__name__] += 1
+                if self.program.verbose > 1:
+                    print(
+                        "Register(s) %s never used, assigned by '%s' in %s" % \
+                        (unused_regs,i,format_trace(i.caller)))
 
             for j in i.get_used():
                 self.alloc_reg(j, alloc_pool)
@@ -277,6 +295,7 @@ class StraightlineAllocator:
                 x = reg.reg_type, reg.size
             print('Used registers: ', end='')
             p(sizes)
+            print('Unused instructions:', dict(self.unused))
 
 def determine_scope(block, options):
     last_def = defaultdict_by_id(lambda: -1)
@@ -421,6 +440,7 @@ class Merger:
         last = defaultdict(lambda: defaultdict(lambda: None))
         last_open = deque()
         last_input = defaultdict(lambda: [None, None])
+        mem_scopes = defaultdict_by_id(lambda: MemScope())
 
         depths = [0] * len(block.instructions)
         self.depths = depths
@@ -429,6 +449,12 @@ class Merger:
         self.sources = []
         self.real_depths = [0] * len(block.instructions)
         round_type = {}
+        shuffles = defaultdict_by_id(set)
+
+        class MemScope:
+            def __init__(self):
+                self.read = []
+                self.write = []
 
         def add_edge(i, j):
             if i in (-1, j):
@@ -581,14 +607,20 @@ class Merger:
                 depths[n] = depth
 
             if isinstance(instr, ReadMemoryInstruction):
-                if options.preserve_mem_order or instr._protect:
+                if options.preserve_mem_order:
                     strict_mem_access(n, last_mem_read, last_mem_write)
-                elif not options.preserve_mem_order:
+                elif instr._protect:
+                    scope = mem_scopes[instr._protect]
+                    strict_mem_access(n, scope.read, scope.write)
+                if not options.preserve_mem_order:
                     mem_access(n, instr, last_mem_read_of, last_mem_write_of)
             elif isinstance(instr, WriteMemoryInstruction):
-                if options.preserve_mem_order or instr._protect:
+                if options.preserve_mem_order:
                     strict_mem_access(n, last_mem_write, last_mem_read)
-                elif not options.preserve_mem_order:
+                elif instr._protect:
+                    scope = mem_scopes[instr._protect]
+                    strict_mem_access(n, scope.write, scope.read)
+                if not options.preserve_mem_order:
                     mem_access(n, instr, last_mem_write_of, last_mem_read_of)
             elif isinstance(instr, matmulsm):
                 if options.preserve_mem_order:
@@ -608,6 +640,11 @@ class Merger:
                 keep_order(instr, n, instr.args[0])
             elif isinstance(instr, StackInstruction):
                 keep_order(instr, n, StackInstruction)
+            elif isinstance(instr, applyshuffle):
+                shuffles[instr.args[3]].add(n)
+            elif isinstance(instr, delshuffle):
+                for i_inst in shuffles[instr.args[0]]:
+                    add_edge(i_inst, n)
 
             if not G.pred[n]:
                 self.sources.append(n)
@@ -683,6 +720,7 @@ class RegintOptimizer:
         self.cache = util.dict_by_id()
         self.offset_cache = util.dict_by_id()
         self.rev_offset_cache = {}
+        self.range_cache = util.dict_by_id()
 
     def add_offset(self, res, new_base, new_offset):
         self.offset_cache[res] = new_base, new_offset
@@ -693,6 +731,12 @@ class RegintOptimizer:
         for i, inst in enumerate(instructions):
             if isinstance(inst, ldint_class):
                 self.cache[inst.args[0]] = inst.args[1]
+            elif isinstance(inst, incint):
+                if inst.args[2] == 1 and inst.args[3] == 1 and \
+                   inst.args[4] == len(inst.args[0]) and \
+                   inst.args[1] in self.cache:
+                    self.range_cache[inst.args[0]] = \
+                        len(inst.args[0]), self.cache[inst.args[1]]
             elif isinstance(inst, IntegerInstruction):
                 if inst.args[1] in self.cache and inst.args[2] in self.cache:
                     res = inst.op(self.cache[inst.args[1]],
@@ -731,6 +775,10 @@ class RegintOptimizer:
                     base, offset = self.offset_cache[inst.args[1]]
                     addr = self.rev_offset_cache[base.i, offset]
                     inst.args[1] = addr
+                elif inst.args[1] in self.range_cache:
+                    size, base = self.range_cache[inst.args[1]]
+                    if size == len(inst.args[0]):
+                        instructions[i] = inst.get_direct(base)
             elif type(inst) == convint_class:
                 if inst.args[1] in self.cache:
                     res = self.cache[inst.args[1]]

@@ -18,7 +18,7 @@ inline bool check_cpu([[maybe_unused]]int func, [[maybe_unused]]bool ecx, [[mayb
     // __asm__ __volatile__ ("cpuid":
     //         "+a" (ax), "=b" (bx), "+c" (cx), "=d" (dx));
     // return ((ecx ? cx : bx) >> feature) & 1;
-    return true;
+    return false;
 #endif
 }
 

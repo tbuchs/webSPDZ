@@ -345,6 +345,17 @@ class starg(base.Instruction):
     code = base.opcodes['STARG']
     arg_format = ['ci']
 
+@base.vectorize
+class cmdlinearg(base.Instruction):
+    """ Load command-line argument.
+
+    :param: dest (regint)
+    :param: index (regint)
+
+    """
+    code = base.opcodes['CMDLINEARG']
+    arg_format = ['ciw','ci']
+
 @base.gf2n
 class reqbl(base.Instruction):
     """ Requirement on computation modulus. Minimal bit length of prime if
@@ -654,7 +665,7 @@ class picks(base.VectorInstruction):
     def __init__(self, *args):
         super(picks, self).__init__(*args)
         assert 0 <= args[2] < len(args[1])
-        assert 0 <= args[2] + args[3] * len(args[0]) <= len(args[1])
+        assert 0 <= args[2] + args[3] * (len(args[0]) - 1) < len(args[1])
 
 class concats(base.VectorInstruction):
     """ Concatenate vectors.
@@ -1630,6 +1641,17 @@ class print_reg_plain(base.IOInstruction):
     code = base.opcodes['PRINTREGPLAIN']
     arg_format = ['c']
 
+@base.gf2n
+class print_reg_plains(base.IOInstruction):
+    """ Output secret register.
+
+    :param: source (sint)
+
+    """
+    __slots__ = []
+    code = base.opcodes['PRINTREGPLAINS']
+    arg_format = ['s']
+
 class cond_print_plain(base.IOInstruction):
     """ Conditionally output clear register (with precision).
     Outputs :math:`x \cdot 2^p` where :math:`p` is the precision.
@@ -1860,6 +1882,19 @@ class acceptclientconnection(base.IOInstruction):
     code = base.opcodes['ACCEPTCLIENTCONNECTION']
     arg_format = ['ciw', 'ci']
 
+class initclientconnection(base.IOInstruction):
+    """ Initialize connection.
+
+    :param: client id destination (regint)
+    :param: port number (regint)
+    :param: my client id (regint)
+    :param: hostname (variable string)
+
+    """
+    __slots__ = []
+    code = base.opcodes['INITCLIENTCONNECTION']
+    arg_format = ['ciw', 'ci', 'ci', 'varstr']
+
 class closeclientconnection(base.IOInstruction):
     """ Close connection to client.
 
@@ -1941,7 +1976,7 @@ class fixinput(base.PublicFileIOInstruction):
 
     :param: player (int)
     :param: destination (cint)
-    :param: exponent (int)
+    :param: exponent (int, for float/double) / byte length (1/8, for integer)
     :param: input type (0: 64-bit integer, 1: float, 2: double)
 
     """
@@ -2284,30 +2319,30 @@ class asm_open(base.VarArgsInstruction, base.DataInstruction):
         self.args += other.args[1:]
 
 @base.gf2n
-@base.vectorize
-class muls(base.VarArgsInstruction, base.DataInstruction):
+class muls(base.VarArgsInstruction, base.DataInstruction, base.Ciscable):
     """ (Element-wise) multiplication of secret registers (vectors).
 
-    :param: number of arguments to follow (multiple of three)
+    :param: number of arguments to follow (multiple of four)
+    :param: vector size (int)
     :param: result (sint)
     :param: factor (sint)
     :param: factor (sint)
-    :param: (repeat the last three)...
+    :param: (repeat the last four)...
     """
     __slots__ = []
     code = base.opcodes['MULS']
-    arg_format = tools.cycle(['sw','s','s'])
+    arg_format = tools.cycle(['int','sw','s','s'])
     data_type = 'triple'
+    is_vec = lambda self: True
+
+    def __init__(self, *args, **kwargs):
+        super(muls_class, self).__init__(*args, **kwargs)
+        for i in range(0, len(args), 4):
+            for j in range(3):
+                assert args[i + j + 1].size == args[i]
 
     def get_repeat(self):
-        return len(self.args) // 3
-
-    def merge_id(self):
-        # can merge different sizes
-        # but not if large
-        if self.get_size() is None or self.get_size() > 100:
-            return type(self), self.get_size()
-        return type(self)
+        return sum(self.args[::4])
 
     # def expand(self):
     #     s = [program.curr_block.new_reg('s') for i in range(9)]
@@ -2323,6 +2358,16 @@ class muls(base.VarArgsInstruction, base.DataInstruction):
     #     adds(s[7], s[2], s[5])
     #     adds(s[8], s[7], s[6])
     #     addm(self.args[0], s[8], c[2])
+
+# compatibility
+try:
+    vmuls = muls_class
+    muls_bak = muls
+    muls = lambda *args: muls_bak(args[0].size, *args)
+    vgmuls = gmuls_class = gmuls
+    gmuls = lambda *args: gmuls_class(args[0].size, *args)
+except NameError:
+    pass
 
 @base.gf2n
 class mulrs(base.VarArgsInstruction, base.DataInstruction):
@@ -2403,8 +2448,8 @@ class dotprods(base.VarArgsInstruction, base.DataInstruction,
         return self.arg_format()
 
     def get_repeat(self):
-        return sum(self.args[i] // 2
-                   for i, n in self.bases(iter(self.args))) * self.get_size()
+        return sum(self.args[i] // 2 - 1
+                   for i, n in self.bases(iter(self.args)))
 
     def get_def(self):
         return [self.args[i + 1] for i, n in self.bases(iter(self.args))]
@@ -2421,7 +2466,7 @@ class matmul_base(base.DataInstruction):
     def get_repeat(self):
         return reduce(operator.mul, self.args[3:6])
 
-class matmuls(matmul_base):
+class matmuls(matmul_base, base.Mergeable):
     """ Secret matrix multiplication from registers. All matrices are
     represented as vectors in row-first order.
 
@@ -2433,7 +2478,11 @@ class matmuls(matmul_base):
     :param: number of columns in second factor and result (int)
     """
     code = base.opcodes['MATMULS']
-    arg_format = ['sw','s','s','int','int','int']
+    arg_format = itertools.cycle(['sw','s','s','int','int','int'])
+
+    def get_repeat(self):
+        return sum(reduce(operator.mul, self.args[i + 3:i + 6])
+                   for i in range(0, len(self.args), 6))
 
 class matmulsm(matmul_base):
     """ Secret matrix multiplication reading directly from memory.

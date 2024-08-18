@@ -149,8 +149,6 @@ public:
     bool operator==(const gfpvar_& other) const;
     bool operator!=(const gfpvar_& other) const;
 
-    void add(octetStream& other, int = -1);
-
     void negate();
 
     gfpvar_ invert() const;

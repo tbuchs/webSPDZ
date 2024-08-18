@@ -99,7 +99,7 @@ template<class U>
 void GC::Processor<T>::check_input(const U& in, const int* params)
 {
 	int n_bits = *params;
-	auto test = in >> (n_bits - 1);
+	auto test = in >> n_bits;
 	if (n_bits == 1)
 	{
 		if (not (in == 0 or in == 1))
@@ -110,7 +110,7 @@ void GC::Processor<T>::check_input(const U& in, const int* params)
 		if (params[1] == 0)
 			throw runtime_error(
 					"input out of range for a " + std::to_string(n_bits)
-							+ "-bit signed integer: " + to_string(in));
+							+ "-bit (un)signed integer: " + to_string(in));
 		else
 			throw runtime_error(
 					"input out of range for a " + to_string(n_bits)
@@ -284,6 +284,13 @@ void Processor<T>::notcb(const ::BaseInstruction& instruction)
 }
 
 template<class T>
+void Processor<T>::movsb(const ::BaseInstruction& instruction)
+{
+    for (int i = 0; i < DIV_CEIL(instruction.get_n(), T::default_length); i++)
+        S[instruction.get_r(0) + i] = S[instruction.get_r(1) + i];
+}
+
+template<class T>
 void Processor<T>::andm(const ::BaseInstruction& instruction)
 {
     for (int i = 0; i < DIV_CEIL(instruction.get_n(), T::default_length); i++)
@@ -317,7 +324,6 @@ void Processor<T>::andrsvec(const vector<int>& args)
         int n_args = (*it++ - 3) / 2;
         int size = *it++;
         int base = *(it + n_args);
-        assert(n_args <= N_BITS);
         for (int i = 0; i < size; i += 1)
         {
             if (i % N_BITS == 0)
@@ -452,6 +458,19 @@ template <class T>
 void Processor<T>::print_float_prec(int n)
 {
     out << setprecision(n);
+}
+
+template<class T>
+void Processor<T>::incint(const BaseInstruction& instruction)
+{
+    auto dest = &I[instruction.get_r(0)];
+    auto base = I[instruction.get_r(1)];
+    auto& start = instruction.get_start();
+    for (int i = 0; i < instruction.get_size(); i++)
+    {
+        int inc = (i / start[0]) % start[1];
+        *dest++ = base + inc * int(instruction.get_n());
+    }
 }
 
 } /* namespace GC */

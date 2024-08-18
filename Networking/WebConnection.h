@@ -19,9 +19,9 @@ using namespace std;
 #include "Player.h"
 
 #include <emscripten/websocket.h>
-#include "datachannel-wasm/wasm/include/rtc/datachannel.hpp"
-#include "datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
-#include "datachannel-wasm/wasm/include/rtc/configuration.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/datachannel.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
+#include "deps/datachannel-wasm/wasm/include/rtc/configuration.hpp"
 
 void send_websocket_message(int websocket, string type, string player_group, int player_id, string msg) {
   json message = {{"type", type}, {"group", player_group}, {"name", player_id}, {"content", msg}};
@@ -49,7 +49,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
 
   if(offer.empty()) {
     rtc::Reliability reliability;
-    reliability.type = rtc::Reliability::Type::Reliable;
+    // reliability.type = rtc::Reliability::Type::Reliable;
     reliability.unordered = false;
     rtc::DataChannelInit dc_init;
     dc_init.reliability = reliability;

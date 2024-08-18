@@ -18,7 +18,7 @@ void FixInput_<Integer>::read(std::istream& in, const int* params)
 template<>
 void FixInput_<bigint>::read(std::istream& in, const int* params)
 {
-#define HIGH_PREC_INPUT ; // TODO temp fix for weird behavior of mpz_class = double (works with other datatypes)
+//#define HIGH_PREC_INPUT ; // TODO temp fix for weird behavior of mpz_class = double (works with other datatypes)
 #ifdef HIGH_PREC_INPUT
     mpf_class x;
     in >> x;
@@ -26,6 +26,8 @@ void FixInput_<bigint>::read(std::istream& in, const int* params)
 #else
     double x;
     in >> x;
+    cerr << "Test: " << round(x * exp2(*params)) << endl;
     items[0] = round(x * exp2(*params));
+    cerr << "items[0]: " << items[0] << endl;
 #endif
 }

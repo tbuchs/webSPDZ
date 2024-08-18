@@ -301,8 +301,8 @@ void Processor<sint, sgf2n>::write_socket(const RegType reg_type,
             }
           else if (reg_type == INT)
             {
-              // Send vector of 32-bit clear ints
-              socket_stream.store((int&) get_Ci_ref(registers[i] + j));
+              // Send vector of 64-bit clear ints
+              socket_stream.store(get_Ci_ref(registers[i] + j));
             }
           else
             {
@@ -330,7 +330,7 @@ void Processor<sint, sgf2n>::write_socket(const RegType reg_type,
 }
 
 
-// Receive vector of 32-bit clear ints
+// Receive vector of 64-bit clear ints
 template<class sint, class sgf2n>
 void Processor<sint, sgf2n>::read_socket_ints(int client_id,
     const vector<int>& registers, int size)
@@ -344,9 +344,7 @@ void Processor<sint, sgf2n>::read_socket_ints(int client_id,
   for (int j = 0; j < size; j++)
     for (int i = 0; i < m; i++)
       {
-        int val;
-        socket_stream.get(val);
-        write_Ci(registers[i] + j, (long) val);
+        write_Ci(registers[i] + j, socket_stream.get_int(8));
       }
 }
 
@@ -379,9 +377,20 @@ void Processor<sint, sgf2n>::read_socket_private(int client_id,
   client_timer.stop();
   client_stats.add(socket_stream.get_length());
 
-  for (int j = 0; j < size; j++)
-    for (int i = 0; i < m; i++)
-      get_Sp_ref(registers[i] + j).unpack(socket_stream, read_macs);
+  int j, i;
+  try
+    {
+      for (j = 0; j < size; j++)
+        for (i = 0; i < m; i++)
+          get_Sp_ref(registers[i] + j).unpack(socket_stream, read_macs);
+    }
+  catch (exception& e)
+    {
+      throw insufficient_shares(m * size, j * m + i, e);
+    }
+
+  if (socket_stream.left())
+    throw runtime_error("unexpected share data");
 }
 
 
@@ -468,28 +477,29 @@ void SubProcessor<T>::POpen(const Instruction& inst)
 }
 
 template<class T>
-void SubProcessor<T>::muls(const vector<int>& reg, int size)
+void SubProcessor<T>::muls(const vector<int>& reg)
 {
-    assert(reg.size() % 3 == 0);
-    int n = reg.size() / 3;
+    assert(reg.size() % 4 == 0);
+    int n = reg.size() / 4;
 
     SubProcessor<T>& proc = *this;
     protocol.init_mul();
     for (int i = 0; i < n; i++)
-        for (int j = 0; j < size; j++)
+        for (int j = 0; j < reg[4 * i]; j++)
         {
-            auto& x = proc.S[reg[3 * i + 1] + j];
-            auto& y = proc.S[reg[3 * i + 2] + j];
+            auto& x = proc.S[reg[4 * i + 2] + j];
+            auto& y = proc.S[reg[4 * i + 3] + j];
             protocol.prepare_mul(x, y);
         }
     protocol.exchange();
     for (int i = 0; i < n; i++)
-        for (int j = 0; j < size; j++)
+    {
+        for (int j = 0; j < reg[4 * i]; j++)
         {
-            proc.S[reg[3 * i] + j] = protocol.finalize_mul();
+            proc.S[reg[4 * i + 1] + j] = protocol.finalize_mul();
         }
-
-    protocol.counter += n * size;
+        protocol.counter += n * reg[4 * i];
+    }
 }
 
 template<class T>
@@ -553,33 +563,46 @@ void SubProcessor<T>::dotprods(const vector<int>& reg, int size)
 
 template<class T>
 void SubProcessor<T>::matmuls(const vector<T>& source,
-        const Instruction& instruction, size_t a, size_t b)
+        const Instruction& instruction)
 {
-    auto& dim = instruction.get_start();
-    auto A = source.begin() + a;
-    auto B = source.begin() + b;
-    auto C = S.begin() + (instruction.get_r(0));
-    assert(A + dim[0] * dim[1] <= source.end());
-    assert(B + dim[1] * dim[2] <= source.end());
-    assert(C + dim[0] * dim[2] <= S.end());
-
     protocol.init_dotprod();
-    for (int i = 0; i < dim[0]; i++)
-        for (int j = 0; j < dim[2]; j++)
-        {
-            for (int k = 0; k < dim[1]; k++)
-                protocol.prepare_dotprod(*(A + i * dim[1] + k),
-                        *(B + k * dim[2] + j));
-            protocol.next_dotprod();
-        }
+
+    auto& start = instruction.get_start();
+    assert(start.size() % 6 == 0);
+
+    for(auto it = start.begin(); it < start.end(); it += 6)
+    {
+        auto dim = it + 3;
+        auto A = source.begin() + *(it + 1);
+        auto B = source.begin() + *(it + 2);
+        assert(A + dim[0] * dim[1] <= source.end());
+        assert(B + dim[1] * dim[2] <= source.end());
+
+        for (int i = 0; i < dim[0]; i++)
+            for (int j = 0; j < dim[2]; j++)
+            {
+                for (int k = 0; k < dim[1]; k++)
+                    protocol.prepare_dotprod(*(A + i * dim[1] + k),
+                            *(B + k * dim[2] + j));
+                protocol.next_dotprod();
+            }
+    }
+
     protocol.exchange();
-    for (int i = 0; i < dim[0]; i++)
-        for (int j = 0; j < dim[2]; j++)
-            *(C + i * dim[2] + j) = protocol.finalize_dotprod(dim[1]);
+
+    for(auto it = start.begin(); it < start.end(); it += 6)
+    {
+        auto C = S.begin() + *it;
+        auto dim = it + 3;
+        assert(C + dim[0] * dim[2] <= S.end());
+        for (int i = 0; i < dim[0]; i++)
+            for (int j = 0; j < dim[2]; j++)
+                *(C + i * dim[2] + j) = protocol.finalize_dotprod(dim[1]);
+    }
 }
 
 template<class T>
-void SubProcessor<T>::matmulsm(const CheckVector<T>& source,
+void SubProcessor<T>::matmulsm(const MemoryPart<T>& source,
         const Instruction& instruction, size_t a, size_t b)
 {
     auto& dim = instruction.get_start();
@@ -592,7 +615,7 @@ void SubProcessor<T>::matmulsm(const CheckVector<T>& source,
     protocol.init_dotprod();
     for (int i = 0; i < dim[0]; i++)
     {
-        auto ii = Proc->get_Ci().at(dim[3] + i);
+        auto ii = Proc->get_Ci().at(dim[3] + i).get();
         for (int j = 0; j < dim[2]; j++)
         {
 #ifdef DEBUG_MATMULSM
@@ -628,16 +651,21 @@ void SubProcessor<T>::matmulsm(const CheckVector<T>& source,
 }
 
 template<class T>
-void SubProcessor<T>::matmulsm_prep(int ii, int j, const CheckVector<T>& source,
+void SubProcessor<T>::matmulsm_prep(int ii, int j, const MemoryPart<T>& source,
         const vector<int>& dim, size_t a, size_t b)
 {
-    auto jj = Proc->get_Ci().at(dim[6] + j);
+    auto jj = Proc->get_Ci().at(dim[6] + j).get();
+    const T* base = source.data();
+    size_t size = source.size();
     for (int k = 0; k < dim[1]; k++)
     {
-        auto kk = Proc->get_Ci().at(dim[4] + k);
-        auto ll = Proc->get_Ci().at(dim[5] + k);
-        protocol.prepare_dotprod(source.at(a + ii * dim[7] + kk),
-                source.at(b + ll * dim[8] + jj));
+        auto kk = Proc->get_Ci().at(dim[4] + k).get();
+        auto ll = Proc->get_Ci().at(dim[5] + k).get();
+        auto aa = a + ii * dim[7] + kk;
+        auto bb = b + ll * dim[8] + jj;
+        assert(aa < size);
+        assert(bb < size);
+        protocol.prepare_dotprod(base[aa], base[bb]);
     }
     protocol.next_dotprod();
 }
@@ -655,16 +683,22 @@ void SubProcessor<T>::matmulsm_finalize(int i, int j, const vector<int>& dim,
 template<class T>
 void SubProcessor<T>::conv2ds(const Instruction& instruction)
 {
-    protocol.init_dotprod();
     auto& args = instruction.get_start();
     vector<Conv2dTuple> tuples;
     for (size_t i = 0; i < args.size(); i += 15)
         tuples.push_back(Conv2dTuple(args, i));
-    for (auto& tuple : tuples)
-        tuple.pre(S, protocol);
-    protocol.exchange();
-    for (auto& tuple : tuples)
-        tuple.post(S, protocol);
+    size_t done = 0;
+    while (done < tuples.size())
+    {
+        protocol.init_dotprod();
+        size_t i;
+        for (i = done; i < tuples.size() and protocol.get_buffer_size() <
+                OnlineOptions::singleton.batch_size; i++)
+            tuples[i].pre(S, protocol);
+        protocol.exchange();
+        for (; done < i; done++)
+            tuples[done].post(S, protocol);
+    }
 }
 
 inline
@@ -766,23 +800,20 @@ void SubProcessor<T>::secure_shuffle(const Instruction& instruction)
 }
 
 template<class T>
-size_t SubProcessor<T>::generate_secure_shuffle(const Instruction& instruction)
+size_t SubProcessor<T>::generate_secure_shuffle(const Instruction& instruction,
+    ShuffleStore& shuffle_store)
 {
-    return shuffler.generate(instruction.get_n());
+    return shuffler.generate(instruction.get_n(), shuffle_store);
 }
 
 template<class T>
-void SubProcessor<T>::apply_shuffle(const Instruction& instruction, int handle)
+void SubProcessor<T>::apply_shuffle(const Instruction& instruction, int handle,
+    ShuffleStore& shuffle_store)
 {
     shuffler.apply(S, instruction.get_size(), instruction.get_start()[2],
-            instruction.get_start()[0], instruction.get_start()[1], handle,
+            instruction.get_start()[0], instruction.get_start()[1],
+            shuffle_store.get(handle),
             instruction.get_start()[4]);
-}
-
-template<class T>
-void SubProcessor<T>::delete_shuffle(int handle)
-{
-    shuffler.del(handle);
 }
 
 template<class T>
@@ -796,17 +827,26 @@ void SubProcessor<T>::input_personal(const vector<int>& args)
 {
   input.reset_all(P);
   for (size_t i = 0; i < args.size(); i += 4)
-    for (int j = 0; j < args[i]; j++)
+    if (args[i + 1] == P.my_num())
       {
-        if (args[i + 1] == P.my_num())
-          input.add_mine(C[args[i + 3] + j]);
-        else
-          input.add_other(args[i + 1]);
+        auto begin = C.begin() + args[i + 3];
+        auto end = begin + args[i];
+        assert(end <= C.end());
+        for (auto it = begin; it < end; it++)
+          input.add_mine(*it);
       }
+    else
+      for (int j = 0; j < args[i]; j++)
+        input.add_other(args[i + 1]);
   input.exchange();
   for (size_t i = 0; i < args.size(); i += 4)
-    for (int j = 0; j < args[i]; j++)
-      S[args[i + 2] + j] = input.finalize(args[i + 1]);
+    {
+      auto begin = S.begin() + args[i + 2];
+      auto end = begin + args[i];
+      assert(end <= S.end());
+      for (auto it = begin; it < end; it++)
+        *it = input.finalize(args[i + 1]);
+    }
 }
 
 /**
@@ -858,6 +898,16 @@ typename sint::clear Processor<sint, sgf2n>::get_inverse2(unsigned m)
   return inverses2m[m];
 }
 
+template<class T, class U>
+void fixinput_int(T& proc, const Instruction& instruction, U)
+{
+  U* x = new U[instruction.get_size()];
+  proc.binary_input.read((char*) x, sizeof(U) * instruction.get_size());
+  for (int i = 0; i < instruction.get_size(); i++)
+    proc.write_Cp(instruction.get_r(0) + i, x[i]);
+  delete[] x;
+}
+
 template<class sint, class sgf2n>
 void Processor<sint, sgf2n>::fixinput(const Instruction& instruction)
 {
@@ -878,19 +928,24 @@ void Processor<sint, sgf2n>::fixinput(const Instruction& instruction)
         throw runtime_error("unknown format for fixed-point input");
       }
 
-      for (int i = 0; i < instruction.get_size(); i++)
+      if (binary_input.fail())
+        throw IO_Error("failure reading from " + binary_input_filename);
+
+      if (binary_input.peek() == EOF)
+        throw IO_Error("not enough inputs in " + binary_input_filename);
+
+      if (instruction.get_r(2) == 0)
         {
-          if (binary_input.peek() == EOF)
-            throw IO_Error("not enough inputs in " + binary_input_filename);
-          double buf;
-          if (instruction.get_r(2) == 0)
-            {
-              int64_t x;
-              binary_input.read((char*) &x, sizeof(x));
-              tmp = x;
-            }
+          if (instruction.get_r(1) == 1)
+            fixinput_int(*this, instruction, int8_t());
           else
+            fixinput_int(*this, instruction, int64_t());
+        }
+      else
+        {
+          for (int i = 0; i < instruction.get_size(); i++)
             {
+              double buf;
               if (use_double)
                 binary_input.read((char*) &buf, sizeof(double));
               else
@@ -900,11 +955,12 @@ void Processor<sint, sgf2n>::fixinput(const Instruction& instruction)
                   buf = x;
                 }
               tmp = bigint::tmp = round(buf * exp2(instruction.get_r(1)));
+              write_Cp(instruction.get_r(0) + i, tmp);
             }
-          if (binary_input.fail())
-            throw IO_Error("failure reading from " + binary_input_filename);
-          write_Cp(instruction.get_r(0) + i, tmp);
         }
+
+      if (binary_input.fail())
+        throw IO_Error("failure reading from " + binary_input_filename);
     }
 }
 

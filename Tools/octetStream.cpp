@@ -106,12 +106,13 @@ octetStream octetStream::hash() const
 
 bigint octetStream::check_sum(int req_bytes) const
 {
-  unsigned char hash[req_bytes];
+  auto hash = new unsigned char[req_bytes];
   crypto_generichash(hash, req_bytes, data, len, NULL, 0);
 
   bigint ans;
   bigintFromBytes(ans,hash,req_bytes);
   // cout << ans << "\n";
+  delete[] hash;
   return ans;
 }
 
@@ -143,7 +144,9 @@ void octetStream::store_bytes(octet* x, const size_t l)
 
 void octetStream::get_bytes(octet* ans, size_t& length)
 {
-  length = get_int(4);
+  auto rec_length = get_int(4);
+  if (rec_length != length)
+    throw runtime_error("unexpected length");
   memcpy(ans, consume(length), length * sizeof(octet));
 }
 
@@ -188,14 +191,14 @@ void octetStream::get(bigint& ans)
 
 void octetStream::store(const string& str)
 {
-  store(str.length());
+  store((unsigned int)str.length());
   append((const octet*) str.data(), str.length());
 }
 
 
 void octetStream::get(string& str)
 {
-  size_t size;
+  word size;
   get(size);
   str.assign((const char*) consume(size), size);
 }

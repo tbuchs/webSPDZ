@@ -24,7 +24,7 @@ public:
     fixint(const T& other) :
             super(other)
     {
-        auto check = (long long int)(this->a[this->N_WORDS - 1]) >> N_OVERFLOW;
+        auto check = mp_limb_signed_t(this->a[this->N_WORDS - 1]) >> N_OVERFLOW;
         assert(check == 0 or check == -1);
     }
 

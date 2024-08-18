@@ -139,9 +139,9 @@ ecdsa-static: static-dir $(patsubst ECDSA/%.cpp,static/%.x,$(wildcard ECDSA/*-ec
 $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER) $(GC)
 	$(AR) -csr $@ $^
 
-CFLAGS += -fPIC #-fsanitize=undefined -fsanitize-minimal-runtime -Wbad-function-cast -Wcast-function-type
+CFLAGS += -fPIC -fsanitize=undefined -Wbad-function-cast -Wcast-function-type #-fsanitize-minimal-runtime
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1 -sWASMFS -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG
+LDFLAGS += -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sEXCEPTION_CATCHING_ALLOWED=[..] -sEXIT_RUNTIME -sASSERTIONS=1 -sWASMFS -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB #-sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG
 
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)

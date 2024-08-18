@@ -33,6 +33,8 @@ class SpdzWise : public ProtocolBase<T>
     virtual void zero_check(check_type t);
 
 public:
+    static const bool uses_triples = false;
+
     Player& P;
 
     SpdzWise(Player& P);

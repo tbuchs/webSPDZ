@@ -131,7 +131,7 @@ void OTExtensionWithMatrix::extend(int nOTs_requested, const BitVector& newRecei
     channel->send("hello", 6);
     char buf[6];
     channel->recv(buf, 6);
-    assert(buf == string("hello"));
+    assert(string(buf, 5) == string("hello"));
 #endif
 }
 

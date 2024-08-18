@@ -16,14 +16,14 @@
 
 template<class T>
 MalRepRingPrep<T>::MalRepRingPrep(SubProcessor<T>*, DataPositions& usage) :
-        BufferPrep<T>(usage)
+        BufferPrep<T>(usage), prep(dummy_pos)
 {
 }
 
 template<class T>
 RingOnlyBitsFromSquaresPrep<T>::RingOnlyBitsFromSquaresPrep(SubProcessor<T>*,
         DataPositions& usage) :
-        BufferPrep<T>(usage)
+        BufferPrep<T>(usage), prep(0, dummy_pos), bit_proc(0), bit_MC(0)
 {
 }
 
@@ -48,6 +48,15 @@ MalRepRingPrepWithBits<T>::MalRepRingPrepWithBits(SubProcessor<T>* proc,
 }
 
 template<class T>
+RingOnlyBitsFromSquaresPrep<T>::~RingOnlyBitsFromSquaresPrep()
+{
+    if (bit_proc)
+        delete bit_proc;
+    if (bit_MC)
+        delete bit_MC;
+}
+
+template<class T>
 void MalRepRingPrep<T>::buffer_triples()
 {
     if (MalRepRingOptions::singleton.shuffle)
@@ -59,9 +68,6 @@ void MalRepRingPrep<T>::buffer_triples()
 template<class T>
 void MalRepRingPrep<T>::buffer_squares()
 {
-    typedef typename T::prep_type prep_type;
-    DataPositions _;
-    MaliciousRepPrep<prep_type> prep(_);
     assert(this->proc != 0);
     prep.init_honest(this->proc->P);
     prep.buffer_size = BaseMachine::batch_size<T>(DATA_SQUARE,
@@ -75,9 +81,6 @@ void MalRepRingPrep<T>::buffer_squares()
 template<class T>
 void MalRepRingPrep<T>::simple_buffer_triples()
 {
-    typedef typename T::prep_type prep_type;
-    DataPositions _;
-    MaliciousRepPrep<prep_type> prep(_);
     assert(this->proc != 0);
     prep.init_honest(this->proc->P);
     prep.buffer_size = this->buffer_size;
@@ -134,6 +137,12 @@ TripleShuffleSacrifice<T>::TripleShuffleSacrifice(int B, int C) :
 }
 
 template<class T>
+TripleShuffleSacrifice<T>::TripleShuffleSacrifice(DataFieldType type) :
+        ShuffleSacrifice(BaseMachine::bucket_size(type))
+{
+}
+
+template<class T>
 void TripleShuffleSacrifice<T>::triple_sacrifice(vector<array<T, 3>>& triples,
         vector<array<T, 3>>& check_triples, Player& P,
         typename T::MAC_Check& MC, ThreadQueues* queues)
@@ -154,7 +163,8 @@ void TripleShuffleSacrifice<T>::triple_sacrifice(vector<array<T, 3>>& triples,
     vector<typename T::open_type> opened;
     MC.POpen(opened, shares, P);
     for (int i = 0; i < C; i++)
-        if (typename T::clear(opened[3 * i] * opened[3 * i + 1]) != opened[3 * i + 2])
+        if (typename T::clear(opened[3 * i] * opened[3 * i + 1])
+                != typename T::clear(opened[3 * i + 2]))
             throw Offline_Check_Error("shuffle opening");
 
     // triples might be same as check_triples
@@ -229,12 +239,12 @@ void RingOnlyBitsFromSquaresPrep<T>::buffer_bits()
 {
     auto proc = this->proc;
     assert(proc != 0);
-    typedef typename T::SquareToBitShare BitShare;
-    typename BitShare::MAC_Check MC;
-    DataPositions usage;
-    typename BitShare::SquarePrep prep(0, usage);
-    SubProcessor<BitShare> bit_proc(MC, prep, proc->P);
-    prep.set_proc(&bit_proc);
+    if (bit_proc == 0)
+    {
+        bit_MC = new typename BitShare::MAC_Check;
+        bit_proc = new SubProcessor<BitShare>(*bit_MC, prep, proc->P);
+        prep.set_proc(bit_proc);
+    }
     bits_from_square_in_ring(this->bits, this->buffer_size, &prep);
 }
 

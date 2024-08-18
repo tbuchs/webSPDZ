@@ -71,18 +71,6 @@ OnlineMachine::OnlineMachine(int argc, const char** argv, ez::ezOptionParser& op
       "--ip-file-name" // Flag token.
     );
 
-    if (nplayers == 0)
-        opt.add(
-                "2", // Default.
-                0, // Required?
-                1, // Number of args expected.
-                0, // Delimiter if expecting multiple args.
-                "Number of players (default: 2). "
-                "Ignored if external server is used.", // Help description.
-                "-N", // Flag token.
-                "--nparties" // Flag token.
-        );
-
     opt.add(
           "", // Default.
           0, // Required?
@@ -138,6 +126,7 @@ void OnlineMachine::start_networking()
     string hostname, ipFileName;
     int pnbase;
     int my_port;
+
     opt.get("--portnumbase")->getInt(pnbase);
     opt.get("--hostname")->getString(hostname);
     opt.get("--ip-file-name")->getString(ipFileName);

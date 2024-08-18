@@ -80,17 +80,17 @@ opcodes = dict(
     CONVCBITVEC = 0x231,
 )
 
-class BinaryVectorInstruction(base.Instruction):
-    is_vec = lambda self: True
+class BinaryCiscable(base.Ciscable):
+    pass
 
-    def copy(self, size, subs):
-        return type(self)(*self.get_new_args(size, subs))
+class BinaryVectorInstruction(BinaryCiscable):
+    is_vec = lambda self: True
 
 class NonVectorInstruction(base.Instruction):
     is_vec = lambda self: False
 
     def __init__(self, *args, **kwargs):
-        assert(args[0].n <= args[0].unit)
+        assert(args[0].n is None or args[0].n <= args[0].unit)
         super(NonVectorInstruction, self).__init__(*args, **kwargs)
 
 class NonVectorInstruction1(base.Instruction):
@@ -163,7 +163,7 @@ class andrs(BinaryVectorInstruction):
                            sum(int(math.ceil(x / 64)) for x in self.args[::4]))
 
 class andrsvec(base.VarArgsInstruction, base.Mergeable,
-               base.DynFormatInstruction):
+               base.DynFormatInstruction, BinaryCiscable):
     """ Constant-vector AND of secret bit registers (vectorized version).
 
     :param: total number of arguments to follow (int)
@@ -205,6 +205,9 @@ class andrsvec(base.VarArgsInstruction, base.Mergeable,
             size = self.args[i + 1]
             req_node.increment(('bit', 'triple'), size * (n - 3) // 2)
             req_node.increment(('bit', 'mixed'), size)
+
+    def copy(self, size, subs):
+        return type(self)(*self.get_new_args(size, subs))
 
 class ands(BinaryVectorInstruction):
     """ Bitwise AND of secret bit register vector.
@@ -306,7 +309,7 @@ class bitcoms(NonVectorInstruction, base.VarArgsInstruction):
     arg_format = tools.chain(['sbw'], itertools.repeat('sb'))
 
 class bitdecc(NonVectorInstruction, base.VarArgsInstruction):
-    """ Secret bit register decomposition.
+    """ Clear bit register decomposition.
 
     :param: number of arguments to follow / number of bits plus one (int)
     :param: source (sbit)
@@ -513,8 +516,8 @@ class convcbitvec(BinaryVectorInstruction):
     """
     code = opcodes['CONVCBITVEC']
     arg_format = ['int','ciw','cb']
-    def __init__(self, *args):
-        super(convcbitvec, self).__init__(*args)
+    def __init__(self, *args, **kwargs):
+        super(convcbitvec, self).__init__(*args, **kwargs)
         assert(args[2].n == args[0])
         args[1].set_size(args[0])
 
@@ -546,14 +549,14 @@ class split(base.Instruction):
         super(split_class, self).__init__(*args, **kwargs)
         assert (len(args) - 2) % args[0] == 0
 
-class movsb(NonVectorInstruction):
+class movsb(BinaryVectorInstruction):
     """ Copy secret bit register.
 
     :param: destination (sbit)
     :param: source (sbit)
     """
     code = opcodes['MOVSB']
-    arg_format = ['sbw','sb']
+    arg_format = ['int', 'sbw','sb']
 
 class trans(base.VarArgsInstruction, base.DynFormatInstruction):
     """ Secret bit register vector transpose. The first destination vector
@@ -568,8 +571,6 @@ class trans(base.VarArgsInstruction, base.DynFormatInstruction):
     """
     code = opcodes['TRANS']
     is_vec = lambda self: True
-    def __init__(self, *args):
-        super(trans, self).__init__(*args)
 
     @classmethod
     def dynamic_arg_format(cls, args):

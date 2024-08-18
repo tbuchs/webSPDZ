@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     int my_client_id;
     int nparties;
     double salary_value;
-    int finish;
+    size_t finish;
     int port_base = 14000;
 
     if (argc < 5) {
@@ -131,6 +131,12 @@ int main(int argc, char** argv)
     case 'R':
     {
         int R = specification.get<int>();
+        int R2 = specification.get<int>();
+        if (R2 != 64)
+        {
+            cerr << R2 << "-bit ring not implemented" << endl;
+        }
+
         switch (R)
         {
         case 64:

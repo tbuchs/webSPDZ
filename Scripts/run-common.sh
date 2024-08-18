@@ -16,6 +16,16 @@ gdb_screen()
     screen -S :$name -d -m bash -l -c "echo $*; echo $LIBRARY_PATH; gdb $prog -ex \"run $*\""
 }
 
+valgrind_screen()
+{
+    prog=$1
+    shift
+    IFS=
+    name=${*/-/}
+    IFS=' '
+    screen -S :$name -d -m bash -l -c "echo $*; echo $LIBRARY_PATH; valgrind $prog $*"
+}
+
 lldb_screen()
 {
     prog=$1
