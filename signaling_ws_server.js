@@ -1,7 +1,7 @@
-
 const ws = require('ws');
-var wss = new ws.Server({port: 8080}); 
-
+const args = process.argv;
+var wss = new ws.Server({host: args[2], port: args[3]});
+console.log("Starting Signaling Server at " + args[2] + ":" + args[3])
 //all connected to the server users 
 var users = new Map();
 var currNumPlayers = new Map();

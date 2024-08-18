@@ -40,7 +40,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
   string next_player_key = player->get_map_key(next_player_id);
   if(player->peer_connections.find(next_player_key) == player->peer_connections.end()) {
     rtc::Configuration config;
-    config.iceServers.emplace_back("stun:stun.1.google.com:19302");
+    config.iceServers.emplace_back("stun:stun.l.google.com:19302");
     pc = std::make_shared<rtc::PeerConnection>(config);
     player->peer_connections.emplace(next_player_key, pc);
   } else
@@ -175,7 +175,7 @@ static EM_BOOL WebSocketMessage([[maybe_unused]]int eventType, const EmscriptenW
     std::shared_ptr<rtc::PeerConnection> pc;
     if(player->peer_connections.find(name) == player->peer_connections.end()) {
       rtc::Configuration config;
-      config.iceServers.emplace_back("stun:stun.1.google.com:19302");
+      config.iceServers.emplace_back("stun:stun.l.google.com:19302");
       pc = std::make_shared<rtc::PeerConnection>(config);
       player->peer_connections.emplace(name, pc);
     } else
