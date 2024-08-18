@@ -20,6 +20,7 @@
 
 using namespace std;
 
+#ifdef EMSCRIPTEN
 // WebPlayer, no socket communication
 void Names::init(int player, int num_players, vector<string>* signaling_server_config)
 {
@@ -27,6 +28,7 @@ void Names::init(int player, int num_players, vector<string>* signaling_server_c
   nplayers = num_players;
   signaling_server_url = signaling_server_config->at(0) + ":" + signaling_server_config->at(1); // ip:port
 }
+#endif
 
 void Names::init(int player, int pnb, int my_port, const char *servername,
                  bool setup_socket)

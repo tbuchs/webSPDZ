@@ -68,15 +68,6 @@ public:
   static const int DEFAULT_PORT = -1;
 
   /**
-   * Initialize without socket communication, but signaling server for WebRTC
-   * @param player my number
-   * @param num_players number of players
-   * @param signaling_port port number for signaling server
-   * @param signaling_server location of signaling server
-   */
-  void init(int player, int num_players, vector<string>* signaling_server_config);
-
-  /**
    * Initialize with central server
    * @param player my number
    * @param pnb base port number (server listens one below)
@@ -151,6 +142,16 @@ public:
   
   #ifdef EMSCRIPTEN
   string signaling_server_url;
+
+  /**
+   * Initialize without socket communication, but signaling server for WebRTC
+   * @param player my number
+   * @param num_players number of players
+   * @param signaling_port port number for signaling server
+   * @param signaling_server location of signaling server
+   */
+  void init(int player, int num_players, vector<string>* signaling_server_config);
+
   #endif
 };
 
