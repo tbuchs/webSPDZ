@@ -237,7 +237,7 @@ WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connecte
 
   EmscriptenWebSocketCreateAttributes attr;
   emscripten_websocket_init_create_attributes(&attr);
-  attr.url = ("ws://" + Nms.signaling_server_url).c_str();
+  attr.url = ("wss://" + Nms.signaling_server_url).c_str();
   attr.createOnMainThread = true;
   websocket_conn = emscripten_websocket_new(&attr);
   if (websocket_conn <= 0)
