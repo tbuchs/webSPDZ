@@ -12,7 +12,7 @@ The building process differs from the original MP-SPDZ since the project is buil
 - [Firefox](https://www.mozilla.org/firefox/new/)
 - [Python 3](https://www.python.org/downloads/)
 
-There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/). 
+There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/).
 
 ### Building
 To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datachannel-wasm) library upon first compilation and install the needed websocket package for nodejs, run:
@@ -37,11 +37,13 @@ Cross-Origin-Embedder-Policy: require-corp
 The needed services (WebServer and SignalingServer for establishing the secure WEBRTC connection) are already included in the repository. Both servers can be started by executing ```./run-servers.sh```.
 Otherwise, the servers can be started manually:
 ```
-python3 wasm-server.py
-node signaling_ws_server.js
+python3 https-server.py
+node signaling_wss_server.js
 ```
 
 To execute the protocol, open a Firefox browser (other browsers are not tested at the moment) and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
+
+Please note that the certificates used for https-server and websocket server are self-signed and may not be trusted by the browser. You may need to add an exception to the certificate in the browser. Easily done by visiting `https://localhost:XXXX` (where XXXX names the port of https- and wss-server) and adding an exception.
 
 Parameters for the computation must be set in the URL. An overview of available parameters can be found in the [MP-SPDZ Readme](README_MPSPDZ.md). 
 To allow communication via WEBRTC add the flag `--web` or `-w`.
