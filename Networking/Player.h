@@ -25,7 +25,7 @@ using namespace std;
 #include "Networking/PlayerBuffer.h"
 #include "Tools/Lock.h"
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 #include <emscripten/websocket.h>
 #include "deps/datachannel-wasm/wasm/include/rtc/datachannel.hpp"
 #include "deps/datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
@@ -139,20 +139,19 @@ public:
   int my_num() const { return player_no; }
   const string get_name(int i) const { return names[i]; }
   int get_portnum_base() const { return portnum_base; }
-  
-  #ifdef EMSCRIPTEN
+
+#ifdef __EMSCRIPTEN__
   string signaling_server_url;
 
   /**
    * Initialize without socket communication, but signaling server for WebRTC
    * @param player my number
    * @param num_players number of players
-   * @param signaling_port port number for signaling server
-   * @param signaling_server location of signaling server
+   * @param signaling_server_config location of signaling server
    */
   void init(int player, int num_players, vector<string>* signaling_server_config);
 
-  #endif
+#endif
 };
 
 struct CommStats
@@ -449,7 +448,7 @@ public:
   NamedCommStats total_comm() const;
 };
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 /**
  * WebPlayer communication helper class
  *

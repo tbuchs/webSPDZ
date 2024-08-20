@@ -151,7 +151,7 @@ void OnlineMachine::start_networking()
       {
         if(nplayers == 0)
           opt.get("-N")->getInt(nplayers);
-      #ifdef EMSCIRPTEN
+      #ifdef __EMSCRIPTEN__
         vector<string> signaling_server_args = {};
         opt.get("--signaling-server")->getStrings(signaling_server_args);
         playerNames.init(playerno, nplayers, &signaling_server_args);

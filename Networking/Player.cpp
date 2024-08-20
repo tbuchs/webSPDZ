@@ -11,7 +11,7 @@
 #include <utility>
 #include <assert.h>
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 #include <emscripten/websocket.h>
 #include <emscripten/threading.h>
 #include <emscripten/proxying.h>
@@ -20,9 +20,9 @@
 
 using namespace std;
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 // WebPlayer, no socket communication
-void Names::init(int player, int num_players, vector<string>* signaling_server_config)
+void Names::init(int player, int num_players, vector<string> *signaling_server_config)
 {
   player_no = player;
   nplayers = num_players;
@@ -224,7 +224,7 @@ Player::Player(const Names &Nms) : PlayerBase(Nms.my_num()), N(Nms)
   player_no = Nms.player_no;
   thread_stats.resize(nplayers);
 }
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 WebPlayer::~WebPlayer() {}
 
 WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connected_users(0), id(id)

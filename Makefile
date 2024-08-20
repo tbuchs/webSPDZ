@@ -222,7 +222,8 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 
 ifeq ($(WEB), 1)
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Player-Data
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Player-Data 
+#--embed-file Programs
 else
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB)

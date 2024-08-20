@@ -86,7 +86,7 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
   cerr << "Opening file " << fname << endl;
 #endif
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
   int result = emscripten_wget(fname.c_str(), fname.c_str());
   if(result != 0)
     throw runtime_error("Failed to download file");
