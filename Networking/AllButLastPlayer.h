@@ -10,11 +10,11 @@
 
 class AllButLastPlayer : public Player
 {
-    const Player& P;
+    Player& P;
     Names* N;
 
 public:
-    AllButLastPlayer(const Player& P) :
+    AllButLastPlayer(Player& P) :
             Player(*(N = new Names(P.my_num(), P.num_players() - 1))), P(P)
     {
     }
@@ -24,19 +24,19 @@ public:
         delete N;
     }
 
-    void send_to_no_stats(int player, const octetStream& o) const
+    void send_to_no_stats(int player, const octetStream& o)
     {
         P.send_to(player, o);
     }
 
-    void receive_player_no_stats(int i, octetStream& o) const
+    void receive_player_no_stats(int i, octetStream& o)
     {
         P.receive_player(i, o);
     }
 
     void send_receive_all_no_stats(const vector<vector<bool>>& channels,
             const vector<octetStream>& to_send,
-            vector<octetStream>& to_receive) const
+            vector<octetStream>& to_receive)
     {
         auto my_channels = channels;
         my_channels.resize(P.num_players());
@@ -48,7 +48,7 @@ public:
         to_receive.resize(P.num_players() - 1);
     }
 
-    void Broadcast_Receive_no_stats(vector<octetStream>& os) const
+    void Broadcast_Receive_no_stats(vector<octetStream>& os)
     {
         vector<bool> senders(P.num_players(), true), receivers(P.num_players(),
                 true);

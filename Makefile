@@ -66,6 +66,7 @@ vm: arithmetic binary
 doc:
 	cd doc; $(MAKE) html
 
+semi2k: semi2k-party.x
 arithmetic: rep-ring rep-field shamir semi2k-party.x semi-party.x mascot sy dealer-ring-party.x
 binary: rep-bin yao semi-bin-party.x tinier-party.x tiny-party.x ccd-party.x malicious-ccd-party.x real-bmr
 
