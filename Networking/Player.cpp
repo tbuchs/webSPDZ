@@ -239,7 +239,8 @@ WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connecte
 
   EmscriptenWebSocketCreateAttributes attr;
   emscripten_websocket_init_create_attributes(&attr);
-  attr.url = ("wss://" + Nms.signaling_server_url).c_str();
+  string url = "wss://" + Nms.signaling_server_url;
+  attr.url = url.c_str();
   attr.createOnMainThread = true;
   websocket_conn = emscripten_websocket_new(&attr);
   if (websocket_conn <= 0)
@@ -272,7 +273,7 @@ WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connecte
     throw runtime_error("Not all clients connected after a minute");
   }
   cout << "All clients connected!" << endl;
-  emscripten_websocket_close(websocket_conn, 0, "Finshed WebRTC-Connection establishment.");
+  emscripten_websocket_close(websocket_conn, 1000, "Finshed WebRTC-Connection establishment.");
   emscripten_websocket_delete(websocket_conn);
 }
 
