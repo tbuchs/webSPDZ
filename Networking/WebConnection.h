@@ -35,6 +35,18 @@ void send_websocket_message(int websocket, string type, string player_group, int
   }
 }
 
+void send_websocket_message(int websocket, string type, string player_group, int player_id, string mId, string msg) {
+  json message = {{"type", type}, {"group", player_group}, {"name", player_id}, {"mId", mId}, {"content", msg}};
+  unsigned short ready;
+  emscripten_websocket_get_ready_state(websocket, &ready);
+  int result = emscripten_websocket_send_utf8_text(websocket, message.dump().c_str());
+  if (result < 0) {
+    cerr << "WebSocket send failed with error code " << result << endl;
+    error("WebSocket send failed");
+    exit(1);
+  }
+}
+
 void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
   std::shared_ptr<rtc::PeerConnection> pc;
   string next_player_key = player->get_map_key(next_player_id);
@@ -148,9 +160,8 @@ static EM_BOOL WebSocketOpen([[maybe_unused]]int eventType, const EmscriptenWebS
 
 static EM_BOOL WebSocketMessage([[maybe_unused]]int eventType, const EmscriptenWebSocketMessageEvent *e, void *userData) {
   WebPlayer* player = (WebPlayer*)userData;
-  string message = (char*)e->data;
-  stringstream ss(message);
-  json json_msg{json::parse(message)};
+  string message((char*)e->data);
+  json json_msg = json::parse(message);
 
   if (json_msg["type"] == "login") {
     if(json_msg["success"] != true) {
@@ -172,6 +183,7 @@ static EM_BOOL WebSocketMessage([[maybe_unused]]int eventType, const EmscriptenW
     player->peer_connections.at(name)->setRemoteDescription(rtc::Description(json_msg.at("answer"), rtc::Description::Type::Answer));
   } else if (json_msg["type"] == "candidate") {
     string name = json_msg.at("name");
+    string mId = json_msg.at("mId");
     std::shared_ptr<rtc::PeerConnection> pc;
     if(player->peer_connections.find(name) == player->peer_connections.end()) {
       rtc::Configuration config;
@@ -184,7 +196,7 @@ static EM_BOOL WebSocketMessage([[maybe_unused]]int eventType, const EmscriptenW
     if(player->webrtc_candidates.find(name) == player->webrtc_candidates.end())
       player->webrtc_candidates.emplace(name, vector<rtc::Candidate>());
 
-    player->webrtc_candidates.at(name).push_back(rtc::Candidate(json_msg.at("candidate"), "0")); // TODO use real mid?
+    player->webrtc_candidates.at(name).push_back(rtc::Candidate(json_msg.at("candidate"), mId));
   } else {
     cout << "Unknown message type" << endl;
     exit(1);

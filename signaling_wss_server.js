@@ -134,6 +134,7 @@ wss.on('connection', function(connection) {
                sendTo(conn, {
                   type: "candidate",
                   name: connection.name,
+                  mId: data.mId,
                   candidate: data.content
                });
             } else
