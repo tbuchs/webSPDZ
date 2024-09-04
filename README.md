@@ -41,7 +41,7 @@ python3 https-server.py
 node signaling_wss_server.js
 ```
 
-To execute the protocol, open a Firefox/Chrome browser and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
+To execute the protocol, open a Firefox/Chrome browser (WASM64: for chrome enable the flags #enable-experimental-webassembly-features and  #enable-webassembly-memory64 for Firefox use Nightly) and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
 
 Please note that the certificates used for https-server and websocket server are self-signed and may not be trusted by the browser. You may need to add an exception to the certificate in the browser. Easily done by visiting `https://localhost:XXXX` (where XXXX names the port of https- and wss-server) and adding an exception.
 
