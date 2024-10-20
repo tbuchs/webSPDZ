@@ -78,17 +78,20 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
       player->connected_users--;
     });
 
+    dc->onError([](std::string error) {
+      std::cerr << "[DataChannel error: " << error << "]" << std::endl;
+    });
+
     dc->onMessage([player, next_player_key](std::variant<rtc::binary, rtc::string> message) {
       if (std::holds_alternative<rtc::string>(message)) {
         const octetStream* msg = new octetStream(std::get<rtc::string>(message));
-        // std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
         player->add_message(next_player_key, msg);
       } else {
         std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-        //std::cout << "Binary message from " << next_player << " received, size=" << std::get<rtc::binary>(message).size();
-        if(binary_msg.size() == 0) {
-          // cerr << "Binary message is empty" << endl;
-          const octetStream* msg = new octetStream();
+          // check if message is only zeros == start message for chunks
+        if(binary_msg.size() < 1000 && binary_msg.at(0) == std::byte(0) && 
+            std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(0); })) {
+          const octetStream* msg = new octetStream(binary_msg.size());
           player->add_message(next_player_key, msg);
         } else {
           unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
@@ -110,6 +113,10 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
       std::shared_ptr<rtc::DataChannel> dc = _dc;
       player->connected_users++;
 
+      dc->onError([](std::string error) {
+        std::cerr << "[DataChannel error: " << error << "]" << std::endl;
+      });
+
       dc->onClosed([dc, player]() { 
         std::cout << "[DataChannel closed: " << dc->label() << "]" << std::endl;
         player->connected_users--;
@@ -118,21 +125,19 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
       dc->onMessage([player, next_player_key](std::variant<rtc::binary, rtc::string> message) {
         if (std::holds_alternative<rtc::string>(message)) {
           const octetStream* msg = new octetStream(std::get<rtc::string>(message));
-          // std::cout << "[Player " << player->my_num() << " received message: " << *msg << " from " << next_player << "]" << std::endl;
           player->add_message(next_player_key, msg);
         } else {
           std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-          // std::cout << "Binary message from " << next_player << " received, size=" << binary_msg.size();
-          if(binary_msg.size() == 0) {
-            // cerr << "Binary message is empty" << endl;
-            const octetStream* msg = new octetStream();
+          // check if message is only zeros == start message for chunks
+          if(binary_msg.size() < 1000 && binary_msg.at(0) == std::byte(0) && 
+              std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(0); })) {
+            const octetStream* msg = new octetStream(binary_msg.size());
             player->add_message(next_player_key, msg);
           } else {
             unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
             const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
             player->add_message(next_player_key, msg);
           }
-          //cout << " content: " << *msg << endl;
         }
       });
 	  });
@@ -226,8 +231,29 @@ struct args {
 void callback_send_method(void* ptr_args) {
   struct args* a = (args*)ptr_args;
   rtc::DataChannel* dc_ptr = (rtc::DataChannel*)a->dc_;
-  if(!dc_ptr->send(reinterpret_cast<byte*>(a->data_), a->msg_size_)) {
-    cerr << "Failed to send message" << endl;
-    exit(1);
+  // max msg size 16kb
+  int max_msg_size = 256000;
+  if(a->msg_size_ > max_msg_size) {
+    int num_chunks = (a->msg_size_ + max_msg_size - 1) / max_msg_size;
+    // Send number of Chunks filled with zeros as start message
+    std::vector<std::byte> start_msg(num_chunks, std::byte(0));
+    dc_ptr->send(&start_msg[0], num_chunks);
+
+    int bytes_sent = 0;
+    for(int i=0; i<num_chunks; i++) {
+      int size = (i != num_chunks-1) ? max_msg_size : a->msg_size_ - bytes_sent;
+      if(!dc_ptr->send(reinterpret_cast<byte*>(a->data_ + i*max_msg_size), size)) {
+        cerr << "Failed to send message" << endl;
+        exit(1);
+      }
+      bytes_sent += size;
+    }
+  }
+  else 
+  { 
+    if(!dc_ptr->send(reinterpret_cast<byte*>(a->data_), a->msg_size_)) {
+      cerr << "Failed to send message" << endl;
+      exit(1);
+    }
   }
 }

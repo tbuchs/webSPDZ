@@ -382,6 +382,35 @@ void WebPlayer::Broadcast_Receive_no_stats(vector<octetStream> &o)
     receive_player_no_stats(receive_from, o[receive_from]);
   }
 }
+
+void WebPlayer::exchange_no_stats(int other, const octetStream &o, octetStream &to_receive)
+{
+  send_message(other, &o);
+  receive_player_no_stats(other, to_receive);
+}
+
+size_t WebPlayer::send_no_stats(int player, const PlayerBuffer &buffer, bool block)
+{
+  (void)block;
+  const octetStream msg = octetStream(buffer.size, buffer.data);
+  assert(memcmp(buffer.data, msg.get_data(), buffer.size) == 0);
+  assert(msg.get_length() == buffer.size);
+  send_message(player, &msg);
+  return buffer.size;
+}
+
+size_t WebPlayer::recv_no_stats(int player, const PlayerBuffer &buffer, bool block)
+{
+  (void)block;
+  octetStream msg = octetStream(buffer.size);
+  receive_player_no_stats(player, msg);
+  octet** msg_non_const = const_cast<octet**>(&buffer.data);
+  memcpy(*msg_non_const, msg.get_data(), buffer.size);
+  // assert buffer data
+  assert(memcmp(buffer.data, msg.get_data(), buffer.size) == 0);
+  return buffer.size;
+}
+
 #endif
 
 template <class T>
@@ -616,12 +645,12 @@ void Player::receive_relative(int offset, octetStream &o)
 }
 
 template <class T>
-void MultiPlayer<T>::exchange_no_stats(int other, const octetStream &o, octetStream &to_receive) const
+void MultiPlayer<T>::exchange_no_stats(int other, const octetStream &o, octetStream &to_receive)
 {
   o.exchange(sockets[other], sockets[other], to_receive);
 }
 
-void Player::exchange(int other, const octetStream &o, octetStream &to_receive) const
+void Player::exchange(int other, const octetStream &o, octetStream &to_receive)
 {
 #ifdef VERBOSE_COMM
   cerr << "Exchanging with " << other << endl;
@@ -631,12 +660,12 @@ void Player::exchange(int other, const octetStream &o, octetStream &to_receive) 
   sent += o.get_length();
 }
 
-void Player::exchange(int player, octetStream &o) const
+void Player::exchange(int player, octetStream &o)
 {
   exchange(player, o, o);
 }
 
-void Player::exchange_relative(int offset, octetStream &o) const
+void Player::exchange_relative(int offset, octetStream &o)
 {
   exchange(get_player(offset), o);
 }
@@ -866,7 +895,7 @@ void VirtualTwoPartyPlayer::receive(octetStream &o) const
   comm_stats["Receiving one-to-one"].add(o, ts);
 }
 
-void VirtualTwoPartyPlayer::send_receive_player(vector<octetStream> &o) const
+void VirtualTwoPartyPlayer::send_receive_player(vector<octetStream> &o)
 {
   TimeScope ts(comm_stats["Exchanging one-to-one"].add(o[0]));
   comm_stats.sent += o[0].get_length();
@@ -897,7 +926,7 @@ size_t VirtualTwoPartyPlayer::recv(const PlayerBuffer &buffer, bool block) const
   return received;
 }
 
-void OffsetPlayer::send_receive_player(vector<octetStream> &o) const
+void OffsetPlayer::send_receive_player(vector<octetStream> &o)
 {
   P.exchange(P.get_player(offset), o[0], o[1]);
 }

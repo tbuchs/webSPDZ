@@ -12,6 +12,7 @@
 #include <set>
 #include <iostream>
 #include <fstream>
+#include <string>
 using namespace std;
 
 #include "Tools/octetStream.h"
@@ -348,20 +349,20 @@ public:
    * Exchange information with one other party,
    * reusing the buffer if possible.
    */
-  void exchange(int other, const octetStream &to_send, octetStream &ot_receive) const;
-  virtual void exchange_no_stats(int, const octetStream &, octetStream &) const
+  void exchange(int other, const octetStream &to_send, octetStream &ot_receive);
+  virtual void exchange_no_stats(int, const octetStream &, octetStream &)
   {
     throw runtime_error("implement exchange");
   }
   /**
    * Exchange information with one other party, reusing the buffer.
    */
-  void exchange(int other, octetStream &o) const;
+  void exchange(int other, octetStream &o);
   /**
    * Exchange information with one other party specified by offset,
    * reusing the buffer if possible.
    */
-  void exchange_relative(int offset, octetStream &o) const;
+  void exchange_relative(int offset, octetStream &o);
   /**
    * Send information to a party while receiving from another by offset,
    * The default is to send to the next party while receiving from the previous.
@@ -476,6 +477,15 @@ public:
    */
   virtual void Broadcast_Receive_no_stats(vector<octetStream> &o);
 
+  /**
+   * Exchange information with one other party,
+   * reusing the buffer if possible.
+   */
+  virtual void exchange_no_stats(int other, const octetStream &, octetStream &);
+
+  size_t send_no_stats(int player, const PlayerBuffer &buffer, bool block);
+  size_t recv_no_stats(int player, const PlayerBuffer &buffer, bool block);
+
   virtual bool is_encrypted() { return true; }
 
   void send_message(int receiver, const octetStream *msg);
@@ -514,6 +524,37 @@ private:
     const octetStream *msg = message_queue.at(sender).front();
     message_queue.at(sender).pop_front();
     msg_lock.unlock();
+    
+    if(msg->get_length() == 0 && msg->get_max_length() != 0)
+    {
+      size_t chunks = msg->get_max_length();
+      delete msg;
+      octetStream *msg_chunks = new octetStream();
+
+      for(size_t i = 0; i < chunks; i++)
+      {
+        while (message_queue.at(sender).size() == 0)
+        {
+          emscripten_sleep(0);
+        }
+        msg_lock.lock();
+        const octetStream *chunk = message_queue.at(sender).front();
+        if(i != chunks-1) {
+          if(chunk->get_length() != 256000) {
+            cout << "Length of chunk number " << i << "/" << chunks << " is " << chunk->get_length() << endl;
+          }
+        }
+        size_t msg_length = msg_chunks->get_length();
+        size_t chunk_length = chunk->get_length();
+        msg_chunks->concat(*chunk);
+        assert(msg_length + chunk_length == msg_chunks->get_length());
+        delete message_queue.at(sender).front();
+        message_queue.at(sender).pop_front();
+        msg_lock.unlock();
+      }
+      // cout << "Reveived " << chunks << " with length " << msg_chunks->get_length() << endl;
+      return msg_chunks;
+    }  
     return msg;
   }
 
@@ -559,7 +600,7 @@ public:
 
   // exchange data with minimal memory usage
   virtual void exchange_no_stats(int other, const octetStream &to_send,
-                                 octetStream &to_receive) const;
+                                 octetStream &to_receive);
 
   // send to next and receive from previous player
   virtual void pass_around_no_stats(const octetStream &to_send,
@@ -625,7 +666,7 @@ public:
 
   virtual void send(octetStream &o) const = 0;
   virtual void receive(octetStream &o) const = 0;
-  virtual void send_receive_player(vector<octetStream> &o) const = 0;
+  virtual void send_receive_player(vector<octetStream> &o) = 0;
   void Broadcast_Receive(vector<octetStream> &o);
 
   virtual size_t send(const PlayerBuffer &, bool) const
@@ -657,7 +698,7 @@ public:
 
   void send(octetStream &o) const;
   void receive(octetStream &o) const;
-  void send_receive_player(vector<octetStream> &o) const;
+  void send_receive_player(vector<octetStream> &o);
 
   void pass_around(octetStream &o, int _ = 1)
   {
@@ -701,7 +742,7 @@ public:
   void reverse_send(octetStream &o) const { P.send_to(P.get_player(-offset), o); }
   void receive(octetStream &o) const { P.receive_player(P.get_player(offset), o); }
   void reverse_receive(octetStream &o) { P.receive_player(P.get_player(-offset), o); }
-  void send_receive_player(vector<octetStream> &o) const;
+  void send_receive_player(vector<octetStream> &o);
 
   void reverse_exchange(octetStream &o) const { P.pass_around(o, P.num_players() - offset); }
   void exchange(octetStream &o) const { P.exchange(P.get_player(offset), o); }
