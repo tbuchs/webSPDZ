@@ -18,8 +18,8 @@ public:
     {
     }
 
-    void exchange(const Player& P);
-    void Check(const Player& P);
+    void exchange(Player& P);
+    void Check(Player& P);
 
     Rep4MC& get_part_MC()
     {

@@ -9,7 +9,7 @@
 #include "Rep4MC.h"
 
 template<class T>
-void Rep4MC<T>::exchange(const Player& P)
+void Rep4MC<T>::exchange(Player& P)
 {
     octetStream right, tmp;
     for (auto& secret : this->secrets)
@@ -30,7 +30,7 @@ void Rep4MC<T>::exchange(const Player& P)
 }
 
 template<class T>
-void Rep4MC<T>::Check(const Player& P)
+void Rep4MC<T>::Check(Player& P)
 {
     octetStream left;
     check_hash.final(left);
