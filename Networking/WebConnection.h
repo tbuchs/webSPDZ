@@ -89,7 +89,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
       } else {
         std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
           // check if message is only zeros == start message for chunks
-        if(binary_msg.size() < 1000 && binary_msg.at(0) == std::byte(0) && 
+          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(0) && 
             std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(0); })) {
           const octetStream* msg = new octetStream(binary_msg.size());
           player->add_message(next_player_key, msg);
@@ -129,7 +129,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
         } else {
           std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
           // check if message is only zeros == start message for chunks
-          if(binary_msg.size() < 1000 && binary_msg.at(0) == std::byte(0) && 
+          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(0) && 
               std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(0); })) {
             const octetStream* msg = new octetStream(binary_msg.size());
             player->add_message(next_player_key, msg);
