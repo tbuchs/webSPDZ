@@ -44,6 +44,7 @@ callgrind.out.*
 
 # Compiled source #
 ###################
+deps/SimplestOT_C/
 Programs/Bytecode/*
 Programs/Schedules/*
 Programs/Public-Input/*
