@@ -332,7 +332,9 @@ void WebPlayer::receive_player_no_stats(int player, octetStream &o)
     emscripten_sleep(0);
   }
   wait_timer.stop();
-  o = *read_message(player_key);
+  const octetStream* msg = read_message(player_key);
+  o = *msg;
+  delete msg;
   recv_timer.stop();
 }
 
