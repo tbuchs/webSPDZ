@@ -88,9 +88,9 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
         player->add_message(next_player_key, msg);
       } else {
         std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-          // check if message is only zeros == start message for chunks
-          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(0) && 
-            std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(0); })) {
+          // check if message is only 7 == start message for chunks
+          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(7) && 
+            std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(7); })) {
           const octetStream* msg = new octetStream(binary_msg.size());
           player->add_message(next_player_key, msg);
         } else {
@@ -128,9 +128,9 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
           player->add_message(next_player_key, msg);
         } else {
           std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-          // check if message is only zeros == start message for chunks
-          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(0) && 
-              std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(0); })) {
+          // check if message is only 7 == start message for chunks
+          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(7) && 
+              std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(7); })) {
             const octetStream* msg = new octetStream(binary_msg.size());
             player->add_message(next_player_key, msg);
           } else {
@@ -236,7 +236,7 @@ void callback_send_method(void* ptr_args) {
   if(a->msg_size_ > max_msg_size) {
     int num_chunks = (a->msg_size_ + max_msg_size - 1) / max_msg_size;
     // Send number of Chunks filled with zeros as start message
-    std::vector<std::byte> start_msg(num_chunks, std::byte(0));
+    std::vector<std::byte> start_msg(num_chunks, std::byte(7));
     dc_ptr->send(&start_msg[0], num_chunks);
 
     int bytes_sent = 0;
