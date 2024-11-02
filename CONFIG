@@ -1,7 +1,7 @@
 ROOT = .
 
 # compile for web usage
-WEB = 0
+WEB = 1
 USE_WASM32 = 0
 
 OPTIM= -O3
@@ -68,7 +68,9 @@ endif
 endif
 endif
 
-USE_KOS = 0
+# settings for web compatability
+USE_KOS = 1
+AVX_OT = 0
 
 # allow to set compiler in CONFIG.mine
 ifeq ($(WEB), 1)
@@ -98,14 +100,14 @@ LDLIBS = -lgmpxx -lgmp -lsodium $(MY_LDLIBS) -lssl -lcrypto
 
 ifeq ($(WEB), 1)
 LDLIBS += -lwebsocket.js -ldatachannel-wasm
-	ifeq ($(USE_WASM32), 1)
-	LDLIBS += -I $(CURDIR)/local/lib/wasm32 -L $(CURDIR)/local/lib/wasm32
-	CFLAGS += -I./local/include/wasm32
-	else 
-	LDLIBS += -I $(CURDIR)/local/lib/wasm64 -L $(CURDIR)/local/lib/wasm64
-	CFLAGS += -I./local/include/wasm64 -sMEMORY64
-	LDFLAGS += -sMEMORY64
-	endif
+ifeq ($(USE_WASM32), 1)
+LDLIBS += -I $(CURDIR)/local/wasm32/lib -L $(CURDIR)/local/wasm32/lib
+CFLAGS += -I./local/wasm32/include
+else 
+LDLIBS += -I $(CURDIR)/local/wasm64/lib -L $(CURDIR)/local/wasm64/lib
+CFLAGS += -I./local/wasm64/include -sMEMORY64
+LDFLAGS += -sMEMORY64
+endif
 else
 LDLIBS += $(BREW_LDLIBS)
 LDLIBS +=  -Wl,-rpath -Wl,$(CURDIR)/local/lib -L$(CURDIR)/local/lib
