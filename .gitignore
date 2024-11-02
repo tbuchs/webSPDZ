@@ -115,6 +115,7 @@ _build/
 
 # environment
 .env
+.venv
 
 # temp doc files
 doc/readme.md
