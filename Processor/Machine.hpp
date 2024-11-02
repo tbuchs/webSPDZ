@@ -475,7 +475,7 @@ void Machine<sint, sgf2n>::run(const string& progname)
 
   finish_timer.stop();
   
-#ifdef VERBOSE
+#if defined(VERBOSE) && !defined(__EMSCRIPTEN__)
   cerr << "Memory usage: ";
   tinfo[0].print_usage(cerr, Mp.MS, "sint");
   tinfo[0].print_usage(cerr, Mp.MC, "cint");
