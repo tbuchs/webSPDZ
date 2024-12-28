@@ -19,7 +19,7 @@ OnlineMachine::OnlineMachine(int argc, const char** argv, ez::ezOptionParser& op
         OnlineOptions& online_opts, int nplayers, V) :
         argc(argc), argv(argv), online_opts(online_opts), lg2(0),
         use_encryption(false),
-        opt(opt), nplayers(nplayers)
+        opt(opt), nplayers(nplayers), use_websockets(false)
 {
     opt.add(
           to_string(V::default_degree()).c_str(), // Default.
@@ -155,6 +155,10 @@ void OnlineMachine::start_networking()
         vector<string> signaling_server_args = {};
         opt.get("--signaling-server")->getStrings(signaling_server_args);
         playerNames.init(playerno, nplayers, &signaling_server_args);
+        int check_websockets_usage = 0;
+        opt.get("-w")->getInt(check_websockets_usage);
+        if (check_websockets_usage > 0)
+          use_websockets = true;
       #endif
       }
       else if (not opt.get("-ext-server")->isSet)
@@ -188,7 +192,7 @@ int OnlineMachine::run()
     try
 #endif
     {
-        Machine<T, U>(playerNames, use_encryption, online_opts, lg2).run(
+        Machine<T, U>(playerNames, use_encryption, use_websockets, online_opts, lg2).run(
                 online_opts.progname);
 
         if (online_opts.verbose)

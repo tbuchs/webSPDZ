@@ -1,4 +1,0 @@
-a = sint(1)
-b = sint(2)
-
-print_ln('got %s', (a < b).reveal())

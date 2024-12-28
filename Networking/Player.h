@@ -217,8 +217,6 @@ protected:
 public:
   mutable Timer timer;
   mutable Timer send_timer;
-  mutable Timer recv_timer;
-  mutable Timer wait_timer;
 
   PlayerBase(int player_no) : player_no(player_no), sent(comm_stats.sent) {}
   virtual ~PlayerBase();
@@ -450,6 +448,76 @@ public:
 };
 
 #ifdef __EMSCRIPTEN__
+/**
+ * Just a copy of WebPlayer for communication via WebSockets
+ * TODO Child Class of WebPlayer
+ */
+class WebSocketPlayer : public Player
+{
+  public:
+  WebSocketPlayer(const Names &Nms, const string &id);
+  virtual ~WebSocketPlayer();
+   // Send an octetStream to all other players
+  //   -- And corresponding receive
+  virtual void send_to_no_stats(int player, const octetStream &o);
+  virtual void receive_player_no_stats(int i, octetStream &o);
+
+  virtual void send_receive_all_no_stats(const vector<vector<bool>> &channels,
+                                         const vector<octetStream> &to_send, vector<octetStream> &to_receive);
+
+  // send to next and receive from previous player
+  virtual void pass_around_no_stats(const octetStream &to_send,
+                                    octetStream &to_receive, int offset);
+
+  /* Broadcast and Receive data to/from all players
+   *  - Assumes o[player_no] contains the thing broadcast by me
+   */
+  virtual void Broadcast_Receive_no_stats(vector<octetStream> &o);
+
+  /**
+   * Exchange information with one other party,
+   * reusing the buffer if possible.
+   */
+  virtual void exchange_no_stats(int other, const octetStream &, octetStream &);
+
+  size_t send_no_stats(int player, const PlayerBuffer &buffer, bool block);
+  size_t recv_no_stats(int player, const PlayerBuffer &buffer, bool block);
+
+  virtual bool is_encrypted() { return true; }
+
+  void send_message(int receiver, const octetStream* msg);
+
+  virtual string get_id() const { return id; }
+  inline size_t get_group_id() const { return group_id; }
+  inline void set_group_id(size_t id) { group_id = id; }
+
+  inline void add_message(int sender, octet* msg, size_t msg_length)
+  {
+    msg_lock.lock();
+    if(message_queue.size() <= group_id)
+    {
+      size_t old_size = message_queue.size();
+      message_queue.resize(group_id + 10); // resize a bit more than needed
+      for(size_t i = old_size - 1; i < message_queue.size(); i++)
+      {
+        message_queue.at(i) = std::vector<std::deque<octetStream>>{};
+        message_queue.at(i).resize(nplayers);
+      }
+    }
+    message_queue.at(group_id).at(sender).emplace_back(octetStream(msg_length, msg));
+    msg_lock.unlock();
+  }
+
+  EMSCRIPTEN_WEBSOCKET_T websocket_conn;
+  bool connected;
+
+  private:
+  Lock msg_lock;
+  std::vector<std::vector<std::deque<octetStream>>> message_queue; // [group][player]
+  string id;
+  size_t group_id;
+};
+
 /**
  * WebPlayer communication helper class
  *

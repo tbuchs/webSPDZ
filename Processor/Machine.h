@@ -64,6 +64,7 @@ class Machine : public BaseMachine
   Timer finish_timer;
 
   bool use_encryption;
+  bool use_websockets;
   bool live_prep;
 
   OnlineOptions opts;
@@ -76,7 +77,7 @@ class Machine : public BaseMachine
 
   static void init_binary_domains(int security_parameter, int lg2);
 
-  Machine(Names& playerNames, bool use_encryption = true,
+  Machine(Names& playerNames, bool use_encryption = true, bool use_websockets = false,
           const OnlineOptions opts = sint(), int lg2 = 0);
   ~Machine();
 

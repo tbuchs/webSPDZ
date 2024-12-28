@@ -113,11 +113,11 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
             "--bucket-size" // Flag token.
     );
     opt.add(
-            "", // Default.
+            0, // Default.
             0, // Required?
-            0, // Number of args expected.
+            1, // Number of args expected.
             0, // Delimiter if expecting multiple args.
-            "To run completely in the browser using WebRTC.", // Help description.
+            "To run completely in the browser using WebRTC or WebSockets.", // Help description.
             "-w", // Flag token.
             "--web" // Flag token.
     );

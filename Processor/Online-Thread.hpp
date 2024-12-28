@@ -52,7 +52,10 @@ void thread_info<sint, sgf2n>::Sub_Main_Func()
   Player *player;
   string id = "thread" + to_string(num);
 #ifdef __EMSCRIPTEN__
-  player = new WebPlayer(*(tinfo->Nms), id);
+  if(machine.use_websockets)
+    player = new WebSocketPlayer(*(tinfo->Nms), id);
+  else
+    player = new WebPlayer(*(tinfo->Nms), id);
 #else
   if (machine.use_encryption)
   {
