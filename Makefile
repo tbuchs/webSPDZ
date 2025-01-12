@@ -162,7 +162,12 @@ $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER
 ifeq ($(WEB), 1)
 CFLAGS += -fPIC
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sWASMFS -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sINITIAL_MEMORY=500mb # -sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSOCKET_DEBUG -sSAFE_HEAP
+LDFLAGS += -sWASMFS  -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sINITIAL_MEMORY=500mb # -sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSOCKET_DEBUG -sSAFE_HEAP
+#use WebSocket Communication on the main thread
+ifeq ($(SINGLE_THREADED_WEBSOCKET), 1)
+CFLAGS += -DSINGLE_THREADED_WEBSOCKET
+LDFLAGS += -sASYNCIFY
+endif
 # DEBUG
 ifeq ($(DEBUGGING), 1)
 LDFLAGS += -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1
@@ -246,7 +251,7 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 
 ifeq ($(WEB), 1)
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=20 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Player-Data 
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=20 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Player-Data --embed-file Programs
 #--embed-file Programs
 else
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
@@ -410,5 +415,6 @@ mac-machine-setup:
 clean-deps:
 	-rm -rf local/lib/liblibOTe.* deps/libOTe/out deps/SimplestOT_C
 
-clean: clean-deps
+# clean: clean-deps
+clean:
 	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x *.so
