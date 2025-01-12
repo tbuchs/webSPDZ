@@ -113,7 +113,7 @@ OnlineOptions::OnlineOptions(ez::ezOptionParser& opt, int argc,
             "--bucket-size" // Flag token.
     );
     opt.add(
-            0, // Default.
+            "0", // Default.
             0, // Required?
             1, // Number of args expected.
             0, // Delimiter if expecting multiple args.

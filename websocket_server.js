@@ -16,7 +16,7 @@ const args = process.argv;
 // Create an HTTPS server with the SSL credentials
 const httpsServer = https.createServer(credentials);
 httpsServer.listen(args[3], args[2], () => {
-  console.log("Starting Signaling Server at " + args[2] + ":" + args[3]);
+  console.log("Starting WebSocket Server at " + args[2] + ":" + args[3]);
 });
 
 // Create the WebSocket server on top of the HTTPS server
@@ -42,7 +42,7 @@ wss.on('connection', function(connection) {
          const group = data.readUInt8(length - 1); // 1
          var conn = users[group][name];
          data.writeInt8(connection.name.split('/')[1], length - 2); // 0
-         conn.send(data);         
+         conn.send(data);
       }
       else
       {
@@ -50,7 +50,6 @@ wss.on('connection', function(connection) {
          console.log("Player: " + data.name + " group: " + data.group);		
          //if anyone is logged in with this username then refuse
          if(userGroups.has(data.group) && (typeof users[userGroups.get(data.group)][data.name] !== 'undefined')) {
-            console.log("Usergroup: " + data.group + " name: " + data.name + " has " + users[userGroups[data.group]][data.name]); 
             sendTo(connection, { 
                type: "login", 
                success: false,

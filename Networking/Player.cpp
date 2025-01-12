@@ -230,18 +230,21 @@ WebSocketPlayer::~WebSocketPlayer()
 {
   emscripten_websocket_close(websocket_conn, 1000, "Finished.");
   emscripten_websocket_delete(websocket_conn);
+  pthread_mutex_destroy(&mutex);
+  pthread_cond_destroy(&ready);
+  for (int i = 0; i < nplayers; i++)
+  {
+    pthread_mutex_destroy(&message_locks.at(i));
+    pthread_cond_destroy(&message_conds.at(i));
+  }
 }
 
-WebSocketPlayer::WebSocketPlayer(const Names &Nms, const string &id) : Player(Nms), connected(false), id(id)
+void *WebSocketPlayer::create_communication_channel(void *arg)
 {
-  msg_lock = Lock();
+  WebSocketPlayer *player = (WebSocketPlayer *)arg;
+  player->websocket_thread_id = pthread_self();
 
-  message_queue.resize(20); // reserve for 20 groups = 19 threads
-  for(size_t i = 0; i < message_queue.size(); i++)
-  {
-    message_queue.at(i) = std::vector<std::deque<octetStream>>{};
-    message_queue.at(i).resize(nplayers);
-  }
+  player->message_queue.resize(player->nplayers);
 
   // Establish WebSocket Connection to other Players
   if (!emscripten_websocket_is_supported())
@@ -252,22 +255,48 @@ WebSocketPlayer::WebSocketPlayer(const Names &Nms, const string &id) : Player(Nm
 
   EmscriptenWebSocketCreateAttributes attr;
   emscripten_websocket_init_create_attributes(&attr);
-  string url = "wss://" + Nms.signaling_server_url; //"wss://192.168.178.28:8080";
+  string url = "wss://" + player->signaling_server;
   attr.url = url.c_str();
-  attr.createOnMainThread = true;
-  websocket_conn = emscripten_websocket_new(&attr);
-  if (websocket_conn <= 0)
+  // attr.createOnMainThread = true; // has no affect, since it is not implemented in emscripten
+  player->websocket_conn = emscripten_websocket_new(&attr);
+  if (player->websocket_conn <= 0)
   {
-    cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)websocket_conn << "!" << endl;
+    cerr << "WebSocket creation failed, error code " << (EMSCRIPTEN_RESULT)player->websocket_conn << "!" << endl;
     exit(1);
   }
-  emscripten_websocket_set_onopen_callback(websocket_conn, this, WebSocketOpen_WebSocketPlayer);
-  emscripten_websocket_set_onmessage_callback(websocket_conn, this, WebSocketMessage_WebSocketPlayer);
-  emscripten_websocket_set_onclose_callback(websocket_conn, nullptr, WebSocketClose_WebSocketPlayer);
-  emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError_WebSocketPlayer);
+  emscripten_websocket_set_onopen_callback(player->websocket_conn, player, WebSocketOpen_WebSocketPlayer);
+  emscripten_websocket_set_onmessage_callback(player->websocket_conn, player, WebSocketMessage_WebSocketPlayer);
+  emscripten_websocket_set_onclose_callback(player->websocket_conn, nullptr, WebSocketClose_WebSocketPlayer);
+  emscripten_websocket_set_onerror_callback(player->websocket_conn, nullptr, WebSocketError_WebSocketPlayer);
 
-  while(!connected)
-    emscripten_sleep(0);
+  emscripten_exit_with_live_runtime(); // don't let the thread exit, needed for websocket callbacks
+  return 0;
+}
+
+WebSocketPlayer::WebSocketPlayer(const Names &Nms, const string &id) : Player(Nms), connected(false), id(id), signaling_server(Nms.signaling_server_url)
+{
+  pthread_mutex_init(&mutex, 0);
+  pthread_cond_init(&ready, 0);
+
+  for (int i = 0; i < nplayers; i++)
+  {
+    message_locks.push_back(pthread_mutex_t());
+    pthread_mutex_init(&message_locks.at(i), 0);
+    message_conds.push_back(pthread_cond_t());
+    pthread_cond_init(&message_conds.at(i), 0);
+  }
+
+#ifdef SINGLE_THREADED_WEBSOCKET
+  if(!emscripten_has_asyncify())
+    error("Asyncify is required for single-threaded WebSockets! Link with -sASYNCIFY=1");
+  create_communication_channel(this);
+  while (!connected)
+    emscripten_sleep(1);
+#else
+  pthread_t thread;
+  pthread_create(&thread, 0, create_communication_channel, this);
+  pthread_cond_wait(&ready, &mutex);
+#endif
 }
 
 void WebSocketPlayer::send_message(int receiver, const octetStream *msg)
@@ -276,11 +305,32 @@ void WebSocketPlayer::send_message(int receiver, const octetStream *msg)
   msg_copy->store_int(receiver, 1);
   msg_copy->store_int(get_group_id(), 1);
 
-  int result = emscripten_websocket_send_binary(websocket_conn, msg_copy->get_data(), msg_copy->get_length());
-  if (result < 0) {
-    cerr << "WebSocket send failed with error code " << result << endl;
-    error("WebSocket send failed");
-    exit(1);
+  if (pthread_self() != websocket_thread_id)
+  {
+    void (*func_ptr)(void *) = callback_send_websocketplayer;
+    em_proxying_queue *q = em_proxying_queue_create();
+    args_websocket_send *data_args = new args_websocket_send();
+    data_args->websocket_id = websocket_conn;
+    data_args->data_ = (unsigned char *)msg->get_data();
+    data_args->msg_size_ = msg->get_length();
+    int ret_val = emscripten_proxy_sync(q, websocket_thread_id, func_ptr, data_args);
+    if (ret_val == 0)
+    {
+      cerr << "Proxying send_binary failed" << endl;
+      error("WebSocket proxying send_binary failed");
+    }
+    delete data_args;
+    em_proxying_queue_destroy(q);
+  }
+  else
+  {
+    int result = emscripten_websocket_send_binary(websocket_conn, msg_copy->get_data(), msg_copy->get_length());
+    if (result < 0)
+    {
+      cerr << "Sending message from " << id << " with socket " << websocket_conn << " failed" << endl;
+      error("WebSocket send_binary failed");
+      exit(1);
+    }
   }
 
   // delete 2 byte modifications
@@ -296,16 +346,19 @@ void WebSocketPlayer::send_to_no_stats(int player, const octetStream &o)
 
 void WebSocketPlayer::receive_player_no_stats(int player, octetStream &o)
 {
-  msg_lock.lock();
-  while((message_queue.size() <= group_id) || (message_queue.at(group_id).at(player).size() == 0))
-  {
-    msg_lock.unlock();
-    emscripten_sleep(0);
-    msg_lock.lock();
-  }
-  o = message_queue.at(group_id).at(player).front();
-  message_queue.at(group_id).at(player).pop_front();
-  msg_lock.unlock();
+  pthread_mutex_lock(&message_locks.at(player));
+
+#ifdef SINGLE_THREADED_WEBSOCKET
+  // wait for message
+  while (message_queue.at(player).size() == 0)
+    emscripten_thread_sleep(1);
+#else
+  if (message_queue.at(player).size() == 0)
+    pthread_cond_wait(&message_conds.at(player), &message_locks.at(player));
+#endif
+  o = message_queue.at(player).front();
+  message_queue.at(player).pop_front();
+  pthread_mutex_unlock(&message_locks.at(player));
 }
 
 void WebSocketPlayer::send_receive_all_no_stats(const vector<vector<bool>> &channels,
@@ -329,8 +382,7 @@ void WebSocketPlayer::send_receive_all_no_stats(const vector<vector<bool>> &chan
   }
 }
 
-void WebSocketPlayer::pass_around_no_stats(const octetStream &to_send,
-                                     octetStream &to_receive, int offset)
+void WebSocketPlayer::pass_around_no_stats(const octetStream &to_send, octetStream &to_receive, int offset)
 {
   int send_to = get_player(offset);
   int recv_from = get_player(-offset);
@@ -340,8 +392,6 @@ void WebSocketPlayer::pass_around_no_stats(const octetStream &to_send,
 
 void WebSocketPlayer::Broadcast_Receive_no_stats(vector<octetStream> &o)
 {
-  if (o.size() != (unsigned long)nplayers)
-    throw runtime_error("player numbers don't match");
   for (int i = 1; i < nplayers; i++)
   {
     int send_to = (player_no + i) % nplayers;
@@ -365,8 +415,6 @@ size_t WebSocketPlayer::send_no_stats(int player, const PlayerBuffer &buffer, bo
 {
   (void)block;
   const octetStream msg = octetStream(buffer.size, buffer.data);
-  assert(memcmp(buffer.data, msg.get_data(), buffer.size) == 0);
-  assert(msg.get_length() == buffer.size);
   send_message(player, &msg);
   return buffer.size;
 }
@@ -376,18 +424,36 @@ size_t WebSocketPlayer::recv_no_stats(int player, const PlayerBuffer &buffer, bo
   (void)block;
   octetStream msg = octetStream(buffer.size);
   receive_player_no_stats(player, msg);
-  octet** msg_non_const = const_cast<octet**>(&buffer.data);
-  memcpy(*msg_non_const, msg.get_data(), buffer.size);
-  // assert buffer data
-  assert(memcmp(buffer.data, msg.get_data(), buffer.size) == 0);
   return buffer.size;
 }
 
-WebPlayer::~WebPlayer() {}
+// ------------------ WebPlayer ------------------
+// WebRTC Communication
+// -----------------------------------------------
+
+WebPlayer::~WebPlayer()
+{
+  for (int i = 0; i < nplayers; i++)
+  {
+    pthread_mutex_destroy(&message_locks.at(i));
+    pthread_cond_destroy(&message_conds.at(i));
+  }
+  pthread_mutex_destroy(&start_mutex);
+  pthread_cond_destroy(&start_cond);
+}
 
 WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connected_users(0), id(id)
 {
-  msg_lock = Lock();
+  for (int i = 0; i < nplayers; i++)
+  {
+    message_locks.push_back(pthread_mutex_t());
+    pthread_mutex_init(&message_locks.at(i), 0);
+    message_conds.push_back(pthread_cond_t());
+    pthread_cond_init(&message_conds.at(i), 0);
+  }
+  pthread_mutex_init(&start_mutex, 0);
+  pthread_cond_init(&start_cond, 0);
+
   // Establish WebSocket Connection to other Players
   if (!emscripten_websocket_is_supported())
   {
@@ -412,26 +478,18 @@ WebPlayer::WebPlayer(const Names &Nms, const string &id) : Player(Nms), connecte
   emscripten_websocket_set_onclose_callback(websocket_conn, nullptr, WebSocketClose);
   emscripten_websocket_set_onerror_callback(websocket_conn, nullptr, WebSocketError);
 
-  // self connection
-  message_queue.insert({get_map_key(my_num()), std::deque<const octetStream *>{}});
+  message_queue.resize(nplayers);
   connected_users++;
 
   // wait for all other players to connect
-  int sleep_interval = 10;
-  int time_slept = 0;
-  while (connected_users < nplayers and time_slept < 120 * 1000)
+  if ((connected_users < nplayers))
   {
-    // cout << "connected users(" << connected_users << "/" << nplayers << ")" << endl;
-    emscripten_sleep(sleep_interval);
-    time_slept += sleep_interval;
+    pthread_mutex_lock(&start_mutex);
+    pthread_cond_wait(&start_cond, &start_mutex);
+    pthread_mutex_unlock(&start_mutex);
   }
-  if (connected_users < nplayers)
-  {
-    cerr << "Timeout - only " << connected_users << " clients!" << endl;
-    throw runtime_error("Not all clients connected after a minute");
-  }
-  cout << "All clients connected!" << endl;
-  emscripten_websocket_close(websocket_conn, 1000, "Finished WebRTC-Connection establishment.");
+  cerr << "All clients connected!" << endl;
+  emscripten_websocket_close(websocket_conn, 1000, "Finished.");
   emscripten_websocket_delete(websocket_conn);
 }
 
@@ -443,23 +501,17 @@ void WebPlayer::send_message(int receiver, const octetStream *msg)
     std::shared_ptr<rtc::DataChannel> data_channel = data_channels.at(receiver_key);
     void (*func_ptr)(void *) = callback_send_method;
     em_proxying_queue *q = emscripten_proxy_get_system_queue();
-    args *data_args = new args();
+    args_webrtc_send *data_args = new args_webrtc_send();
     data_args->dc_ = data_channel.get();
     data_args->data_ = (unsigned char *)msg->get_data();
     data_args->msg_size_ = msg->get_length();
     emscripten_proxy_sync(q, emscripten_main_runtime_thread_id(), func_ptr, data_args);
     delete data_args;
   }
-  else if (receiver == player_no)
-  {
-    // self send
-    cerr << "Sending message to self" << endl;
-    add_message(receiver_key, msg);
-  }
   else
   {
-    cerr << "DataChannel not found for receiver " << receiver << endl;
-    error("DataChannel not found for receiver");
+    cerr << "DataChannel not found for sender: " << player_no << " - receiver " << receiver_key << endl;
+    error("DataChannel not found");
   }
 }
 
@@ -470,25 +522,39 @@ void WebPlayer::send_to_no_stats(int player, const octetStream &o)
   comm_stats.sent += o.get_length();
 }
 
-void WebPlayer::receive_player_no_stats(int player, octetStream &o)
+void WebPlayer::receive_player_no_stats(int sender, octetStream &o)
 {
-  string player_key = get_map_key(player);
-  if (message_queue.find(player_key) == message_queue.end())
-  {
-    // first message
-    msg_lock.lock();
-    message_queue.insert({player_key, std::deque<const octetStream *>{}});
-    msg_lock.unlock();
-  }
-
-  // receive message from player, if there is none, wait for it
-  std::deque<const octetStream *> &messages = message_queue.at(player_key);
-  while (messages.size() == 0)
-    emscripten_sleep(0);
+  pthread_mutex_lock(&message_locks.at(sender));
+  if (message_queue.at(sender).size() == 0)
+    pthread_cond_wait(&message_conds.at(sender), &message_locks.at(sender));
   
-  const octetStream* msg = read_message(player_key);
-  o = *msg;
-  delete msg;
+  o = message_queue.at(sender).front();
+  message_queue.at(sender).pop_front();
+
+  if (o.get_length() == 0 && o.get_max_length() != 0)
+  {
+    size_t chunks = o.get_max_length();
+    octetStream msg_chunks = octetStream(chunks * RTC_MAX_MESSAGE_SIZE);
+
+    for (size_t i = 0; i < chunks; i++)
+    {
+      if (message_queue.at(sender).size() == 0)
+        pthread_cond_wait(&message_conds.at(sender), &message_locks.at(sender));
+
+      octetStream chunk = message_queue.at(sender).front();
+      if (i != chunks - 1)
+      {
+        if (chunk.get_length() != RTC_MAX_MESSAGE_SIZE)
+        {
+          cout << "Length of chunk number " << i << "/" << chunks << " is " << chunk.get_length() << endl;
+        }
+      }
+      msg_chunks.concat(chunk);
+      message_queue.at(sender).pop_front();
+    }
+    o = msg_chunks;
+  }
+  pthread_mutex_unlock(&message_locks.at(sender));
 }
 
 void WebPlayer::send_receive_all_no_stats(const vector<vector<bool>> &channels,
@@ -548,8 +614,6 @@ size_t WebPlayer::send_no_stats(int player, const PlayerBuffer &buffer, bool blo
 {
   (void)block;
   const octetStream msg = octetStream(buffer.size, buffer.data);
-  assert(memcmp(buffer.data, msg.get_data(), buffer.size) == 0);
-  assert(msg.get_length() == buffer.size);
   send_message(player, &msg);
   return buffer.size;
 }
@@ -559,10 +623,6 @@ size_t WebPlayer::recv_no_stats(int player, const PlayerBuffer &buffer, bool blo
   (void)block;
   octetStream msg = octetStream(buffer.size);
   receive_player_no_stats(player, msg);
-  octet** msg_non_const = const_cast<octet**>(&buffer.data);
-  memcpy(*msg_non_const, msg.get_data(), buffer.size);
-  // assert buffer data
-  assert(memcmp(buffer.data, msg.get_data(), buffer.size) == 0);
   return buffer.size;
 }
 

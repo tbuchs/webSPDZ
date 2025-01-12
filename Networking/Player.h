@@ -150,7 +150,7 @@ public:
    * @param num_players number of players
    * @param signaling_server_config location of signaling server
    */
-  void init(int player, int num_players, vector<string>* signaling_server_config);
+  void init(int player, int num_players, vector<string> *signaling_server_config);
 
 #endif
 };
@@ -454,10 +454,10 @@ public:
  */
 class WebSocketPlayer : public Player
 {
-  public:
+public:
   WebSocketPlayer(const Names &Nms, const string &id);
   virtual ~WebSocketPlayer();
-   // Send an octetStream to all other players
+  // Send an octetStream to all other players
   //   -- And corresponding receive
   virtual void send_to_no_stats(int player, const octetStream &o);
   virtual void receive_player_no_stats(int i, octetStream &o);
@@ -485,37 +485,42 @@ class WebSocketPlayer : public Player
 
   virtual bool is_encrypted() { return true; }
 
-  void send_message(int receiver, const octetStream* msg);
+  void send_message(int receiver, const octetStream *msg);
 
   virtual string get_id() const { return id; }
   inline size_t get_group_id() const { return group_id; }
   inline void set_group_id(size_t id) { group_id = id; }
+  static void *create_communication_channel(void *args);
 
-  inline void add_message(int sender, octet* msg, size_t msg_length)
+  inline void signal_start()
   {
-    msg_lock.lock();
-    if(message_queue.size() <= group_id)
-    {
-      size_t old_size = message_queue.size();
-      message_queue.resize(group_id + 10); // resize a bit more than needed
-      for(size_t i = old_size - 1; i < message_queue.size(); i++)
-      {
-        message_queue.at(i) = std::vector<std::deque<octetStream>>{};
-        message_queue.at(i).resize(nplayers);
-      }
-    }
-    message_queue.at(group_id).at(sender).emplace_back(octetStream(msg_length, msg));
-    msg_lock.unlock();
+    pthread_cond_signal(&ready);
+  }
+
+  inline void add_message(int sender, octet *msg, size_t msg_length)
+  {
+    pthread_mutex_lock(&message_locks.at(sender));
+    message_queue.at(sender).emplace_back(octetStream(msg_length, msg));
+  #ifndef SINGLE_THREADED_WEBSOCKET
+    pthread_cond_signal(&message_conds.at(sender));
+  #endif
+    pthread_mutex_unlock(&message_locks.at(sender));
   }
 
   EMSCRIPTEN_WEBSOCKET_T websocket_conn;
   bool connected;
 
-  private:
-  Lock msg_lock;
-  std::vector<std::vector<std::deque<octetStream>>> message_queue; // [group][player]
+private:
+  std::vector<std::deque<octetStream>> message_queue;
+  std::vector<pthread_mutex_t> message_locks;
+  std::vector<pthread_cond_t> message_conds;
   string id;
   size_t group_id;
+  size_t websocket_thread_id;
+  string signaling_server;
+
+  pthread_mutex_t mutex;
+  pthread_cond_t ready;
 };
 
 /**
@@ -558,19 +563,20 @@ public:
 
   void send_message(int receiver, const octetStream *msg);
 
-  inline void add_message(string sender, const octetStream *msg)
+  inline void signal_start()
   {
-    msg_lock.lock();
-    if (message_queue.find(sender) != message_queue.end())
-    {
-      message_queue.at(sender).push_back(msg);
-    }
+    pthread_cond_signal(&start_cond);
+  }
+
+  inline void add_message(int sender, octet *msg, size_t msg_length)
+  {
+    pthread_mutex_lock(&message_locks.at(sender));
+    if (msg == nullptr)
+      message_queue.at(sender).emplace_back(octetStream(msg_length));
     else
-    {
-      // first message
-      message_queue.insert({sender, std::deque<const octetStream *>{msg}});
-    }
-    msg_lock.unlock();
+      message_queue.at(sender).emplace_back(octetStream(msg_length, msg));
+    pthread_cond_signal(&message_conds.at(sender));
+    pthread_mutex_unlock(&message_locks.at(sender));
   }
 
   virtual string get_id() const { return id; }
@@ -578,7 +584,6 @@ public:
   string get_map_key(int player) const { return id + "/" + to_string(player); }
   string get_map_key(string group, int player_no) const { return group + "/" + to_string(player_no); }
 
-  Lock msg_lock;
   map<string, std::shared_ptr<rtc::DataChannel>> data_channels;
   map<string, std::shared_ptr<rtc::PeerConnection>> peer_connections;
   map<string, std::vector<rtc::Candidate>> webrtc_candidates;
@@ -586,47 +591,11 @@ public:
   int connected_users;
 
 private:
-  inline const octetStream *read_message(string sender)
-  {
-    msg_lock.lock();
-    const octetStream *msg = message_queue.at(sender).front();
-    message_queue.at(sender).pop_front();
-    msg_lock.unlock();
-    
-    if(msg->get_length() == 0 && msg->get_max_length() != 0)
-    {
-      size_t chunks = msg->get_max_length();
-      delete msg;
-      octetStream *msg_chunks = new octetStream();
-
-      for(size_t i = 0; i < chunks; i++)
-      {
-        while (message_queue.at(sender).size() == 0)
-        {
-          emscripten_sleep(0);
-        }
-        msg_lock.lock();
-        const octetStream *chunk = message_queue.at(sender).front();
-        if(i != chunks-1) {
-          if(chunk->get_length() != 256000) {
-            cout << "Length of chunk number " << i << "/" << chunks << " is " << chunk->get_length() << endl;
-          }
-        }
-        size_t msg_length = msg_chunks->get_length();
-        size_t chunk_length = chunk->get_length();
-        msg_chunks->concat(*chunk);
-        assert(msg_length + chunk_length == msg_chunks->get_length());
-        delete message_queue.at(sender).front();
-        message_queue.at(sender).pop_front();
-        msg_lock.unlock();
-      }
-      // cout << "Reveived " << chunks << " with length " << msg_chunks->get_length() << endl;
-      return msg_chunks;
-    }  
-    return msg;
-  }
-
-  map<string, std::deque<const octetStream *>> message_queue;
+  std::vector<std::deque<octetStream>> message_queue;
+  std::vector<pthread_mutex_t> message_locks;
+  std::vector<pthread_cond_t> message_conds;
+  pthread_mutex_t start_mutex;
+  pthread_cond_t start_cond;
   string id;
 };
 #endif

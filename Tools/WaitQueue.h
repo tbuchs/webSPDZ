@@ -6,6 +6,10 @@
 #ifndef TOOLS_WAITQUEUE_H_
 #define TOOLS_WAITQUEUE_H_
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/threading.h>
+#endif
+
 #include <pthread.h>
 #include <deque>
 using namespace std;
@@ -66,8 +70,17 @@ public:
     bool pop(T& value)
     {
         lock();
+    #ifdef SINGLE_THREADED_WEBSOCKET
+        while (running and queue.size() == 0)
+        {
+            unlock();
+            emscripten_sleep(1);
+            lock();
+        }
+    #else
         if (running and queue.size() == 0)
             wait();
+    #endif
         if (running)
         {
             value = queue.front();
@@ -87,8 +100,17 @@ public:
     bool pop_dont_stop(T& value)
     {
         lock();
+    #ifdef SINGLE_THREADED_WEBSOCKET
+        while (running and queue.size() == 0)
+        {
+            unlock();
+            emscripten_sleep(1);
+            lock();
+        }
+    #else
         if (running and queue.size() == 0)
             wait();
+    #endif
         bool something_for_you = queue.size() > 0;
         if (something_for_you)
         {

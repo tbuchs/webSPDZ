@@ -23,6 +23,9 @@ using namespace std;
 #include "deps/datachannel-wasm/wasm/include/rtc/peerconnection.hpp"
 #include "deps/datachannel-wasm/wasm/include/rtc/configuration.hpp"
 
+std::string START_SEQUENCE = "BEGIN";
+size_t RTC_MAX_MESSAGE_SIZE = 256000;
+
 void send_websocket_message(int websocket, string type, string player_group, int player_id, string msg) {
   json message = {{"type", type}, {"group", player_group}, {"name", player_id}, {"content", msg}};
   unsigned short ready;
@@ -70,11 +73,14 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
     player->data_channels.emplace(next_player_key, dc);
 
     dc->onOpen([player, dc]() {
-      std::cout << "[DataChannel open: " << dc->label() << "]" << std::endl;
+      std::cerr << "[DataChannel open: " << dc->label() << "]" << std::endl;
       player->connected_users++;
+      if(player->connected_users == player->num_players())
+        player->signal_start();
     });
+
     dc->onClosed([player, dc]() { 
-      std::cout << "[DataChannel closed: " << dc->label() << "]" << std::endl; 
+      std::cer << "[DataChannel closed: " << dc->label() << "]" << std::endl; 
       player->connected_users--;
     });
 
@@ -82,22 +88,21 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
       std::cerr << "[DataChannel error: " << error << "]" << std::endl;
     });
 
-    dc->onMessage([player, next_player_key](std::variant<rtc::binary, rtc::string> message) {
+    dc->onMessage([player, next_player_id](std::variant<rtc::binary, rtc::string> message) {
       if (std::holds_alternative<rtc::string>(message)) {
-        const octetStream* msg = new octetStream(std::get<rtc::string>(message));
-        player->add_message(next_player_key, msg);
+        string msg = std::get<rtc::string>(message);
+        // check if message is start sequence for chunked message
+        if(msg.substr(0, START_SEQUENCE.size()) == START_SEQUENCE) {
+          string num_chunks = msg.substr(START_SEQUENCE.size());
+          int num_chunks_int = stoi(num_chunks);
+          player->add_message(next_player_id, nullptr, num_chunks_int);
+        } else {
+          error("Received string message in binary message handler");
+        }
       } else {
         std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-          // check if message is only 7 == start message for chunks
-          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(7) && 
-            std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(7); })) {
-          const octetStream* msg = new octetStream(binary_msg.size());
-          player->add_message(next_player_key, msg);
-        } else {
-          unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
-          const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
-          player->add_message(next_player_key, msg);
-        }
+        unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
+        player->add_message(next_player_id, msg_ptr, binary_msg.size());
       }
     });
   } else {
@@ -107,11 +112,15 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
         pc->addRemoteCandidate(candidate); 
       }
     }
-    pc->onDataChannel([player, next_player_key](std::shared_ptr<rtc::DataChannel> _dc) { //only the answerer has to create a new dc object
+
+    pc->onDataChannel([player, next_player_key, next_player_id](std::shared_ptr<rtc::DataChannel> _dc) {
       std::cout << "[Got a DataChannel with label: " << _dc->label() << "]" << std::endl;
       player->data_channels.emplace(next_player_key, _dc);
       std::shared_ptr<rtc::DataChannel> dc = _dc;
       player->connected_users++;
+
+      if(player->connected_users == player->num_players())
+        player->signal_start();
 
       dc->onError([](std::string error) {
         std::cerr << "[DataChannel error: " << error << "]" << std::endl;
@@ -122,36 +131,33 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
         player->connected_users--;
       });
 
-      dc->onMessage([player, next_player_key](std::variant<rtc::binary, rtc::string> message) {
+      dc->onMessage([player, next_player_id](std::variant<rtc::binary, rtc::string> message) {
         if (std::holds_alternative<rtc::string>(message)) {
-          const octetStream* msg = new octetStream(std::get<rtc::string>(message));
-          player->add_message(next_player_key, msg);
+          string msg = std::get<rtc::string>(message);
+          // check if message is start sequence for chunked message
+          if(msg.substr(0, START_SEQUENCE.size()) == START_SEQUENCE) {
+            string num_chunks = msg.substr(START_SEQUENCE.size());
+            int num_chunks_int = stoi(num_chunks);
+            player->add_message(next_player_id, nullptr, num_chunks_int);
+          } else
+            error("Received string message in binary message handler");
         } else {
           std::vector<std::byte> binary_msg = std::get<rtc::binary>(message);
-          // check if message is only 7 == start message for chunks
-          if(binary_msg.size() < 1000 && binary_msg.size() > 0 && binary_msg.at(0) == std::byte(7) && 
-              std::all_of(binary_msg.begin(), binary_msg.end(), [](std::byte i) { return i==std::byte(7); })) {
-            const octetStream* msg = new octetStream(binary_msg.size());
-            player->add_message(next_player_key, msg);
-          } else {
-            unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
-            const octetStream* msg = new octetStream(binary_msg.size(), msg_ptr);
-            player->add_message(next_player_key, msg);
-          }
+          unsigned char* msg_ptr = reinterpret_cast<unsigned char*>(&binary_msg[0]);
+          player->add_message(next_player_id, msg_ptr, binary_msg.size());
         }
       });
-	  });
+    });
   }
 
   pc->onGatheringStateChange([player, pc, next_player_id](rtc::PeerConnection::GatheringState state) {
-    if (state == rtc::PeerConnection::GatheringState::Complete) { // only send offer/answer if gathering of candidates is complete
+    if (state == rtc::PeerConnection::GatheringState::Complete)
+    {
       std::optional<rtc::Description> desc = pc->localDescription();
-      if(desc.has_value()) {
+      if(desc.has_value())
         send_websocket_message(player->websocket_conn, desc.value().typeString(), player->get_id(), next_player_id, rtc::string(desc.value()).c_str());
-        }
-      }
+    }
   });
-}
 }
 
 static EM_BOOL WebSocketOpen([[maybe_unused]]int eventType, const EmscriptenWebSocketOpenEvent *websocketEvent, void *userData) {
@@ -223,22 +229,22 @@ EM_BOOL WebSocketError(int eventType, [[maybe_unused]]const EmscriptenWebSocketE
 	return EM_TRUE;
 }
 
-struct args {
+struct args_webrtc_send {
   void* dc_;
   unsigned char* data_;
   int msg_size_;
 };
 
 void callback_send_method(void* ptr_args) {
-  struct args* a = (args*)ptr_args;
+  struct args_webrtc_send* a = (args_webrtc_send*)ptr_args;
   rtc::DataChannel* dc_ptr = (rtc::DataChannel*)a->dc_;
   // max msg size 16kb
-  int max_msg_size = 256000;
+  int max_msg_size = RTC_MAX_MESSAGE_SIZE;
   if(a->msg_size_ > max_msg_size) {
     int num_chunks = (a->msg_size_ + max_msg_size - 1) / max_msg_size;
-    // Send number of Chunks filled with zeros as start message
-    std::vector<std::byte> start_msg(num_chunks, std::byte(7));
-    dc_ptr->send(&start_msg[0], num_chunks);
+    string num_chunks_str = to_string(num_chunks);
+    // sending start message and number of chunks # BEGIN<num_chunks>
+    dc_ptr->send(START_SEQUENCE + num_chunks_str);
 
     int bytes_sent = 0;
     for(int i=0; i<num_chunks; i++) {

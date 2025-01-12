@@ -87,9 +87,10 @@ void BaseMachine::load_schedule(const string& progname, bool load_bytecode)
 #endif
 
 #ifdef __EMSCRIPTEN__
-  int result = emscripten_wget(fname.c_str(), fname.c_str());
-  if(result != 0)
-    throw runtime_error("Failed to download file");
+  if(emscripten_has_asyncify())
+  {
+    emscripten_wget(fname.c_str(), fname.c_str());
+  }
 #endif
   
   ifstream inpf;
