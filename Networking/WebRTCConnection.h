@@ -114,7 +114,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
     }
 
     pc->onDataChannel([player, next_player_key, next_player_id](std::shared_ptr<rtc::DataChannel> _dc) {
-      std::cout << "[Got a DataChannel with label: " << _dc->label() << "]" << std::endl;
+      std::cerr << "[Got a DataChannel with label: " << _dc->label() << "]" << std::endl;
       player->data_channels.emplace(next_player_key, _dc);
       std::shared_ptr<rtc::DataChannel> dc = _dc;
       player->connected_users++;
@@ -127,7 +127,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
       });
 
       dc->onClosed([dc, player]() { 
-        std::cout << "[DataChannel closed: " << dc->label() << "]" << std::endl;
+        std::cerr << "[DataChannel closed: " << dc->label() << "]" << std::endl;
         player->connected_users--;
       });
 
