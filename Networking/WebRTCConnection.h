@@ -80,7 +80,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
     });
 
     dc->onClosed([player, dc]() { 
-      std::cer << "[DataChannel closed: " << dc->label() << "]" << std::endl; 
+      std::cerr << "[DataChannel closed: " << dc->label() << "]" << std::endl; 
       player->connected_users--;
     });
 
