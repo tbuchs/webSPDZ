@@ -152,6 +152,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
       }
   });
 }
+}
 
 static EM_BOOL WebSocketOpen([[maybe_unused]]int eventType, const EmscriptenWebSocketOpenEvent *websocketEvent, void *userData) {
   // register on websocket server

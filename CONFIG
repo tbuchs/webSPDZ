@@ -3,6 +3,8 @@ ROOT = .
 # compile for web usage
 WEB = 1
 USE_WASM32 = 0
+DEBUGGING = 0 # set to 1 to enable less optimizations and more debugging information
+SINGLE_THREADED_WEBSOCKET = 0 # set to 1 to use Websockets only on main thread for communication
 
 OPTIM= -O3
 #PROF = -pg
