@@ -30,9 +30,10 @@ void Program::compute_constants()
 void Program::parse(string filename)
 {
 #ifdef __EMSCRIPTEN__
-  int result = emscripten_wget(filename.c_str(), filename.c_str());
-  if(result != 0)
-    throw runtime_error("Failed to download file");
+  if(emscripten_has_asyncify())
+  {
+    emscripten_wget(filename.c_str(), filename.c_str());
+  }
 #endif
   
   ifstream pinp(filename);

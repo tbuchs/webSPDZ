@@ -44,6 +44,7 @@ callgrind.out.*
 
 # Compiled source #
 ###################
+deps/SimplestOT_C/
 Programs/Bytecode/*
 Programs/Schedules/*
 Programs/Public-Input/*
@@ -115,6 +116,7 @@ _build/
 
 # environment
 .env
+.venv
 
 # temp doc files
 doc/readme.md

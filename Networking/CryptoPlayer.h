@@ -52,7 +52,7 @@ public:
             bool block);
 
     void exchange_no_stats(int other, const octetStream& to_send,
-        octetStream& to_receive) const;
+        octetStream& to_receive);
 
     void pass_around_no_stats(const octetStream& to_send, octetStream& to_receive,
         int offset);

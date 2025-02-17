@@ -53,10 +53,10 @@ void Machine<sint, sgf2n>::init_binary_domains(int security_parameter, int lg2)
 
 template<class sint, class sgf2n>
 Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
-    const OnlineOptions opts, int lg2)
+    bool use_websockets, const OnlineOptions opts, int lg2)
   : my_number(playerNames.my_num()), N(playerNames),
-    use_encryption(use_encryption), live_prep(opts.live_prep), opts(opts),
-    external_clients(my_number)
+    use_encryption(use_encryption), use_websockets(use_websockets), live_prep(opts.live_prep), 
+    opts(opts), external_clients(my_number)
 {
   OnlineOptions::singleton = opts;
 
@@ -89,7 +89,10 @@ Machine<sint, sgf2n>::Machine(Names& playerNames, bool use_encryption,
   string id = "machine";
 
 #ifdef __EMSCRIPTEN__
-  P = new WebPlayer(N, id);
+  if(use_websockets)
+    P = new WebSocketPlayer(N, id);
+  else
+    P = new WebPlayer(N, id);
 #else
   if (use_encryption)
     P = new CryptoPlayer(N, id);
@@ -475,7 +478,7 @@ void Machine<sint, sgf2n>::run(const string& progname)
 
   finish_timer.stop();
   
-#ifdef VERBOSE
+#if defined(VERBOSE) && !defined(__EMSCRIPTEN__)
   cerr << "Memory usage: ";
   tinfo[0].print_usage(cerr, Mp.MS, "sint");
   tinfo[0].print_usage(cerr, Mp.MC, "cint");

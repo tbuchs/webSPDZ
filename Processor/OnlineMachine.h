@@ -27,6 +27,8 @@ protected:
 
     int nplayers;
 
+    bool use_websockets;
+
 public:
     template<class V = gf2n>
     OnlineMachine(int argc, const char** argv, ez::ezOptionParser& opt,

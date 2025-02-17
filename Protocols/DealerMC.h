@@ -21,9 +21,9 @@ public:
     DealerMC(internal_type& internal);
     ~DealerMC();
 
-    void init_open(const Player& P, int n = 0);
+    void init_open(Player& P, int n = 0);
     void prepare_open(const T& secret, int n_bits = -1);
-    void exchange(const Player& P);
+    void exchange(Player& P);
     typename T::open_type finalize_raw();
     array<typename T::open_type*, 2> finalize_several(int n);
 

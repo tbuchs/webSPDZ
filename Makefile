@@ -12,8 +12,12 @@ PROCESSOR = $(patsubst %.cpp,%.o,$(wildcard Processor/*.cpp))
 FHEOBJS = $(patsubst %.cpp,%.o,$(wildcard FHEOffline/*.cpp FHE/*.cpp)) Protocols/CowGearOptions.o
 
 GC = $(patsubst %.cpp,%.o,$(wildcard GC/*.cpp)) $(PROCESSOR)
-GC_SEMI = GC/SemiPrep.o GC/square64.o GC/Semi.o
 
+ifeq ($(WEB), 1)
+GC_SEMI = GC/SemiPrep.o GC/Semi.o
+else
+GC_SEMI = GC/SemiPrep.o GC/square64.o GC/Semi.o
+endif
 OT = $(patsubst %.cpp,%.o,$(wildcard OT/*.cpp)) $(LIBSIMPLEOT)
 OT_EXE = ot.x ot-offline.x
 
@@ -21,33 +25,47 @@ COMMONOBJS = $(MATH) $(TOOLS) $(NETWORK) GC/square64.o Processor/OnlineOptions.o
 COMPLETE = $(COMMON) $(PROCESSOR) $(FHEOFFLINE) $(TINYOTOFFLINE) $(GC) $(OT)
 YAO = $(patsubst %.cpp,%.o,$(wildcard Yao/*.cpp)) $(OT) BMR/Key.o
 BMR = $(patsubst %.cpp,%.o,$(wildcard BMR/*.cpp BMR/network/*.cpp))
-VMOBJS = $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o OT/OTTripleSetup.o OT/BaseOT.o $(LIBSIMPLEOT)
+VMOBJS = $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o #OT/OTTripleSetup.o OT/BaseOT.o $(LIBSIMPLEOT)
 VM = $(MINI_OT) $(SHAREDLIB)
 COMMON = $(SHAREDLIB)
 TINIER =  Machines/Tinier.o $(OT)
 SPDZ = Machines/SPDZ.o $(TINIER)
 
-
+ifeq ($(WEB), 1)
+LIB = libwebSPDZ.a
+SHAREDLIB = libwebSPDZ.so
+else
 LIB = libSPDZ.a
 SHAREDLIB = libSPDZ.so
+endif
 FHEOFFLINE = libFHE.so
 LIBRELEASE = librelease.a
+
+ifeq ($(WEB), 0)
 LIBSIMPLEOT_C = deps/SimplestOT_C/ref10/libSimplestOT.a
 LIBSIMPLEOT += $(LIBSIMPLEOT_C)
+STATIC_OTE = local/lib/liblibOTe.a
+SHARED_OTE = local/lib/liblibOTe.so
+else 
+LIBSIMPLEOT_C = local/wasm64/lib/libSimplestOT.a
+LIBSIMPLEOT += $(LIBSIMPLEOT_C)
+STATIC_OTE = local/wasm64/lib/liblibOTe.a
+endif
 
 ifeq ($(AVX_OT), 1)
 LIBSIMPLEOT_ASM = deps/SimpleOT/libsimpleot.a
 LIBSIMPLEOT += $(LIBSIMPLEOT_ASM)
 endif
 
-STATIC_OTE = local/lib/liblibOTe.a
-SHARED_OTE = local/lib/liblibOTe.so
-
+ifeq ($(WEB), 1)
+OT += $(STATIC_OTE) local/wasm64/lib/libcryptoTools.a
+else
 ifeq ($(USE_KOS), 0)
 ifeq ($(USE_SHARED_OTE), 1)
 OT += $(SHARED_OTE) local/lib/libcryptoTools.so
 else
 OT += $(STATIC_OTE) local/lib/libcryptoTools.a
+endif
 endif
 endif
 
@@ -66,6 +84,7 @@ vm: arithmetic binary
 doc:
 	cd doc; $(MAKE) html
 
+semi2k: semi2k-party.x
 arithmetic: rep-ring rep-field shamir semi2k-party.x semi-party.x mascot sy dealer-ring-party.x
 binary: rep-bin yao semi-bin-party.x tinier-party.x tiny-party.x ccd-party.x malicious-ccd-party.x real-bmr
 
@@ -104,7 +123,7 @@ semi-he: hemi-party.x soho-party.x temi-party.x
 
 rep-field: malicious-rep-field-party.x replicated-field-party.x ps-rep-field-party.x
 
-rep-ring: replicated-ring-party.x #brain-party.x malicious-rep-ring-party.x ps-rep-ring-party.x rep4-ring-party.x
+rep-ring: replicated-ring-party.x rep4-ring-party.x #brain-party.x malicious-rep-ring-party.x ps-rep-ring-party.x 
 
 rep-bin: replicated-bin-party.x malicious-rep-bin-party.x ps-rep-bin-party.x Fake-Offline.x
 
@@ -141,16 +160,26 @@ $(LIBRELEASE): Protocols/MalRepRingOptions.o $(PROCESSOR) $(COMMONOBJS) $(TINIER
 	$(AR) -csr $@ $^
 
 ifeq ($(WEB), 1)
-CFLAGS += -fPIC #-fsanitize=undefined -Wbad-function-cast -Wcast-function-type -fsanitize-minimal-runtime -fexceptions
+CFLAGS += -fPIC
 LDLIBS += -I $(CURDIR)
-LDFLAGS += -sWASMFS -sASYNCIFY -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sINITIAL_MEMORY=196608000 #3000 pages with pagesize 64KiB -sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSAFE_HEAP -sSOCKET_DEBUG -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1
+LDFLAGS += -sWASMFS  -sUSE_BOOST_HEADERS --js-library deps/datachannel-wasm/wasm/js/webrtc.js -sPROXY_TO_PTHREAD --post-js local/testing-post.js -sUSE_PTHREADS -sINITIAL_MEMORY=500mb # -sASYNCIFY_IGNORE_INDIRECT -sFORCE_FILESYSTEM -sSOCKET_DEBUG -sSAFE_HEAP
+#use WebSocket Communication on the main thread
+ifeq ($(SINGLE_THREADED_WEBSOCKET), 1)
+CFLAGS += -DSINGLE_THREADED_WEBSOCKET
+LDFLAGS += -sASYNCIFY
+endif
+# DEBUG
+ifeq ($(DEBUGGING), 1)
+LDFLAGS += -sEXCEPTION_CATCHING_ALLOWED=[..] -sASSERTIONS=1
+CFLAGS += -g
+endif
 else
 CFLAGS += -fPIC
 LDLIBS += -Wl,-rpath -Wl,$(CURDIR)
 endif
 
 ifeq ($(WEB), 1)
-$(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
+$(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/Instruction.o
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS) $(LDFLAGS)
 else
 $(SHAREDLIB): $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
@@ -222,8 +251,7 @@ Fake-Offline.x: Utils/Fake-Offline.o $(VM)
 
 ifeq ($(WEB), 1)
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=15 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Player-Data 
-#--embed-file Programs
+	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(LDFLAGS) -sPTHREAD_POOL_SIZE=20 $(SHAREDLIB) -o $(subst .x,,$@).html --embed-file Player-Data --embed-file Programs --shell-file webspdz-shell.html
 else
 %.x: Machines/%.o $(MINI_OT) $(SHAREDLIB)
 	$(CXX) -o $@ $(CFLAGS) $^ $(LDLIBS) $(SHAREDLIB)
@@ -308,7 +336,11 @@ endif
 $(LIBSIMPLEOT_C): deps/SimplestOT_C/ref10/Makefile
 	$(MAKE) -C deps/SimplestOT_C/ref10
 
+ifeq ($(WEB), 0)
 OT/BaseOT.o: deps/SimplestOT_C/ref10/Makefile
+else
+OT/BaseOT.o:
+endif
 
 deps/SimplestOT_C/ref10/Makefile:
 	git submodule update --init deps/SimplestOT_C || git clone https://github.com/mkskeller/SimplestOT_C deps/SimplestOT_C
@@ -382,5 +414,6 @@ mac-machine-setup:
 clean-deps:
 	-rm -rf local/lib/liblibOTe.* deps/libOTe/out deps/SimplestOT_C
 
-clean: clean-deps
+# clean: clean-deps
+clean:
 	-rm -f */*.o *.o */*.d *.d *.x core.* *.a gmon.out */*/*.o static/*.x *.so

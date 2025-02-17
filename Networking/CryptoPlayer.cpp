@@ -166,7 +166,7 @@ size_t CryptoPlayer::recv_no_stats(int player, const PlayerBuffer& buffer,
 }
 
 void CryptoPlayer::exchange_no_stats(int other, const octetStream& to_send,
-        octetStream& to_receive) const
+        octetStream& to_receive)
 {
     assert(other != my_num());
     if (&to_send == &to_receive)

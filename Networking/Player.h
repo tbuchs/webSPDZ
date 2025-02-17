@@ -12,6 +12,7 @@
 #include <set>
 #include <iostream>
 #include <fstream>
+#include <string>
 using namespace std;
 
 #include "Tools/octetStream.h"
@@ -149,7 +150,7 @@ public:
    * @param num_players number of players
    * @param signaling_server_config location of signaling server
    */
-  void init(int player, int num_players, vector<string>* signaling_server_config);
+  void init(int player, int num_players, vector<string> *signaling_server_config);
 
 #endif
 };
@@ -216,8 +217,6 @@ protected:
 public:
   mutable Timer timer;
   mutable Timer send_timer;
-  mutable Timer recv_timer;
-  mutable Timer wait_timer;
 
   PlayerBase(int player_no) : player_no(player_no), sent(comm_stats.sent) {}
   virtual ~PlayerBase();
@@ -348,20 +347,20 @@ public:
    * Exchange information with one other party,
    * reusing the buffer if possible.
    */
-  void exchange(int other, const octetStream &to_send, octetStream &ot_receive) const;
-  virtual void exchange_no_stats(int, const octetStream &, octetStream &) const
+  void exchange(int other, const octetStream &to_send, octetStream &ot_receive);
+  virtual void exchange_no_stats(int, const octetStream &, octetStream &)
   {
     throw runtime_error("implement exchange");
   }
   /**
    * Exchange information with one other party, reusing the buffer.
    */
-  void exchange(int other, octetStream &o) const;
+  void exchange(int other, octetStream &o);
   /**
    * Exchange information with one other party specified by offset,
    * reusing the buffer if possible.
    */
-  void exchange_relative(int offset, octetStream &o) const;
+  void exchange_relative(int offset, octetStream &o);
   /**
    * Send information to a party while receiving from another by offset,
    * The default is to send to the next party while receiving from the previous.
@@ -450,6 +449,81 @@ public:
 
 #ifdef __EMSCRIPTEN__
 /**
+ * Just a copy of WebPlayer for communication via WebSockets
+ * TODO Child Class of WebPlayer
+ */
+class WebSocketPlayer : public Player
+{
+public:
+  WebSocketPlayer(const Names &Nms, const string &id);
+  virtual ~WebSocketPlayer();
+  // Send an octetStream to all other players
+  //   -- And corresponding receive
+  virtual void send_to_no_stats(int player, const octetStream &o);
+  virtual void receive_player_no_stats(int i, octetStream &o);
+
+  virtual void send_receive_all_no_stats(const vector<vector<bool>> &channels,
+                                         const vector<octetStream> &to_send, vector<octetStream> &to_receive);
+
+  // send to next and receive from previous player
+  virtual void pass_around_no_stats(const octetStream &to_send,
+                                    octetStream &to_receive, int offset);
+
+  /* Broadcast and Receive data to/from all players
+   *  - Assumes o[player_no] contains the thing broadcast by me
+   */
+  virtual void Broadcast_Receive_no_stats(vector<octetStream> &o);
+
+  /**
+   * Exchange information with one other party,
+   * reusing the buffer if possible.
+   */
+  virtual void exchange_no_stats(int other, const octetStream &, octetStream &);
+
+  size_t send_no_stats(int player, const PlayerBuffer &buffer, bool block);
+  size_t recv_no_stats(int player, const PlayerBuffer &buffer, bool block);
+
+  virtual bool is_encrypted() { return true; }
+
+  void send_message(int receiver, const octetStream *msg);
+
+  virtual string get_id() const { return id; }
+  inline size_t get_group_id() const { return group_id; }
+  inline void set_group_id(size_t id) { group_id = id; }
+  static void *create_communication_channel(void *args);
+
+  inline void signal_start()
+  {
+    pthread_cond_signal(&ready);
+  }
+
+  inline void add_message(int sender, octet *msg, size_t msg_length)
+  {
+    pthread_mutex_lock(&message_locks.at(sender));
+    message_queue.at(sender).emplace_back(octetStream(msg_length, msg));
+  #ifndef SINGLE_THREADED_WEBSOCKET
+    pthread_cond_signal(&message_conds.at(sender));
+  #endif
+    pthread_mutex_unlock(&message_locks.at(sender));
+  }
+
+  EMSCRIPTEN_WEBSOCKET_T websocket_conn;
+  bool connected;
+
+private:
+  std::vector<std::deque<octetStream>> message_queue;
+  std::vector<pthread_mutex_t> message_locks;
+  std::vector<pthread_cond_t> message_conds;
+  string id;
+  size_t group_id;
+  size_t websocket_thread_id;
+  string signaling_server;
+
+  pthread_mutex_t mutex;
+  pthread_cond_t ready;
+};
+
+/**
  * WebPlayer communication helper class
  *
  */
@@ -476,23 +550,33 @@ public:
    */
   virtual void Broadcast_Receive_no_stats(vector<octetStream> &o);
 
+  /**
+   * Exchange information with one other party,
+   * reusing the buffer if possible.
+   */
+  virtual void exchange_no_stats(int other, const octetStream &, octetStream &);
+
+  size_t send_no_stats(int player, const PlayerBuffer &buffer, bool block);
+  size_t recv_no_stats(int player, const PlayerBuffer &buffer, bool block);
+
   virtual bool is_encrypted() { return true; }
 
   void send_message(int receiver, const octetStream *msg);
 
-  inline void add_message(string sender, const octetStream *msg)
+  inline void signal_start()
   {
-    msg_lock.lock();
-    if (message_queue.find(sender) != message_queue.end())
-    {
-      message_queue.at(sender).push_back(msg);
-    }
+    pthread_cond_signal(&start_cond);
+  }
+
+  inline void add_message(int sender, octet *msg, size_t msg_length)
+  {
+    pthread_mutex_lock(&message_locks.at(sender));
+    if (msg == nullptr)
+      message_queue.at(sender).emplace_back(octetStream(msg_length));
     else
-    {
-      // first message
-      message_queue.insert({sender, std::deque<const octetStream *>{msg}});
-    }
-    msg_lock.unlock();
+      message_queue.at(sender).emplace_back(octetStream(msg_length, msg));
+    pthread_cond_signal(&message_conds.at(sender));
+    pthread_mutex_unlock(&message_locks.at(sender));
   }
 
   virtual string get_id() const { return id; }
@@ -500,7 +584,6 @@ public:
   string get_map_key(int player) const { return id + "/" + to_string(player); }
   string get_map_key(string group, int player_no) const { return group + "/" + to_string(player_no); }
 
-  Lock msg_lock;
   map<string, std::shared_ptr<rtc::DataChannel>> data_channels;
   map<string, std::shared_ptr<rtc::PeerConnection>> peer_connections;
   map<string, std::vector<rtc::Candidate>> webrtc_candidates;
@@ -508,16 +591,11 @@ public:
   int connected_users;
 
 private:
-  inline const octetStream *read_message(string sender)
-  {
-    msg_lock.lock();
-    const octetStream *msg = message_queue.at(sender).front();
-    message_queue.at(sender).pop_front();
-    msg_lock.unlock();
-    return msg;
-  }
-
-  map<string, std::deque<const octetStream *>> message_queue;
+  std::vector<std::deque<octetStream>> message_queue;
+  std::vector<pthread_mutex_t> message_locks;
+  std::vector<pthread_cond_t> message_conds;
+  pthread_mutex_t start_mutex;
+  pthread_cond_t start_cond;
   string id;
 };
 #endif
@@ -559,7 +637,7 @@ public:
 
   // exchange data with minimal memory usage
   virtual void exchange_no_stats(int other, const octetStream &to_send,
-                                 octetStream &to_receive) const;
+                                 octetStream &to_receive);
 
   // send to next and receive from previous player
   virtual void pass_around_no_stats(const octetStream &to_send,
@@ -625,7 +703,7 @@ public:
 
   virtual void send(octetStream &o) const = 0;
   virtual void receive(octetStream &o) const = 0;
-  virtual void send_receive_player(vector<octetStream> &o) const = 0;
+  virtual void send_receive_player(vector<octetStream> &o) = 0;
   void Broadcast_Receive(vector<octetStream> &o);
 
   virtual size_t send(const PlayerBuffer &, bool) const
@@ -657,7 +735,7 @@ public:
 
   void send(octetStream &o) const;
   void receive(octetStream &o) const;
-  void send_receive_player(vector<octetStream> &o) const;
+  void send_receive_player(vector<octetStream> &o);
 
   void pass_around(octetStream &o, int _ = 1)
   {
@@ -701,7 +779,7 @@ public:
   void reverse_send(octetStream &o) const { P.send_to(P.get_player(-offset), o); }
   void receive(octetStream &o) const { P.receive_player(P.get_player(offset), o); }
   void reverse_receive(octetStream &o) { P.receive_player(P.get_player(-offset), o); }
-  void send_receive_player(vector<octetStream> &o) const;
+  void send_receive_player(vector<octetStream> &o);
 
   void reverse_exchange(octetStream &o) const { P.pass_around(o, P.num_players() - offset); }
   void exchange(octetStream &o) const { P.exchange(P.get_player(offset), o); }

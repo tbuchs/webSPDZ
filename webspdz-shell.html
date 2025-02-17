@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>webSPDZ</title>
+    <style>
+        body {
+            font-family: arial;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+        }
+        #console-container {
+            width: 88%;
+            max-width: 880px;
+            background-color: #444;
+            color: #fff;
+            padding: 22px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #output {
+            width: 100%;
+            height: 400px;
+            background-color: #444;
+            color: #fff;
+            font-family: 'Lucida Console', Monaco, monospace;
+            font-size: 1.1em;
+            outline: 0;
+            box-sizing: border-box;
+            border: none;
+            resize: none;
+        }
+        #status {
+            margin-bottom: 10px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+        #logo {
+            position: absolute;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            top: 40px;
+            left: 30px;
+            font-size: 35px;
+            color: #000000;
+            letter-spacing: 3px;
+        }
+        @media (max-width: 600px) {
+            #console-container {
+                width: 95%;
+                padding: 15px;
+            }
+            #output {
+                height: 70vh;
+                font-size: 1em;
+            }
+            #status {
+                font-size: 1.1em;
+            }
+            #logo {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="logo">webSPDZ</div>
+    <div id="console-container">
+        <div id="status">webSPDZ</div>
+        <textarea id="output" rows="8"></textarea>
+    </div>
+    <script>
+        var statusElement = document.getElementById("status"),
+            outputElement = document.getElementById("output"),
+            Module = {
+                print: function() {
+                    var e = outputElement;
+                    return e && (e.value = ""),
+                    (...t) => {
+                        var n = t.join(" ");
+                        console.log(n),
+                        e && (e.value += n + "\n", e.scrollTop = e.scrollHeight)
+                    }
+                }(),
+                setStatus: e => {
+                    if (Module.setStatus.last ??= { time: Date.now(), text: "" }, e !== Module.setStatus.last.text) {
+                        var t = Date.now();
+                        Module.setStatus.last.time = t;
+                        Module.setStatus.last.text = e;
+                        statusElement.innerHTML = e;
+                    }
+                },
+                totalDependencies: 0,
+                monitorRunDependencies: e => {
+                    this.totalDependencies = Math.max(this.totalDependencies, e);
+                    Module.setStatus(e ? "Preparing... (" + (this.totalDependencies - e) + "/" + this.totalDependencies + ")" : "All downloads complete.");
+                }
+            };
+        Module.setStatus("Downloading...");
+        window.onerror = e => {
+            Module.setStatus("Exception thrown, see JavaScript console");
+            Module.setStatus = e => {
+                e && console.error("[post-exception status] " + e);
+            };
+        };
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

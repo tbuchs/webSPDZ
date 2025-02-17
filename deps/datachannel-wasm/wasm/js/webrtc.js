@@ -399,7 +399,7 @@
 				if(dataChannel.rtcUserDeleted) return;
 				var userPointer = dataChannel.rtcUserPointer || 0;
 				var pError = evt.message ? WEBRTC.allocUTF8FromString(evt.message) : 0;
-				{{{ makeDynCall('vii', 'errorCallback') }}} (pError, userPointer);
+				{{{ makeDynCall('vpp', 'errorCallback') }}} (pError, userPointer);
 				_free(pError);
 			};
 			dataChannel.onerror = cb;
@@ -442,7 +442,7 @@
 			};
 			dataChannel.onbufferedamountlow = cb;
 		},
-		rtcGetBufferedAmount__sig: 'ip',
+		rtcGetBufferedAmount__sig: 'vi',
 		rtcGetBufferedAmount: function(dc) {
 			if(!dc) return;
 			var dataChannel = WEBRTC.dataChannelsMap[dc];
