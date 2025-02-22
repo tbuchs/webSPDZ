@@ -1,7 +1,7 @@
 # webSPDZ
 This project is a fork of the MPC framework [MP-SPDZ](https://github.com/data61/MP-SPDZ). 
 
-webSPDZ aims to bring the MP-SPDZ framework to the browser and facilitate the use of secure multi-party computation. The implementation is neither complete nor well-tested, but it provides a starting point for further development which is done at the moment.
+webSPDZ aims to bring the MP-SPDZ framework to the browser and facilitate the use of secure multi-party computation.
 
 ## Building and Running webSPDZ
 The building process differs from the original MP-SPDZ since the project is built using WebAssembly. For a more detailed description of the original building process, please refer to the [README](README_MPSPDZ.md) of the MP-SPDZ project.
@@ -35,11 +35,10 @@ This command is similar for other protocols. Currently, webSPDZ is only tested w
 **Supported protocols for Dishonest majority**
 - Semi2k Party
 
-
 **Other Building options**
 
-Please note that webSPDZ provides different options when building. Available Options can be found in the [Config](CONFIG) file.
-webSPDZ uses the WebAssembly-based File System (WASMFS)[https://emscripten.org/docs/api_reference/Filesystem-API.html#new-file-system-wasmfs], which aimes to be faster and more modular than the default File System. Due to the nature of Emscripten, files are packaged at compile time and therefor every modification of the MPC program needs a recompilation. This can be circumvented by compiling and linking the program with "-sASYNCIFY=1". Files from the File System are then fetched from the WebServer at runtime. However, be aware that this leads to an increased runtime and size of webSPZD (this is why it is disabled per default). 
+Please note that webSPDZ provides different options when building. Available options can be found in the [Config](CONFIG) file.
+webSPDZ uses the WebAssembly-based Filesystem [WASMFS](https://emscripten.org/docs/api_reference/Filesystem-API.html#new-file-system-wasmfs), which aimes to be faster and more modular than the default Filesystem. Due to the nature of Emscripten, files are packaged at compile time and therefore every modification of the MPC program needs a recompilation. This can be circumvented by compiling and linking the program with "-sASYNCIFY=1". Files from the Filesystem are then fetched from the WebServer at runtime. However, be aware that this leads to an increased runtime and size of webSPZD (this is why it is disabled per default). 
 
 ### Running
 To run webSPDZ, start a server for hosting the webpage. Some features of WebAssembly only work in [secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts), which requires some additional headers to be specified by the server:
@@ -56,7 +55,7 @@ python3 https-server.py "IP" "PORT"
 node signaling_wss_server.js "IP" "PORT"
 ```
 
-If webSockets should be used for communication instead of webRTC, you can use `node websocket_server.js "IP" "PORT"`.
+If webSockets should be used for communication instead of webRTC, you can use `node websocket_server.js "IP" "PORT"`. Please be aware that this communication is not P2P and therefore not as secure as webRTC.
 
 To execute the protocol, open a Firefox/Chrome browser (WASM64: for chrome enable the flags #enable-experimental-webassembly-features and  #enable-webassembly-memory64 for Firefox use Nightly) and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
 
