@@ -9,7 +9,7 @@ The building process differs from the original MP-SPDZ since the project is buil
 ### Prerequisites
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
 - [Node.js](https://nodejs.org/en/download/)
-- [Firefox](https://www.mozilla.org/firefox/new/)
+- [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports WASM and Memory64 (available since Firefox 134 and Chrome 133)
 - [Python 3](https://www.python.org/downloads/)
 
 There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/).
@@ -47,7 +47,6 @@ To run webSPDZ, start a server for hosting the webpage. Some features of WebAsse
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
-
 The needed services (WebServer and SignalingServer for establishing the secure WEBRTC connection) are already included in the repository. Both servers can be started by executing ```./run-servers.sh```.
 Otherwise, the servers can be started manually:
 ```
@@ -57,7 +56,7 @@ node signaling_wss_server.js "IP" "PORT"
 
 If webSockets should be used for communication instead of webRTC, you can use `node websocket_server.js "IP" "PORT"`. Please be aware that this communication is not P2P and therefore not as secure as webRTC.
 
-To execute the protocol, open a Firefox/Chrome browser (WASM64: for chrome enable the flags #enable-experimental-webassembly-features and  #enable-webassembly-memory64 for Firefox use Nightly) and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
+To execute the protocol, open a Firefox/Chrome browser and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
 
 Parameters for the computation must be set in the URL. An overview of available parameters for the different protocols can be found in the [MP-SPDZ Readme](README_MPSPDZ.md).
 
