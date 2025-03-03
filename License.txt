@@ -1,3 +1,31 @@
+______________________
+webSPDZ's LICENSE file
+
+*) Copyright Notice:
+The Software "webSPDZ" is copyright (c) 2023--2025, Thomas Buchsteiner.
+
+Thomas grants you a licence to the Software on the terms of the BSD 3-Clause Licence.
+
+*) List of usage conditions:
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+    o) Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+    o) Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    o) Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+*) DISCLAIMER:
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+The following third-party components are distributed with the Software:
+____________________________________________________________________________________________________
+MP-SPDZ [https://github.com/data61/MP-SPDZ]
+Copyright (c) 2023, Commonwealth Scientific and Industrial Research Organisation (CSIRO) ABN 41 687 119 230.
+Please contact mks.keller@gmail.com 
+See below for the full license [MP-SPDZ LICENSE].
+
+____________________________________________________________________________________________________
+[MP-SPDZ LICENSE]
 The Software is copyright (c) 2023, Commonwealth Scientific and Industrial Research Organisation (CSIRO) ABN 41 687 119 230.
 
 CSIRO grants you a licence to the Software on the terms of the BSD 3-Clause Licence.
@@ -11,24 +39,25 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-The following third party components are distributed with the Software.
-___________________________________________________________________
+The following third-party components are distributed with the Software:
+____________________________________________________________________________________________________
 SPDZ-2 [https://github.com/bristolcrypto/SPDZ-2]
 Copyright (c) 2018, The University of Bristol
 Please contact nigel@cs.bris.ac.uk
-See below for the full license.
-___________________________________________________________________
+See below for the full license [SPDZ-2 LICENSE].
+____________________________________________________________________________________________________
 SPDZ-BMR-ORAM [https://github.com/mkskeller/SPDZ-BMR-ORAM]
 Copyright (c) 2018, The University of Bristol, Bar-Ilan University
 Please contact mks.keller@gmail.com
 The same license as for SPDZ-2 applies.
-___________________________________________________________________
+____________________________________________________________________________________________________
 SCALE-MAMBA [https://github.com/KULeuven-COSIC/SCALE-MAMBA]
 Copyright (c) 2020, The University of Bristol, COSIC-KU Leuven
 Please contact nigel.smart@kuleuven.be
-See below for the full license.
-___________________________________________________________________
+See below for the full license [SCALE-MAMBA LICENSE].
 
+____________________________________________________________________________________________________
+[SPDZ-2 LICENSE]
 
 University of Bristol : Open Access Software Licence
 
@@ -49,8 +78,8 @@ Any use of the software for scientific publications or commercial purposes shoul
 
 Enquiries about further applications and development opportunities are welcome. Please contact nigel@cs.bris.ac.uk
 
-___________________________________________________________________
-
+____________________________________________________________________________________________________
+[SCALE-MAMBA LICENSE]
 
 This software incorporates components from the original SPDZ system, as well as various
 extensions. It's  copyright therefore rests with the following two institutions:
