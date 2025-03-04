@@ -12,8 +12,8 @@ A solution to improve the usability of MPC is to build browser-based MPC engines
 **webSPDZ** is a **general-purpose MPC web engine** that enables versatile MPC on the web, supporting different security models (e.g., honest/dishonest majority and active/passive corruption) by using various MPC protocols.
 As such, webSPDZ brings the _general-purpose MPC native engine MP-SPDZ_ to the web browser.
 MP-SPDZ is one of the most performant and versatile general-purpose MPC engines, supporting ≥40 MPC protocols with different security models.
-As basis, webSPDZ builds on an [MP-SPDZ](https://github.com/data61/MP-SPDZ) fork. 
 
+As basis, webSPDZ builds on [MP-SPDZ](https://github.com/data61/MP-SPDZ). 
 To port MP-SPDZ to the web, we use _Emscripten_ to compile MP-SPDZ’s C++ BackEnd to WebAssembly and _WebRTC_/_WebSockets_ to enable peer-to-peer party communication in the web browser. 
 We believe that webSPDZ brings forth many interesting and practically relevant use cases. 
 
@@ -22,8 +22,8 @@ We believe that webSPDZ brings forth many interesting and practically relevant u
 * [Karl W. Koch](https://gihub.com/kaydoubleu) ✉️  karl.koch@tugraz.at
 * [Dragoș Rotaru](https://github.com/rdragos) ✉️  dragos@mygateway.xyz
 
-🎟️ Preferrably, contact us by [creating a GitHub ticket](https://github.com/tbuchs/webSPDZ/issues).
-✉️  Otherwise, please send an email to all of us to ensure receiving.
+🎟️ Preferrably, [create a GitHub ticket](https://github.com/tbuchs/webSPDZ/issues). <br>
+✉️  Otherwise, please send an email to all of us to ensure that we receive your message :)
 
 
 ### Table of Contents in this README:
@@ -36,7 +36,7 @@ We believe that webSPDZ brings forth many interesting and practically relevant u
 
 ___
 ## Building and Running webSPDZ
-The building process differs from the original MP-SPDZ since the project is built using WebAssembly. For a more detailed description of the original building process, please refer to the [README](README_MPSPDZ.md) of the MP-SPDZ project.
+The building process differs from the original MP-SPDZ since the project uses WebAssembly. For a more detailed description of the original building process, please refer to [MP-SPDZ's README](README_MPSPDZ.md).
 
 ___
 ### Prerequisites
