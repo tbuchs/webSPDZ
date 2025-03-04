@@ -1,6 +1,7 @@
-# webSPDZ
+# webSPDZ: Versatile MPC on the Web
 
-This work, webSPDZ, aims to push the boundaries of practical MPC, to make it more usable and enable it for a broader community.
+This work, webSPDZ, aims to push the boundaries of practical MPC, <br>
+making it more usable and enabling it for a broader community.
 
 Multi-party computation (MPC) has become increasingly practical in the last two decades, solving privacy and security issues in
 various domains, such as healthcare, finance, and machine learning. 
@@ -8,15 +9,15 @@ One big caveat is that MPC sometimes lacks usability since the knowledge barrier
 Users have to deal with, e.g., various CLI tools, private networks, and sometimes even must install many dependencies, which are often hardware-dependent.
 A solution to improve the usability of MPC is to build browser-based MPC engines where each party runs within a browser window.
 
-*webSPDZ*, enables versatile MPC on the web, supporting different security models (e.g. honest/dishonest majority or active/passive corruption) by using various MPC protocols.
-As such, webSPDZ brings the general-purpose MPC native engine MP-SPDZ to the web browser.
+**webSPDZ** is a **general-purpose MPC web engine** that enables versatile MPC on the web, supporting different security models (e.g., honest/dishonest majority and active/passive corruption) by using various MPC protocols.
+As such, webSPDZ brings the _general-purpose MPC native engine MP-SPDZ_ to the web browser.
 MP-SPDZ is one of the most performant and versatile general-purpose MPC engines, supporting ≥40 MPC protocols with different security models.
 As basis, webSPDZ builds on an [MP-SPDZ](https://github.com/data61/MP-SPDZ) fork. 
 
-To port MP-SPDZ to the web, we use Emscripten to compile MP-SPDZ’s C++ BackEnd to WebAssembly and upgrade the party communication for the browser (WebRTC or WebSockets). 
+To port MP-SPDZ to the web, we use _Emscripten_ to compile MP-SPDZ’s C++ BackEnd to WebAssembly and _WebRTC_/_WebSockets_ to enable peer-to-peer party communication in the web browser. 
 We believe that webSPDZ brings forth many interesting and practically relevant use cases. 
 
-Contributors & Contact:
+### Contributors & Contact:
 * **[Thoms Buchsteiner](https://github.com/tbuchs)** **(main author)** ✉️  thomas.buchsteiner@gmail.com
 * [Karl W. Koch](https://gihub.com/kaydoubleu) ✉️  karl.koch@tugraz.at
 * [Dragoș Rotaru](https://github.com/rdragos) ✉️  dragos@mygateway.xyz
@@ -25,18 +26,19 @@ Contributors & Contact:
 ✉️  Otherwise, please send an email to all of us to ensure receiving.
 
 
-Table of Contents in this README:
+### Table of Contents in this README:
 * [Building and Running webSPDZ](#building-and-running-webspdz)
   - [Prerequisites](#prerequisites)
-  - [Supported Security Models](#security-models)
+  - [Supported Security Models](#supported-security-models)
   - [Building](#building)
   - [Running](#running)
-* [Paper and Citation](#paper-citation)
+* [Paper and Citation](#paper-and-citation)
 
-
+___
 ## Building and Running webSPDZ
 The building process differs from the original MP-SPDZ since the project is built using WebAssembly. For a more detailed description of the original building process, please refer to the [README](README_MPSPDZ.md) of the MP-SPDZ project.
 
+___
 ### Prerequisites
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
 - [Node.js](https://nodejs.org/en/download/)
@@ -45,8 +47,9 @@ The building process differs from the original MP-SPDZ since the project is buil
 
 There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/).
 
+___
 ### Supported Security Models
-webSPDZ different security models by using supports the following MPC protocols, :
+webSPDZ supports different security models by using the following MPC protocols:
 
 * **Honest majority**
   - Replicated-Ring (Passive) `replicated-ring-party.x`
@@ -61,14 +64,16 @@ One first decides how many parties can an adversary corrupt and the type of corr
 Depending on the amount of parties that can be (statically) corrupt, protocols largely classify into two categories:
 1. **Honest majority**, where at most half of the parties are corrupt.
 2. **Dishonest majority**, which allows up to all but one corrupted parties.
+
 For types of corruptions, the MPC literature states primarily two:
 1. **Passive or semi-honest**, where corrupted parties try to learn as much as possible from the protocol transcript.
 2. **Active or malicious**, where corrupted parties can arbitrarily deviate from the protocol by sending malformed data.
 
 See [MP-SPDZ's repository](https:github.com/data61/MP-SPDZ] for further MPC protocols.
 We can _fairly easily_ extend webSPDZ for further (MP-SPDZ-supported) protocols.
-For further information on MPC's security models, check, e.g., [Smart's _Computing on Encrypted Data_](https://doi.org/10.1109/MSEC.2023.3279517) or [Lindell's _Secure Multiparty Computation_](https://doi.org/10.1145/3387108).
+For further information on MPC's security models, check, e.g., [Nigel Smart's _Computing on Encrypted Data_](https://doi.org/10.1109/MSEC.2023.3279517) or [Yehuda Lindell's _Secure Multiparty Computation_](https://doi.org/10.1145/3387108).
 
+___
 ### Building
 To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datachannel-wasm) library upon first compilation and install the needed websocket package for nodejs, run:
 ```make setup```
@@ -86,6 +91,7 @@ This command is similar for other protocols.
 Please note that webSPDZ provides different options when building. Available options can be found in the [Config](CONFIG) file.
 webSPDZ uses the WebAssembly-based Filesystem [WASMFS](https://emscripten.org/docs/api_reference/Filesystem-API.html#new-file-system-wasmfs), which aimes to be faster and more modular than the default Filesystem. Due to the nature of Emscripten, files are packaged at compile time and therefore every modification of the MPC program needs a recompilation. This can be circumvented by compiling and linking the program with "-sASYNCIFY=1". Files from the Filesystem are then fetched from the WebServer at runtime. However, be aware that this leads to an increased runtime and size of webSPZD (this is why it is disabled per default). 
 
+___
 ### Running
 To run webSPDZ, start a server for hosting the webpage. Some features of WebAssembly only work in [secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts), which requires some additional headers to be specified by the server:
 
@@ -125,18 +131,22 @@ localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,2,tuto
 
 Please note that the certificates used for https-server and websocket server in the repository are self-signed and may not be trusted by the browser. You may need to add an exception to the certificate in the browser. Easily done by visiting `https://localhost:XXXX` (where XXXX names the port of https- and wss-server) and adding an exception.
 
-# Paper & Citation
+___
+## Paper and Citation
 
-webSPDZ's design is described [in this paper](https://eprint.iacr.org/).
-If you us it in one of your projects, please cite it as:
+webSPDZ's design rationale is described [in this paper](https://eprint.iacr.org/).
+If you use it in one of your projects, please cite it as:
+```
 @article{webSPDZ,
     author 	= {Thomas Buchsteiner, Karl W. Koch, Dragos Rotaru, Christian Rechberger},
     title 	= {{webSPDZ}: Versatile MPC on the Web},
     journal     = {{IACR} Cryptol. ePrint Arch.},
-    <!--booktitle 	= {Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security},-->
-    pages	= {...},
     year 	= {2025},
+    pages	= {...},
+}
+```
+
+<html> </html>
+    <!-- booktitle 	= {Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security},-->
     <!-- doi 	= {10.1145/3372297.3417872}, -->
     <!--url 	= {https://doi.org/10.1145/3372297.3417872},-->
-}
-
