@@ -1,7 +1,38 @@
 # webSPDZ
-This project is a fork of the MPC framework [MP-SPDZ](https://github.com/data61/MP-SPDZ). 
 
-webSPDZ aims to bring the MP-SPDZ framework to the browser and facilitate the use of secure multi-party computation.
+This work, webSPDZ, aims to push the boundaries of practical MPC, to make it more usable and enable it for a broader community.
+
+Multi-party computation (MPC) has become increasingly practical in the last two decades, solving privacy and security issues in
+various domains, such as healthcare, finance, and machine learning. 
+One big caveat is that MPC sometimes lacks usability since the knowledge barrier for regular users can be high. 
+Users have to deal with, e.g., various CLI tools, private networks, and sometimes even must install many dependencies, which are often hardware-dependent.
+A solution to improve the usability of MPC is to build browser-based MPC engines where each party runs within a browser window.
+
+*webSPDZ*, enables versatile MPC on the web, supporting different security models (e.g. honest/dishonest majority or active/passive corruption) by using various MPC protocols.
+As such, webSPDZ brings the general-purpose MPC native engine MP-SPDZ to the web browser.
+MP-SPDZ is one of the most performant and versatile general-purpose MPC engines, supporting ≥40 MPC protocols with different security models.
+As basis, webSPDZ builds on an [MP-SPDZ](https://github.com/data61/MP-SPDZ) fork. 
+
+To port MP-SPDZ to the web, we use Emscripten to compile MP-SPDZ’s C++ BackEnd to WebAssembly and upgrade the party communication for the browser (WebRTC or WebSockets). 
+We believe that webSPDZ brings forth many interesting and practically relevant use cases. 
+
+Contributors & Contact:
+* **[Thoms Buchsteiner](https://github.com/tbuchs)** **(main author)** ✉️  thomas.buchsteiner@gmail.com
+* [Karl W. Koch](https://gihub.com/kaydoubleu) ✉️  karl.koch@tugraz.at
+* [Dragoș Rotaru](https://github.com/rdragos) ✉️  dragos@mygateway.xyz
+
+🎟️ Preferrably, contact us by [creating a GitHub ticket](https://github.com/tbuchs/webSPDZ/issues).
+✉️  Otherwise, please send an email to all of us to ensure receiving.
+
+
+Table of Contents in this README:
+* [Building and Running webSPDZ](#building-and-running-webspdz)
+  - [Prerequisites](#prerequisites)
+  - [Supported Security Models](#security-models)
+  - [Building](#building)
+  - [Running](#running)
+* [Paper and Citation](#paper-citation)
+
 
 ## Building and Running webSPDZ
 The building process differs from the original MP-SPDZ since the project is built using WebAssembly. For a more detailed description of the original building process, please refer to the [README](README_MPSPDZ.md) of the MP-SPDZ project.
@@ -14,6 +45,30 @@ The building process differs from the original MP-SPDZ since the project is buil
 
 There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/).
 
+### Supported Security Models
+webSPDZ different security models by using supports the following MPC protocols, :
+
+* **Honest majority**
+  - Replicated-Ring (Passive) `replicated-ring-party.x`
+  - Rep4-Ring (Active) `rep4-ring-party.x`
+  - Passive Shamir `shamir-party.x`
+  - Active Shamir `malicious-shamir-party.x`
+
+* **Dishonest majority**
+  - Semi2k (Passive) `semi2k-party.x`
+
+One first decides how many parties can an adversary corrupt and the type of corruption. 
+Depending on the amount of parties that can be (statically) corrupt, protocols largely classify into two categories:
+1. **Honest majority**, where at most half of the parties are corrupt.
+2. **Dishonest majority**, which allows up to all but one corrupted parties.
+For types of corruptions, the MPC literature states primarily two:
+1. **Passive or semi-honest**, where corrupted parties try to learn as much as possible from the protocol transcript.
+2. **Active or malicious**, where corrupted parties can arbitrarily deviate from the protocol by sending malformed data.
+
+See [MP-SPDZ's repository](https:github.com/data61/MP-SPDZ] for further MPC protocols.
+We can _fairly easily_ extend webSPDZ for further (MP-SPDZ-supported) protocols.
+For further information on MPC's security models, check, e.g., [Smart's _Computing on Encrypted Data_](https://doi.org/10.1109/MSEC.2023.3279517) or [Lindell's _Secure Multiparty Computation_](https://doi.org/10.1145/3387108).
+
 ### Building
 To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datachannel-wasm) library upon first compilation and install the needed websocket package for nodejs, run:
 ```make setup```
@@ -24,16 +79,7 @@ See [Programs/Source/](Programs/Source/) for some example MPC programs. To run t
 After that, to build webSPDZ with e.g. Shamir's protocol and the previously compiled program, simply run:
 ```make shamir -j```
 
-This command is similar for other protocols. Currently, webSPDZ is only tested with limited protocols, but is easy to extend.
-
-**Supported protocols for Honest majority**
-- Replicated-Ring Party
-- Rep4-Ring Party
-- Shamir Party
-- Malicious Shamir Party
-
-**Supported protocols for Dishonest majority**
-- Semi2k Party
+This command is similar for other protocols. 
 
 **Other Building options**
 
@@ -78,3 +124,19 @@ localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,2,tuto
  ```
 
 Please note that the certificates used for https-server and websocket server in the repository are self-signed and may not be trusted by the browser. You may need to add an exception to the certificate in the browser. Easily done by visiting `https://localhost:XXXX` (where XXXX names the port of https- and wss-server) and adding an exception.
+
+# Paper & Citation
+
+webSPDZ's design is described [in this paper](https://eprint.iacr.org/).
+If you us it in one of your projects, please cite it as:
+@article{webSPDZ,
+    author 	= {Thomas Buchsteiner, Karl W. Koch, Dragos Rotaru, Christian Rechberger},
+    title 	= {{webSPDZ}: Versatile MPC on the Web},
+    journal     = {{IACR} Cryptol. ePrint Arch.},
+    <!--booktitle 	= {Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security},-->
+    pages	= {...},
+    year 	= {2025},
+    <!-- doi 	= {10.1145/3372297.3417872}, -->
+    <!--url 	= {https://doi.org/10.1145/3372297.3417872},-->
+}
+
