@@ -1,23 +1,23 @@
 # webSPDZ: Versatile MPC on the Web
 
-This work, webSPDZ, aims to push the boundaries of practical MPC, <br>
+🌄 This work, webSPDZ, aims to push the boundaries of practical MPC, <br>
 making it more usable and enabling it for a broader community.
 
-Multi-party computation (MPC) has become increasingly practical in the last two decades, solving privacy and security issues in
+🙌 Multi-party computation (MPC) has become increasingly practical in the last two decades, solving privacy and security issues in
 various domains, such as healthcare, finance, and machine learning. 
 One big caveat is that MPC sometimes lacks usability since the knowledge barrier for regular users can be high. 
 Users have to deal with, e.g., various CLI tools, private networks, and sometimes even must install many dependencies, which are often hardware-dependent.
 A solution to improve the usability of MPC is to build browser-based MPC engines where each party runs within a browser window.
 
-**webSPDZ** is a **general-purpose MPC web engine** that enables versatile MPC on the web, supporting different security models (e.g., honest/dishonest majority and active/passive corruption) by using various MPC protocols.
+🌇 **webSPDZ** is a **general-purpose MPC web engine** that enables versatile MPC on the web, supporting different security models (e.g., honest/dishonest majority and active/passive corruption) by using various MPC protocols.
 As such, webSPDZ brings the _general-purpose MPC native engine MP-SPDZ_ to the web browser.
 MP-SPDZ is one of the most performant and versatile general-purpose MPC engines, supporting ≥40 MPC protocols with different security models.
 
-As basis, webSPDZ builds on [MP-SPDZ](https://github.com/data61/MP-SPDZ). 
+🪵 As basis, webSPDZ builds on [MP-SPDZ](https://github.com/data61/MP-SPDZ). 
 To port MP-SPDZ to the web, we use _Emscripten_ to compile MP-SPDZ’s C++ BackEnd to WebAssembly and _WebRTC_/_WebSockets_ to enable peer-to-peer party communication in the web browser. 
 We believe that webSPDZ brings forth many interesting and practically relevant use cases. 
 
-### Contributors & Contact:
+###  Contributors & Contact:
 * **[Thoms Buchsteiner](https://github.com/tbuchs)** **(main author)** ✉️  thomas.buchsteiner@gmail.com
 * [Karl W. Koch](https://gihub.com/kaydoubleu) ✉️  karl.koch@tugraz.at
 * [Dragoș Rotaru](https://github.com/rdragos) ✉️  dragos@mygateway.xyz
@@ -35,7 +35,7 @@ We believe that webSPDZ brings forth many interesting and practically relevant u
 * [Paper and Citation](#paper-and-citation)
 
 ___
-## Building and Running webSPDZ
+## ⚙️🏃 Building and Running webSPDZ
 The building process differs from the original MP-SPDZ since the project uses WebAssembly. For a more detailed description of the original building process, please refer to [MP-SPDZ's README](README_MPSPDZ.md).
 
 ___
@@ -134,7 +134,7 @@ localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,2,tuto
 Please note that the used certificates for the `https-server` and `websocket` servers in the repository are self-signed and may not be trusted by the browser. You may need to add an exception in the "trusted certificate store" in the browser. For instance, visit `https://localhost:XXXX` (where XXXX names the port of https- and wss-server) and add the exception.
 
 ___
-## Paper and Citation
+## 📑 Paper and Citation
 
 webSPDZ's design rationale is described [in this paper](https://eprint.iacr.org/).
 If you use it in one of your projects, please cite it as:
