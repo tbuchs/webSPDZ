@@ -70,7 +70,7 @@ For types of corruptions, the MPC literature states primarily two:
 1. **Passive or semi-honest**, where corrupted parties try to learn as much as possible from the protocol transcript.
 2. **Active or malicious**, where corrupted parties can arbitrarily deviate from the protocol by sending malformed data.
 
-See [MP-SPDZ's repository](https:github.com/data61/MP-SPDZ] for further MPC protocols.
+See [MP-SPDZ's repository](https:github.com/data61/MP-SPDZ) for further MPC protocols.
 We can _fairly easily_ extend webSPDZ for further (MP-SPDZ-supported) protocols.
 For further information on MPC's security models, check, e.g., [Nigel Smart's _Computing on Encrypted Data_](https://doi.org/10.1109/MSEC.2023.3279517) or [Yehuda Lindell's _Secure Multiparty Computation_](https://doi.org/10.1145/3387108).
 
