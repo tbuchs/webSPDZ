@@ -39,7 +39,7 @@ ___
 The building process differs from the original MP-SPDZ since the project uses WebAssembly. For a more detailed description of the original building process, please refer to [MP-SPDZ's README](README_MPSPDZ.md).
 
 ___
-### Prerequisites
+### 🪵 Prerequisites
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
 - [Node.js](https://nodejs.org/en/download/)
 - [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports WebAssembly and Memory64 (available since Firefox 134 and Chrome 133: [webassembly.org/features](https://webassembly.org/features/)
@@ -49,7 +49,7 @@ These are webSPDZ's main prerequisites.
 webSPDZ includes further prerequesites as submodules or pre-built archives in this repository. For an overview, have a look at the [deps](deps/) and [local](local/) folders.
 
 ___
-### Supported Security Models
+### 🛡️ Supported Security Models
 webSPDZ supports different security models by using the following MPC protocols:
 
 * **Honest majority**
@@ -75,7 +75,7 @@ We can _fairly easily_ extend webSPDZ for further (MP-SPDZ-supported) protocols.
 For further information on MPC's security models, check, e.g., [Nigel Smart's _Computing on Encrypted Data_](https://doi.org/10.1109/MSEC.2023.3279517) or [Yehuda Lindell's _Secure Multiparty Computation_](https://doi.org/10.1145/3387108).
 
 ___
-### Building
+### ⚙️ Building
 To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datachannel-wasm) library upon first compilation and install the needed websocket package for nodejs, run:
 ```make setup```
 
@@ -91,7 +91,7 @@ Please note that webSPDZ provides different options when building. Available opt
 webSPDZ uses the WebAssembly-based filesystem [WASMFS](https://emscripten.org/docs/api_reference/Filesystem-API.html#new-file-system-wasmfs), which aimes to be faster and more modular than the default filesystem. Due to the nature of Emscripten, files are packaged at compile time and therefore every modification of the MPC program needs a recompilation. This can be circumvented by compiling and linking the program with "-sASYNCIFY=1". Files from the filesystem are then fetched from the web server at runtime. However, be aware that this leads to an increased runtime and size of webSPDZ (this is why it is disabled per default). 
 
 ___
-### Running
+### 🏃 Running
 To run webSPDZ, start a server for hosting the webpage. Some features of WebAssembly only work in [secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts), which requires some additional headers to be specified by the server:
 
 ```
