@@ -42,10 +42,11 @@ ___
 ### Prerequisites
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
 - [Node.js](https://nodejs.org/en/download/)
-- [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports WASM and Memory64 (available since Firefox 134 and Chrome 133)
+- [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports WebAssembly and Memory64 (available since Firefox 134 and Chrome 133: [webassembly.org/features](https://webassembly.org/features/)
 - [Python 3](https://www.python.org/downloads/)
 
-There are more prerequisites for running webSPDZ, but they are already included in the repository as submodules or pre-built archives. For an overview have a look at the [deps folder](deps/) and [local folder](local/).
+These are webSPDZ's main prerequisites.
+webSPDZ includes further prerequesites as submodules or pre-built archives in this repository. For an overview, have a look at the [deps](deps/) and [local](local/) folders.
 
 ___
 ### Supported Security Models
@@ -81,15 +82,13 @@ To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datac
 See [Programs/Source/](Programs/Source/) for some example MPC programs. To run the [tutorial.mpc](Programs/Source/tutorial.mpc) in default mode run:
 ```./compile.py Programs/Source/tutorial.mpc```
 
-After that, to build webSPDZ with e.g. Shamir's protocol and the previously compiled program, simply run:
-```make shamir -j```
-
-This command is similar for other protocols. 
+Then, to build webSPDZ using, e.g., Shamir's protocol and the previously compiled program, run: `make shamir -j`. 
+This command is similar for other protocols.
 
 **Other Building options**
 
 Please note that webSPDZ provides different options when building. Available options can be found in the [Config](CONFIG) file.
-webSPDZ uses the WebAssembly-based Filesystem [WASMFS](https://emscripten.org/docs/api_reference/Filesystem-API.html#new-file-system-wasmfs), which aimes to be faster and more modular than the default Filesystem. Due to the nature of Emscripten, files are packaged at compile time and therefore every modification of the MPC program needs a recompilation. This can be circumvented by compiling and linking the program with "-sASYNCIFY=1". Files from the Filesystem are then fetched from the WebServer at runtime. However, be aware that this leads to an increased runtime and size of webSPZD (this is why it is disabled per default). 
+webSPDZ uses the WebAssembly-based filesystem [WASMFS](https://emscripten.org/docs/api_reference/Filesystem-API.html#new-file-system-wasmfs), which aimes to be faster and more modular than the default filesystem. Due to the nature of Emscripten, files are packaged at compile time and therefore every modification of the MPC program needs a recompilation. This can be circumvented by compiling and linking the program with "-sASYNCIFY=1". Files from the filesystem are then fetched from the web server at runtime. However, be aware that this leads to an increased runtime and size of webSPDZ (this is why it is disabled per default). 
 
 ___
 ### Running
@@ -99,37 +98,40 @@ To run webSPDZ, start a server for hosting the webpage. Some features of WebAsse
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
-The needed services (WebServer and SignalingServer for establishing the secure WEBRTC connection) are already included in the repository. Both servers can be started by executing ```./run-servers.sh```.
+The needed services (WebServer and SignalingServer for establishing the secure WebRTC connection) are already included in the repository. Both servers can be started by running ```./run-servers.sh```.
 Otherwise, the servers can be started manually:
 ```
 python3 https-server.py "IP" "PORT"
 node signaling_wss_server.js "IP" "PORT"
 ```
 
-If webSockets should be used for communication instead of webRTC, you can use `node websocket_server.js "IP" "PORT"`. Please be aware that this communication is not P2P and therefore not as secure as webRTC.
+If WebSockets should be used for communication instead of WebRTC, you can use `node websocket_server.js "IP" "PORT"`. Please be aware that this communication is not P2P and therefore not as secure as WebRTC.
 
 To execute the protocol, open a Firefox/Chrome browser and open the generated HTML file: `http://localhost:8000/"Protocolname"-party.html`.
 
 Parameters for the computation must be set in the URL. An overview of available parameters for the different protocols can be found in the [MP-SPDZ Readme](README_MPSPDZ.md).
 
-An URL for executing webSPDZ must contain the following parameters: `$webServerIP:$webServerPORT/$Protocol_Name.html?arguments=$Protocol_Paramters, --web, $USE_Websockets, $PlayerID, $PROGRAM
+A URL for running webSPDZ must contain the following parameters: <br>
+`$webServerIP:$webServerPORT/$Protocol_Name.html?arguments=$Protocol_Parameters, --web, $USE_Websockets, $PartyID, $PROGRAM`
 Important flags related to webSPDZ are:
-- webServerIP/Port: the IP and Port the webServer is running on
-- Protocol_Name: the previously compiled protocol
-- Porotcol_Parameters: MP-SPDZ related parameters like `-N, 3` for executing the protocol with 3 Parties
-- `--web` or `-w`: essential flag to indicate the execution of webSPDZ in a browser
-- USE_Websockets: `0` for using webRTC as communication channel, `1` for webSockets
-- optional: `--signaling-server` or `-ss`: to use a signaling server different than the default "localhost:8080"
-- PROGRAM: the name of the MPC program
+- `webServerIP:webServerPORT:` the IP and port the WebServer is running on
+- `Protocol_Name:` the (previously) compiled MPC protocol
+- **Arguments:**
+  - `Protocol_Parameters:` MP-SPDZ related parameters like `-N, 3` to run the protocol with 3 parties
+  - `--web` or `-w`: essential flag to indicate webSPDZ's running in a browser
+  - `USE_Websockets:` `0` for using WebRTC as communication channel, `1` for WebSockets
+  - optional: `--signaling-server` or `-ss`: to use a signaling server different than the default "localhost:8080"
+  - `PartyID:` the id of the respective party, which must align with the corresponding MPC program to ensure correctness (e.g., when party `0` and `1` input different data)
+  - `PROGRAM:` the name of the MPC program
 
-As an example: running the (tutorial.mpc)[[Programs/Source/](Programs/Source/tutorial.mpc) ] file with Shamir's protocol and 3 Parties, webRTC and a custom signaling server, would require 3 browser tabs with the following URLs:
+For instance, running (tutorial.mpc)[[Programs/Source/](Programs/Source/tutorial.mpc) ] using Shamir's MPC protocol with 3 parties, WebRTC, and a custom signaling server, open 3 compatible browser tabs with the following URLs:
  ```
 localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,0,tutorial
 localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,1,tutorial
 localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,2,tutorial
  ```
 
-Please note that the certificates used for https-server and websocket server in the repository are self-signed and may not be trusted by the browser. You may need to add an exception to the certificate in the browser. Easily done by visiting `https://localhost:XXXX` (where XXXX names the port of https- and wss-server) and adding an exception.
+Please note that the used certificates for the `https-server` and `websocket` servers in the repository are self-signed and may not be trusted by the browser. You may need to add an exception in the "trusted certificate store" in the browser. For instance, visit `https://localhost:XXXX` (where XXXX names the port of https- and wss-server) and add the exception.
 
 ___
 ## Paper and Citation
