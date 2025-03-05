@@ -18,12 +18,12 @@ To port MP-SPDZ to the web, we use _Emscripten_ to compile MP-SPDZ’s C++ BackE
 We believe that webSPDZ brings forth many interesting and practically relevant use cases. 
 
 ###  Contributors & Contact:
-* **[Thoms Buchsteiner](https://github.com/tbuchs)** **(main author)** ✉️  thomas.buchsteiner@gmail.com
+* **[Thomas Buchsteiner](https://github.com/tbuchs)** **(main author)** ✉️  thomas.buchsteiner@gmail.com
 * [Karl W. Koch](https://gihub.com/kaydoubleu) ✉️  karl.koch@tugraz.at
 * [Dragoș Rotaru](https://github.com/rdragos) ✉️  dragos@mygateway.xyz
 
 🎟️ Preferrably, [create a GitHub ticket](https://github.com/tbuchs/webSPDZ/issues). <br>
-✉️  Otherwise, please send an email to all of us to ensure that we receive your message :)
+✉️ Otherwise, please send an email to all of us to ensure that we receive your message :)
 
 
 ### Table of Contents in this README:
