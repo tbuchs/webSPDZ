@@ -124,7 +124,7 @@ Important flags related to webSPDZ are:
   - `PartyID:` the id of the respective party, which must align with the corresponding MPC program to ensure correctness (e.g., when party `0` and `1` input different data)
   - `PROGRAM:` the name of the MPC program
 
-For instance, running (tutorial.mpc)[[Programs/Source/](Programs/Source/tutorial.mpc) ] using Shamir's MPC protocol with 3 parties, WebRTC, and a custom signaling server, open 3 compatible browser tabs with the following URLs:
+For instance, running [tutorial.mpc](Programs/Source/tutorial.mpc) using Shamir's MPC protocol with 3 parties, WebRTC, and a custom signaling server, open 3 compatible browser tabs with the following URLs:
  ```
 localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,0,tutorial
 localhost:8000/shamir-party.html?arguments=-N,3,-w,0,-ss,192.168.1.1:2000,1,tutorial
