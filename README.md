@@ -39,10 +39,10 @@ ___
 The building process differs from the original MP-SPDZ since the project uses WebAssembly. For a more detailed description of the original building process, please refer to [MP-SPDZ's README](README_MPSPDZ.md).
 
 ___
-### 🪵 Prerequisites
+### 🪵 Prerequisites for Building & Running
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
 - [Node.js](https://nodejs.org/en/download/)
-- [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports WebAssembly and Memory64 (available since Firefox 134 and Chrome 133: [webassembly.org/features](https://webassembly.org/features/)
+- [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports (i) WebAssembly and Memory64 (available since Firefox 134 and Chrome 133: [webassembly.org/features](https://webassembly.org/features/), and (ii) [WebRTC](https://webrtc.org)
 - [Python 3](https://www.python.org/downloads/)
 
 These are webSPDZ's main prerequisites.
