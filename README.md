@@ -33,6 +33,7 @@ We believe that webSPDZ brings forth many interesting and practically relevant u
   - [⚙️ Building](#%EF%B8%8F-building) 
   - [🏃 Running](#-running)
 * [📑 Paper and Citation](#-paper-and-citation)
+* [🏋️ Further Information on Transforming MP-SPDZ to webSPDZ](%EF%B8%8F-further-information-on-transforming-mp-spdz-to-webspdz)
 
 ___
 ## ⚙️🏃 Building and Running webSPDZ
@@ -152,3 +153,27 @@ If you use it in one of your projects, please cite it as:
     <!-- booktitle 	= {Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security},-->
     <!-- doi 	= {10.1145/3372297.3417872}, -->
     <!--url 	= {https://doi.org/10.1145/3372297.3417872},-->
+
+---
+## 🏋️ Further Information on Transforming MP-SPDZ to webSPDZ
+Next to the paper, in this subsection, we describe additional transformation details for some aspects:
+
+### On Porting Libraries
+
+**Libsodium and OpenSSL** are cryptographic libraries that can _fairly easily_ be ported to Wasm. Emscripten provides the `emconfigure` command, which can be used to replace all default environment variables with Emscripten-specific ones. Libsodium provides a build script for Emscripten, which provides necessary commands: `./dist-build/emscripten.sh --sumo`. OpenSSL must be built manually using various flags: `emconfigure ./ Configure no-hw no-shared no-asm no-threads no-ssl3 no-dtls no-engine no-dso linux-x32 -static`. Then, we modify the resulting Makefile since the compiler path is not correctly set. We fix the compiler path by clearing the `CROSS_COMPILE` variable path to an empty string. Finally, we can build the library with the Emscripten's `emmake` compiler command. Emscripten's compiler links the resulting _".a archive"_ in the framework.
+
+### On Compiler Settings, Threats, and APIs
+
+**Compiler flags.** We use several compiler flags to enable MP-SPDZ in the web browser. For instance,
+
+* `-sMEMORY64=1` to generates 64-bit Wasm code.
+* `-sASSERTIONS` or `-sEXCEPTION_CATCHING_ALLOWED` to emulate unsupported Wasm features without changing large parts of the C++ code.
+* `-sASYNCIFY` to enable synchronous C++ code and asynchronous JavaScript code. We require this interplay of C++ and JavaScript, e.g., when waiting for a network response from other parties.
+
+However, some Emscripten compiler flags can lead to a performance decrease and a larger code size. For instance, we experienced slower runtimes when using `-sASYNCIFY`. 
+
+**Dealing with the UI Thread.** The web browser uses the main thread to run code and perform tasks in the UI. When we have a synchronous operation, such as waiting for another party's input, the UI freezes until the operation has finished. We have implemented a solution that avoids this UI freezing by implementing a thread management solution. webSPDZ's web application runs in a separate thread, using the `-sPROXY_TO_PTHREAD` compiler flag. Now, the UI thread spawns a new thread within this application thead and only becomes active if needed.
+
+Within the application thread, we can also use multithreading. Though, without a thread pool, the application needs to wait for the UI thread to create a new (p)thread within the application thread. To reduce waiting time when creating a new (p)thread, the compiler flag `-sPTHREAD` `-POOL_SIZE=15` allows to [create a thread pool when starting](https://emscripten.org/docs/porting/pthreads.html#compiling-with-pthreads-enabled) webSPDZ's web application (15 potential (p)threads in this example).
+
+However, there are cases where the application thread needs the support of the UI thread. For instance, [some components of the WebRTC API](https://w3c.github.io/webrtc-pc/#interface-definition) are only exposed to the web browser's _Window_ component, which only the UI thread can access. Therefore, some WebRTC-related networking parts can only run in the UI thread. To proxy between the application threads and UI thread, Emscripten provides the `proxying.h API`. Though, the thread proxying can lead to a performance decrease.
