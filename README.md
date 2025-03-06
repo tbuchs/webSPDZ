@@ -27,12 +27,12 @@ We believe that webSPDZ brings forth many interesting and practically relevant u
 
 
 ### Table of Contents in this README:
-* [⚙️🏃 Building and Running webSPDZ](#building-and-running-webspdz)
-  - [🪵 Prerequisites](#prerequisites)
-  - [🛡️ Supported Security Models](#supported-security-models)
-  - [⚙️ Building](#building)
-  - [🏃 Running](#running)
-* [📑 Paper and Citation](#paper-and-citation)
+* [⚙️🏃 Building and Running webSPDZ](#%EF%B8%8F-building-and-running-webspdz)
+  - [🪵 Prerequisites](#-prerequisites-for-building--running)
+  - [🛡️ Supported Security Models](#%EF%B8%8F-supported-security-models)
+  - [⚙️ Building](#%EF%B8%8F-building) 
+  - [🏃 Running](#-running)
+* [📑 Paper and Citation](#-paper-and-citation)
 
 ___
 ## ⚙️🏃 Building and Running webSPDZ
