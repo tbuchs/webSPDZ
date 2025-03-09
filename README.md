@@ -170,7 +170,7 @@ Next to the paper, in this subsection, we describe additional transformation det
 * `-sASSERTIONS` or `-sEXCEPTION_CATCHING_ALLOWED` to emulate unsupported Wasm features without changing large parts of the C++ code.
 * `-sASYNCIFY` to enable synchronous C++ code and asynchronous JavaScript code. We require this interplay of C++ and JavaScript, e.g., when waiting for a network response from other parties.
 
-However, some Emscripten compiler flags can lead to a performance decrease and a larger code size. For instance, we experienced slower runtimes when using `-sASYNCIFY`. 
+However, some Emscripten compiler flags can lead to a performance decrease and a larger code size. For instance, we experienced slower runtimes when using `-sASYNCIFY` or `-sEXCEPTION_CATCHING_ALLOWED`. Therefore, these options are only enabled in the Makefile if they are required. For example, we only use `-sASSERTIONS` and `-sEXCEPTION_CATCHING_ALLOWED` only in debugging mode.
 
 **Dealing with the UI Thread.** The web browser uses the main thread to run code and perform tasks in the UI. When we have a synchronous operation, such as waiting for another party's input, the UI freezes until the operation has finished. We have implemented a solution that avoids this UI freezing by implementing a thread management solution. webSPDZ's web application runs in a separate thread, using the `-sPROXY_TO_PTHREAD` compiler flag. Now, the UI thread spawns a new thread within this application thead and only becomes active if needed.
 
