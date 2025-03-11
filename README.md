@@ -33,8 +33,7 @@ We believe that webSPDZ brings forth many interesting and practically relevant u
   - [⚙️ Building](#%EF%B8%8F-building) 
   - [🏃 Running](#-running)
 * [📑 Paper and Citation](#-paper-and-citation)
-* [🏋️ Further Information on Transforming MP-SPDZ to webSPDZ](%EF%B8%8F-further-information-on-transforming-mp-spdz-to-webspdz)
-
+* [🏋️ Further Information on Transforming MP-SPDZ to webSPDZ](#%EF%B8%8F-further-information-on-transforming-mp-spdz-to-webspdz)
 ___
 ## ⚙️🏃 Building and Running webSPDZ
 The building process differs from the original MP-SPDZ since the project uses WebAssembly. For a more detailed description of the original building process, please refer to [MP-SPDZ's README](README_MPSPDZ.md).
