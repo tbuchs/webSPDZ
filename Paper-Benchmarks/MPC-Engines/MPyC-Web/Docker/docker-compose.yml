@@ -1,0 +1,11 @@
+# docker-compose.yml
+
+version: '3.9'    
+services:
+  mpyc_web_2024_feb_5b72f19:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: mpyc_web_2024_feb_5b72f19
+
+

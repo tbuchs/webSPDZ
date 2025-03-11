@@ -1,0 +1,21 @@
+{
+  "name": "mpyc-web-peerjs",
+  "version": "0.0.0",
+  "packageManager": "yarn@4.0.1",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@types/node": "^20.10.0",
+    "express": "^4.18.2",
+    "peer": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "typescript": "^5.3.2"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\""
+  }
+}

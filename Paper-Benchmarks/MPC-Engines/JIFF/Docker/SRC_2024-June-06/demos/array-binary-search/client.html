@@ -1,0 +1,58 @@
+<!-- Basic UI for running the demo in the browser -->
+
+<html>
+  <head>
+    <title>Binary Search Tree</title>
+    <style>
+      .error {
+        color: #FF0000;
+      }
+    </style>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="../../../dist/jiff-client.js"></script>
+    <script src="../../../dist/jiff-client-websockets.js"></script>
+
+    <!-- Contains UI Handlers and Input Checks -->
+    <script type="text/javascript" src="./client.js"></script>
+
+    <!-- Contains the MPC implementation -->
+    <script type="text/javascript" src="./mpc.js"></script>
+  </head>
+  <body>
+    <h1>Connect JIFF</h1>
+    <label for="computation_id">Computation ID</label><input id="computation_id" value="test"></input><br/><br/>
+    <label for="role">Choose Role</label>
+    <button id="connectButton" onclick="connect(1);connect(2)">Connect</button>
+    <br/><br/>
+    <hr/>
+    <div class="container" id="input1" style="display: block">
+      <div class="row">
+        <h1>Input Sorted Array</h1>
+      </div>
+      <div>
+        <p>Enter an array of sorted positive integers, each smaller than 13.</p>
+      </div>
+      <textarea rows="4" cols="50" id="inputText1">[1, 2, 7, 10, 11, 12]</textarea>
+      <br/><br/>
+      <div class="row">
+        <button class="btn btn-secondary" id="submit1" onclick="submit(1);">Submit</button>
+      </div>
+    </div>
+
+    <div class="container" id="input2" style="display: block">
+      <div class="row">
+        <h1>Input Search Element.</h1>
+      </div>
+      <div>
+        <p>Must be less than 13</p>
+      </div>
+      <input id="inputText2" pattern="[0-9]*"/>
+      <br/><br/>
+      <div class="row">
+        <button class="btn btn-secondary" id="submit2" onclick="submit(2);">Submit</button>
+      </div>
+    </div>
+
+    <div id="output"></div>
+  </body>
+</html>

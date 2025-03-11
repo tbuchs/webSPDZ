@@ -1,0 +1,15 @@
+start_timer(1)
+n = 100000
+sbitint.linear_rounds = True
+
+a = sint.Array(n)
+b = sint.Array(n)
+start_timer(2)
+a.input_from(0)
+b.input_from(1)
+stop_timer(2)
+start_timer(3)
+res = sint.dot_product(a, b)
+stop_timer(3)
+print_ln('%s', res.reveal())
+stop_timer(1)

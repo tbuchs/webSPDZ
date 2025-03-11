@@ -1,0 +1,31 @@
+{
+  "name": "jiff-standalone-example",
+  "version": "1.0.0",
+  "description": "Example standlone JIFF application",
+  "main": "index.js",
+  "scripts": {
+    "build": "browserify client.js -s client --debug -o client.bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/multiparty/jiff-standalone-example.git"
+  },
+  "keywords": [
+    "JIFF",
+    "MPC",
+    "secure-multiparty-computation"
+  ],
+  "author": "Kinan Dak Albab <babman@brown.edu> (https://www.babman.io/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/multiparty/jiff-standalone-example/issues"
+  },
+  "homepage": "https://github.com/multiparty/jiff-standalone-example#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "jiff-mpc": "^1.0.0"
+  },
+  "devDependencies": {
+    "browserify": "^16.5.2"
+  }
+}

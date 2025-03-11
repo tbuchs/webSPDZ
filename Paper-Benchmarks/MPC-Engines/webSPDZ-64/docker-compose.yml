@@ -1,0 +1,14 @@
+# docker-compose.yml
+
+version: '3.7'
+services:
+  webspdz64:
+    container_name: webSPDZ-64-docker
+    build:
+      context: .
+      dockerfile: ./webSPDZ-64-Docker/Dockerfile
+    image: webspdz-64_ubuntu_oct-30_new-firefox
+    # image: webspdz-64_ubuntu_oct-15
+    #image: webspdz-64_ubuntu
+
+

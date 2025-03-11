@@ -1,0 +1,99 @@
+@media (orientation: portrait) {
+    .main-container {
+        height: calc(100vh - 10px);
+    }
+}
+
+@media (min-width: 1200px) {
+    .split {
+        height: calc(100vh - 100px);
+    }
+
+    option:checked:not(:focus) {
+        color: black;
+    }
+}
+
+@media (max-width: 1199px) {
+    .split {
+        height: calc(100vh - 270px);
+    }
+}
+
+@media (max-height: 500px) {
+    .split {
+        height: 120vh;
+    }
+
+}
+
+.editor,
+.cm-editor {
+    width: 100%;
+    height: 100% !important;
+}
+
+.gutter.gutter-vertical {
+    background: url(../images/hsizegrip.png) center center no-repeat $form-control-background;
+    cursor: row-resize;
+    border: 1px solid $gray-900;
+}
+
+.split {
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative;
+    // display: flex !important;
+    // flex-direction: column !important;
+    // // display: flex;
+    // // flex-direction: column;
+    // align-content: flex-start;
+    // // align-items: baseline;
+    // display: flex;
+    // flex-direction: column;
+    // background-color: transparent !important;
+    // user-select: initial;
+    // -webkit-user-select: initial;
+    /* Create stacking context before to terminal canvases. */
+    // z-index: 0;
+}
+
+
+.terminal-split-pane {
+    overflow: hidden !important;
+    position: relative;
+    // position: relative;
+    // width: 100%;
+    // overflow-x: hidden;
+    // overflow-x: scroll;
+    // overflow-y: hidden;
+    // align-content: flex-start;
+    // align-items: baseline;
+    // display: flex;
+    // flex-direction: column;
+    // inset: 0px;
+    // display: block;
+    // white-space: normal;
+    // white-space: nowrap;
+
+    // background-color: #3a2f29 !important;
+}
+
+.xterm-scroll-area {
+    // position: absolute;
+    // // position: relative;
+    // top: 0;
+    // left: 0;
+    // right: 0;
+    // bottom: 0;
+    // z-index: -1;
+}
+
+
+
+textarea.form-control {
+    height: 40px !important;
+    padding: 0px;
+    margin: 0px;
+    border: 0px
+}

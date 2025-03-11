@@ -1,0 +1,186 @@
+Python 3.11
+
+╭────────────────────────────── stats ──────────────────────────────╮
+│ asyncio: tasks: 2 / 1 / 113 k / 728 k | loop: 2 k / 3 M / 3 M     │
+│ data s/r: 37.6 MiB / 37.6 MiB                                     │
+│ latency: 1.00 ms / 72.7 ms / 9.18 s                               │
+│ messages s/r: 738 k / 738 k                                       │
+│ on_runtime_message                                                │
+│ └── time: 4.00 μs / 41.2 μs / 1.73 s                              │
+│ send_runtime_message                                              │
+│ └── time: 14.0 μs / 42.6 μs / 81.1 ms                             │
+╰──────────────────────────── 00:09:30 ─────────────────────────────╯
+
+╭───────────────────────────────────── stats ─────────────────────────────────────╮
+│ $time:                                                                          │
+│     _run_once: ∧ 35.0 μs / μ 2.46 ms / ∨ 20.5 s / ∑ 658 s                       │
+│     call_later: ∧ 4.00 μs / μ 101 μs / ∨ 3.31 s / ∑ 142 s                       │
+│     call_later:89: ∧ 0.00 s / μ 3.45 μs / ∨ 12.6 ms / ∑ 9.23 s                  │
+│     nothing: ∧ 0.00 s / μ 2.94 μs / ∨ 16.9 ms / ∑ 6.70 s                        │
+│     nothing2: ∧ 0.00 s / μ 15.7 μs / ∨ 887 ms / ∑ 34.9 s                        │
+│     nothing3: ∧ 4.00 μs / μ 24.6 μs / ∨ 2.99 s / ∑ 65.6 s                       │
+│     on_runtime_message: ∧ 0.00 s / μ 80.3 μs / ∨ 3.31 s / ∑ 65.6 s              │
+│     run_handle: ∧ 0.00 s / μ 2.00 ms / ∨ 20.5 s / ∑ 561 s                       │
+│     run_handle_outer1: ∧ 0.00 s / μ 2.01 ms / ∨ 20.5 s / ∑ 585 s                │
+│     run_handle_outer2: ∧ 4.00 μs / μ 2.02 ms / ∨ 20.5 s / ∑ 609 s               │
+│     send_runtime_message: ∧ 19.0 μs / μ 61.6 μs / ∨ 47.0 ms / ∑ 43.8 s          │
+│ asyncio: tasks: 1.00 / ∨ 107 k / ∑ 728 k | loop: o 1.77 k / i 3.61 M / 2.00     │
+│ data: ⬆37.6 MiB / ⬇37.6 MiB                                                     │
+│ latency: ∧ 1.00 ms / μ 6.77 ms / ∨ 10.9 s / ∑ 1.46 Ms                           │
+│ messages: ⬆738 k / ⬇738 k                                                       │
+╰─────────────────────────────────── 00:14:55 ────────────────────────────────────╯
+
+
+############################# cnnmnist/3 ##########################
+
+mswsl1/native												02:25
+mswin1/native												02:19
+linux2/native												02:02
+
+mswin1/web/v0.9.2-312c118(wl10)/chrm/stats	    			09:30
+mswin1/web/v0.9.2-312c118(wl10)/chrm	            		07:43 
+mswin1/web/v0.9.2-312c118(wl10)/edge/stats	    			09:30
+mswin1/web/v0.9.2-312c118(wl10)/edge	            		07:43 
+
+mswin1/web/v0.9.2-312c118(wl7)/chrm/stats	    			09:30
+mswin1/web/v0.9.2-312c118(wl7)/chrm	            			08:40 
+
+mswin1/web/v0.9.2-312c118(wl6)/chrm/stats	    			09:46
+mswin1/web/v0.9.2-312c118(wl6)/chrm	            			08:40 
+
+mswin1/web/v0.9.2-312c118(wl5)/chrm/stats	    			09:48
+mswin1/web/v0.9.2-312c118(wl5)/chrm	            			08:13 
+
+mswin1/web/v0.9.2-312c118(wl4)/chrm/stats	    			09:54
+mswin1/web/v0.9.2-312c118(wl4)/chrm	            			08:21
+
+mswin1/web/v0.9.2-312c118(wl3)/chrm/stats	    			10:01
+mswin1/web/v0.9.2-312c118(wl3)/chrm	            			08:40
+
+mswin1/web/v0.9.2-e110e8c(owl3)/chrm/stats	    			09:50
+mswin1/web/v0.9.2-e110e8c(owl3)/chrm    	    			09:17
+
+mswin1/web/v0.9.2-e110e8c(owl2)/chrm/stats	    			10:29 / 10:24 / 10:14
+mswin1/web/v0.9.2-e110e8c(owl2)/chrm    	    			08:46 / 12:00 / 09:06 / 09:18
+
+mswin1/web/v0.9.2-03f1a8a(owl)/chrm/stats	    			xx:xx - queueMicrotask deadlock after Barrier 1 0
+mswin1/web/v0.9.2-03f1a8a(owl)/chrm      	    			xx:xx - queueMicrotask deadlock after Barrier 1 0
+
+mswin1/web/v0.7.0-d09e338/edge/full_async					30:00
+mswin1/web/v0.7.0-d09e338/edge/full_call_soon				24:19
+mswin1/web/v0.7.0-d09e338/edge								11:37
+mswin1/web/v0.7.0-d09e338/edge/stats						11:59
+mswin1/web/v0.5.0-d09e338/edge/stats						11:32 / 11:55
+mswin1/web/v0.5.0-c8b8d89/edge/stats/console				25:51
+mswin1/web/v0.4.0-76ca881/edge/stats						12:40 / 12:45
+mswin1/web/v0.2.1-a51a93f/edge/stats		    			19:53 / 20:08
+
+mswin1/web/v0.7.0-d09e338/ffox								12:17
+mswin1/web/v0.7.0-d09e338/ffox/stats						13:16
+mswin1/web/v0.5.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.4.0-76ca881/ffox/stats						??:??
+mswin1/web/v0.2.1-a51a93f/ffox/stats						??:??
+
+linux2/web/v0.7.0-d09e338/edge	 							13:15 
+linux2/web/v0.7.0-d09e338/edge/stats						13:51 / 14:12 / 13:54
+linux2/web/v0.5.0-c8b8d89/edge/stats	 					14
+linux2/web/v0.4.0-76ca881/edge/stats						??:??
+linux2/web/v0.2.1-a51a93f/edge/stats						??:??
+
+linux2/web/v0.7.0-d09e338/ffox/stats/full_async				36:00
+linux2/web/v0.7.0-d09e338/ffox/stats						16:00 / 16:59
+linux2/web/v0.5.0-c8b8d89/ffox/stats						19:44 / 20:42 / 20:49
+linux2/web/v0.5.0-c8b8d89/ffox/stats/10/100					36:00
+linux2/web/v0.4.0-76ca881/ffox/stats						23:38
+linux2/web/v0.2.1-a51a93f/ffox/stats						??:??
+
+
+mswin1/web/v0.5.0-c8b8d89/edge/dev							10:22
+mswin1/web/v0.5.0-c8b8d89/edge								??:??
+
+############################# cnnmnist/1 #############################
+
+mswsl1/native												01:21
+mswin1/native												01:20
+linux2/native												01:06
+
+
+mswin1/web/v0.9.2-312c118(wl10)/edge	    			    03:05
+
+mswin1/web/v0.9.2-312c118(wl3)/chrm/stats	    			04:08
+mswin1/web/v0.9.2-312c118(wl3)/chrm	            			03:56
+
+mswin1/web/v0.9.2-e110e8c(owl3)/chrm/stats	    			03:36
+mswin1/web/v0.9.2-e110e8c(owl3)/chrm    	    			03:38
+
+mswin1/web/v0.9.2-e110e8c(owl2)/chrm/stats	    			03:40
+mswin1/web/v0.9.2-e110e8c(owl2)/chrm    	    			03:47
+
+mswin1/web/v0.9.2-03f1a8a(owl)/chrm/stats	    			03:38
+mswin1/web/v0.9.2-03f1a8a(owl)/chrm      	    			03:43
+
+mswin1/web/v0.5.0-c8b8d89/edge/stats						05:17
+mswin1/web/v0.4.0-76ca881/edge/stats						05:18
+mswin1/web/v0.2.1-a51a93f/edge					    		05:57
+
+mswin1/web/v0.5.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.4.0-76ca881/ffox/stats						??:??
+mswin1/web/v0.2.1-a51a93f/ffox/stats						??:??
+
+linux2/web/v0.5.0-c8b8d89/edge/stats						05:20
+linux2/web/v0.4.0-76ca881/edge/stats						05:34
+linux2/web/v0.2.1-a51a93f/edge				    			06:13
+
+linux2/web/v0.5.0-c8b8d89/ffox/stats		   		    	06:02 / 05:52 / 05:46 
+linux2/web/v0.4.0-76ca881/ffox/stats			    		06:24 / 06:17
+linux2/web/v0.2.1-a51a93f/ffox				    			06:04
+
+
+
+
+
+
+mswin1/web/v0.5.0-c8b8d89/edge/desktop-win					05:15
+mswin1/web/v0.5.0-c8b8d89/edge/desktop-win/dev				05:11
+
+
+############################# cnnmnist/0 #############################
+
+mswsl1/native												00:26
+mswin1/native												00:27
+linux2/native												00:24
+
+mswin1/web/v0.9.2-312c118(wl10)/edge	    			    01:17
+
+mswin1/web/v0.9.2-312c118(wl3)/chrm/stats	    			01:38
+mswin1/web/v0.9.2-312c118(wl3)/chrm   				        01:39
+
+mswin1/web/v0.9.2-e110e8c(owl3)/chrm/stats 	    			01:38
+mswin1/web/v0.9.2-e110e8c(owl3)/chrm    	    			01:36
+
+mswin1/web/v0.9.2-e110e8c(owl2)/chrm/stats 	    			01:36
+mswin1/web/v0.9.2-e110e8c(owl2)/chrm    	    			01:36
+
+mswin1/web/v0.9.2-03f1a8a(owl)/chrm/stats	    			01:43
+mswin1/web/v0.9.2-03f1a8a(owl)/chrm      	    			01:45
+
+mswin1/web/v0.5.0-c8b8d89/edge/stats     					01:35
+mswin1/web/v0.4.0-76ca881/edge/stats  						01:38
+mswin1/web/v0.2.1-a51a93f/edge					   		    01:33
+
+mswin1/web/v0.5.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.4.0-76ca881/ffox/stats						??:??
+mswin1/web/v0.2.1-a51a93f/ffox/stats						??:??
+
+linux2/web/v0.5.0-c8b8d89/edge/stats						?????
+linux2/web/v0.4.0-76ca881/edge/stats						01:43
+linux2/web/v0.2.1-a51a93f/edge								?????
+
+linux2/web/v0.5.0-c8b8d89/ffox/stats			    		01:34 / 01:20
+linux2/web/v0.4.0-76ca881/ffox/stats		   		    	01:41 / 01:21
+linux2/web/v0.2.1-a51a93f/ffox				   		    	01:21 / 01:21
+
+
+
+mswin1/web/v0.5.0-c8b8d89/edge/dev							01:34
+mswin1/web/v0.5.0-c8b8d89/edge								01:36

@@ -1,0 +1,16 @@
+{
+  "name": "@mpyc-web/starter",
+  "version": "0.10.0",
+  "type": "module",
+  "packageManager": "yarn@4.0.2",
+  "scripts": {
+    "build:py": "mkdir -p ./dist/py ./public/py && poetry build -f wheel && cp ../dist/*.whl ./public/py/ && cp ../dist/*.whl ./dist/py/",
+    "static": "python -m http.server",
+    "ghp": "gh-pages -d dist -t true"
+  },
+  "devDependencies": {
+    "@types/gh-pages": "^5.0.1",
+    "cross-env": "^7.0.3",
+    "gh-pages": "^6.1.0"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "name": "mpyc-web-all",
+  "version": "0.10.0",
+  "type": "module",
+  "packageManager": "yarn@4.0.2",
+  "workspaces": [
+    "mpyc-web-core",
+    "mpyc-web-demo",
+    "mpyc-web-starter",
+    "mpyc-web-peerjs"
+  ],
+  "scripts": {
+    "devs": "VITE_HTTPS=true op run yarn dev",
+    "dev": "concurrently \"yarn vite --debug\" \"yarn workspace @mpyc-web/demo dev\"",
+    "dev:bun": "concurrently \"bun vite --debug\" \"cd mpyc-web-demo && bun dev\" ",
+    "build": "yarn build:py && yarn workspace @mpyc-web/core build && yarn workspace @mpyc-web/demo build",
+    "build:py:rstats": "cd ./mpyc-web-py/lib/rstats && poetry build -f wheel",
+    "build:py": "yarn build:py:rstats && poetry build -f wheel && cp ./dist/*.whl ./mpyc-web-demo/public/py && mkdir -p ./mpyc-web-demo/dist/py/ && cp dist/*.whl ./mpyc-web-demo/dist/py/",
+    "preview": "yarn workspace @mpyc-web/demo vite preview",
+    "starter": "yarn workspace @mpyc-web/starter static",
+    "demo": "yarn workspace @mpyc-web/demo static",
+    "deploy": "yarn netlify deploy --filter @mpyc-web/demo --alias=${0:-$(git rev-parse --abbrev-ref HEAD)}",
+    "deploy:build": "yarn netlify deploy --filter @mpyc-web/demo --alias=${0:-$(git rev-parse --abbrev-ref HEAD)} --build",
+    "deploy:prod": "APP_DEPLOYMENT='' yarn ghp",
+    "deploy:test": "APP_DEPLOYMENT='test' yarn ghp --remote test",
+    "deploy:test2": "APP_DEPLOYMENT='test' yarn ghp --remote test2",
+    "deploy:old": "APP_DEPLOYMENT='' bun ghp --remote mpyc",
+    "publish:wsl": "yarn workspace @mpyc-web/core npm publish --access public --otp $(op.exe item get npmjs.com --otp)",
+    "publish": "yarn workspace @mpyc-web/core npm publish --access public --otp $(op item get npmjs.com --otp)",
+    "publish:py": "poetry publish --build",
+    "publish:py:rstats": "cd ./mpyc-web-py/lib/rstats && poetry publish --build",
+    "ghp:nobuild": "gh-pages -d mpyc-web-demo/dist -t true",
+    "ghp": "yarn build && gh-pages -d mpyc-web-demo/dist -t true",
+    "clean": "rm -rf ./*/dist; rm -rf ./*/node_modules; rm -rf ./*/vite.config.ts.timestamp-*.mjs",
+    "z": "echo $(./scripts/last.sh $*)"
+  },
+  "devDependencies": {
+    "@types/gh-pages": "^5.0.1",
+    "concurrently": "^8.2.2",
+    "gh-pages": "^6.1.0",
+    "netlify-cli": "^17.10.1",
+    "node-sass": "^9.0.0",
+    "rollup": "^4.6.0",
+    "sass": "^1.69.5",
+    "terser": "^5.26.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.2",
+    "vite": "^5.0.3",
+    "vite-plugin-run": "^0.5.1"
+  },
+  "dependencies": {
+    "@lezer/common": "^1.1.1",
+    "@lezer/highlight": "^1.2.0"
+  }
+}

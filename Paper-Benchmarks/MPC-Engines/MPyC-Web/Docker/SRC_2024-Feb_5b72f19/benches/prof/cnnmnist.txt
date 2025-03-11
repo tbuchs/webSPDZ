@@ -1,0 +1,54 @@
+         242909252 function calls (226538376 primitive calls) in 598.324 seconds
+
+   Ordered by: internal time
+   List reduced from 860 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+5434735/2062   52.003    0.000  598.338    0.290 contextlib.py:78(inner)
+  9573824   39.498    0.000   50.635    0.000 finfields.py:373(__init__)
+45870687/45870684   25.529    0.000   25.542    0.000 {built-in method builtins.isinstance}
+  5434735   25.002    0.000   81.088    0.000 stats.py:386(__exit__)
+  2716846   24.035    0.000   33.155    0.000 weblooperBench.py:127(make_handle)
+   759710   23.584    0.000   23.584    0.000 {built-in method gmpy2.gmpy2.powmod}
+  5434735   22.627    0.000   33.147    0.000 stats.py:69(append)
+  5434735   17.485    0.000   50.632    0.000 stats.py:92(update)
+  3445574   16.811    0.000   25.458    0.000 stats.py:141(acc_path)
+  5434735   15.075    0.000   20.808    0.000 stats.py:368(__enter__)
+     1043   14.969    0.014  598.244    0.574 weblooperBench.py:109(_run_once)
+4928405/302832   14.902    0.000   21.758    0.000 asyncoro.py:192(_add_callbacks)
+  4021753   14.336    0.000   37.949    0.000 sectypes.py:516(__init__)
+4928405/302832   14.188    0.000   20.392    0.000 asyncoro.py:208(_get_results)
+  2716337   12.566    0.000  216.722    0.000 weblooperBench.py:67(call_soon)
+   728194   12.549    0.000  158.014    0.000 asyncoro.py:396(typed_asyncoro)
+ 10869470   11.186    0.000   11.186    0.000 {built-in method time.perf_counter_ns}
+     2080   10.085    0.005   10.114    0.005 saved.py:86(inprod2D)
+  2716846    9.156    0.000  139.379    0.000 weblooperBench.py:78(call_later)
+  3275427    8.614    0.000   43.522    0.000 saved.py:27(<lambda>)
+
+
+         242909252 function calls (226538376 primitive calls) in 598.324 seconds
+
+   Ordered by: cumulative time
+   List reduced from 860 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+5434735/2062   52.003    0.000  598.338    0.290 contextlib.py:78(inner)
+     1043    0.018    0.000  598.296    0.574 weblooperBench.py:58(run_once_proxy)
+     1043   14.969    0.014  598.244    0.574 weblooperBench.py:109(_run_once)
+  2716846    4.212    0.000  549.703    0.000 weblooperBench.py:41(run_handle)
+  2716846    6.433    0.000  545.491    0.000 events.py:78(_run)
+  2716846    7.672    0.000  539.057    0.000 {method 'run' of '_contextvars.Context' objects}
+1862910/1356334    4.700    0.000  289.314    0.000 {method 'send' of 'coroutine' objects}
+  1173385    2.268    0.000  288.269    0.000 asyncoro.py:282(_wrap_in_coro)
+  1173385    4.573    0.000  286.001    0.000 asyncoro.py:266(__await__)
+  2716337   12.566    0.000  216.722    0.000 weblooperBench.py:67(call_soon)
+   728194   12.549    0.000  158.014    0.000 asyncoro.py:396(typed_asyncoro)
+  2716846    9.156    0.000  139.379    0.000 weblooperBench.py:78(call_later)
+   728194    1.037    0.000   86.001    0.000 asyncoro.py:431(<lambda>)
+   728194    2.245    0.000   84.963    0.000 asyncoro.py:348(_reconcile)
+1263482/728194    4.301    0.000   82.213    0.000 asyncoro.py:363(__reconcile)
+  1531485    3.088    0.000   82.201    0.000 {method 'set_result' of '_asyncio.Future' objects}
+      257    0.563    0.002   81.418    0.317 saved.py:129(main)
+      256    0.001    0.000   81.401    0.318 run.py:68(run_code)
+      256    0.000    0.000   81.401    0.318 _base.py:505(eval_code_async)
+      256    0.001    0.000   81.400    0.318 _base.py:350(run_async)

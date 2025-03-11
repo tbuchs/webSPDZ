@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    // "allowJs": true,
+    "checkJs": false,
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": [
+      "ESNext"
+      // "DOM",
+      // "DOM.Iterable",
+      // "WebWorker"
+    ],
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "Bundler",
+    // "allowImportingTsExtensions": true,
+    // "isolatedModules": true,
+    // "esModuleInterop": true,
+    "noEmit": true,
+    /* Linting */
+    "strict": true,
+    "outDir": "./dist"
+  },
+  "include": [
+    "./src/**/*" // and your source files
+  ],
+  "exclude": [
+    // "./node_modules/**/*",
+  ]
+}

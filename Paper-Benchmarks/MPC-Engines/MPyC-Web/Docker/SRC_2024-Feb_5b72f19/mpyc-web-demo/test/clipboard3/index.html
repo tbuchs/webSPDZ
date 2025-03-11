@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+
+<head>
+    <script>
+    document.getElementById('customSelect').addEventListener('click', function() {
+        this.classList.toggle('active');
+    });
+</script>
+
+    <style>
+        .custom-select .options-container {
+            display: none;
+            /* Custom styles for options */
+        }
+
+        .custom-select.active .options-container {
+            display: block;
+        }
+
+        .custom-select .option:hover,
+        .custom-select .option.active {
+            background-color: green;
+            /* Custom highlight color */
+        }
+    </style>
+    <style>
+        option {
+            background-color: red !important;
+            color: red !important
+        }
+
+
+        option::backdrop {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        option::focus {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        option:focus-visible {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        option::focus-visible {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        option:focus-within {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        :focus-visible {
+            outline: 5px solid red;
+        }
+
+        option:blank {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        option::marker {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        option:hover {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        option::target-text {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        option::content {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        option:checked> {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+
+        }
+
+        ::selection {
+            color: White !important;
+            background: DarkGreen !important;
+        }
+
+        * {
+            accent-color: red !important;
+        }
+
+        select {
+            background-color: red !important;
+            color: red !important
+        }
+
+        option {
+            background-color: red !important;
+            color: red !important
+        }
+
+        select option:checked {
+            background-color: red !important;
+            color: red !important
+        }
+
+        select option:checked {
+            -moz-cellhighlight: red !important;
+        }
+
+        select option:corner-present {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::backdrop {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::active {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select option::focus {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        option::backdrop {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select::focus {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select:focus-visible {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select::focus-visible {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select:focus-within {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select:blank {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select::marker {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select:hover {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select::target-text {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select::content {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+
+        :root {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select option::active {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::checked {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select option::after {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select option::before {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::-ms-fill {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select option::-moz-focus-inner {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        select option::-moz-focus-outer {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::shadow {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::selection {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::-moz-selection {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+        select option::placeholder {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+        }
+
+
+        option:checked> {
+            -moz-cellhighlight: red !important;
+            background-color: red !important;
+
+        }
+    </style>
+</head>
+
+<body>
+    <div id="customSelect" class="custom-select">
+        <div class="selected-option">Select an option</div>
+        <div class="options-container">
+            <div class="option">Option 1</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <!-- Add more options here -->
+        </div>
+    </div>
+    <select size="100" id="textarea">
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+        <option>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+    </select>
+</body>
+
+</html>

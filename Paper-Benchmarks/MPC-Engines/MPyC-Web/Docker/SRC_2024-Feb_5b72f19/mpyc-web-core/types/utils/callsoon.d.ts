@@ -1,0 +1,10 @@
+export declare function callSoon_new(callback: (args: void) => void, delay?: number): void;
+export declare const callSoon_singleChan: (callback: (args: void) => void, delay: number) => void;
+export declare const callSoon_queueMicrotask: (callback: (args: void) => void, delay: number) => void;
+export declare const callSoon_async: (cb: (args: void) => void, delay: number) => void;
+export declare const sleep_callSoon_singleChan: (ms: number) => Promise<void>;
+export declare const sleep_callSoon_queueMicrotask: (ms: number) => Promise<void>;
+export declare const sleep_callSoon_setTimeout: (ms: number) => Promise<NodeJS.Timeout>;
+export declare const sleep_callSoon_new: (ms: number) => Promise<void>;
+export declare const sleep_callSoon_async: (ms: number) => Promise<void>;
+export declare const sleep: (ms: number) => Promise<void>;

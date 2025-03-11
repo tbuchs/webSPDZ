@@ -1,0 +1,51 @@
+<!-- Basic UI for running the demo in the browser -->
+
+<html>
+  <head>
+    <title>Simple Squares</title>
+    <style>
+      .error {
+        color: #FF0000;
+      }
+    </style>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+    <script src="/dist/jiff-client.js"></script>
+    <script src="/bignumber.js/bignumber.min.js"></script>
+    <script src="/lib/ext/jiff-client-bignumber.js"></script>
+    <script src="/lib/ext/jiff-client-fixedpoint.js"></script>
+    <script src="/lib/ext/jiff-client-negativenumber.js"></script>
+    <script src="/lib/ext/jiff-client-performance.js"></script>
+
+    <!-- Contains the MPC implementation -->
+    <script type="text/javascript" src="./mpc.js"></script>
+
+    <!-- Contains UI Handlers and Input Checks -->
+    <script type="text/javascript" src="./client.js"></script>
+  </head>
+  <body>
+    <div style="width:300px; height:300px;">
+      <canvas id="myChart" width="400" height="400"></canvas>
+    </div>
+    <h1>Connect JIFF</h1>
+    <label for="computation_id">Computation ID</label>
+    <input id="computation_id" value="test"/> <br/><br/>
+
+    <label for="count">Party Count</label> <input id="count" pattern="[0-9]*" value="2"/>
+    &nbsp; <button id="connectButton" onclick="connect();">Connect</button> <br/><br/>
+
+    <hr/>
+
+    <h1>Simple Least Squares</h1>
+    <p>Enter pairs (x,y) one at at time, each value must be between -5 and 5 (exclusive) and must have no more than 2 digits of precision.</p>
+    <div>X Value: <input id="xVal" type="text" placeholder="X" disabled="disabled"/><br/></div>
+    <div>Y Value: <input id="yVal" type="text" placeholder="Y" disabled="disabled"/><br/></div>
+    <button onclick="pushCoordinate();" id="addButton" disabled="disabled">Add Point!</button> <br/>
+    <button onclick="clearCoordinates();" id="clearButton"  disabled="disabled">Clear</button>
+    <br/><br/>
+
+    <button onclick="submit();" id="submitButton"  disabled="disabled">Calculate Least Squares!</button>
+    <div id="output"></div>
+    <div id="perfDiv"></div>
+  </body>
+</html>

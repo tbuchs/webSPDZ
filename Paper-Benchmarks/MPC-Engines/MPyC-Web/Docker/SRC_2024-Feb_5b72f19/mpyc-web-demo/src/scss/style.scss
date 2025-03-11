@@ -1,0 +1,135 @@
+$tooltip-max-height: 300px;
+$tooltip-max-width: 300px;
+$material-symbols-font-size: 16px;
+$grid-breakpoints: (
+  xs: 0,
+  sm: 300px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+);
+
+@import "xterm/css/xterm.css";
+@import "./theme-superhero-before.scss";
+@import "bootstrap/scss/bootstrap";
+
+$form-control-background: $gray-800;
+@import "./theme-superhero-after.scss";
+@import "./resizable.scss";
+@import "./icons.scss";
+
+body {
+  font-family: 'Segoe UI', system-ui;
+  font-weight: normal;
+  font-style: normal;
+}
+
+#select-demo {
+  padding: 5px;
+  padding-right: 0px;
+  width: 100% !important;
+}
+
+#chatInput {
+  resize: none;
+}
+
+#knownPeers {
+  font-size: 14px;
+  max-height: 115px;
+  overflow: auto;
+}
+
+.col-xl-2,
+.col-xl-10 {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.form-select {
+  background-color: $form-control-background;
+  color: $form-control-color;
+  padding-right: 0px;
+
+}
+
+// select {
+//   scrollbar-color: #959595 #2c2c2c !important;
+// }
+
+// div {
+//   scrollbar-color: #959595 #2c2c2c !important;
+// }
+
+option:checked {
+  background: linear-gradient(#c3c3c3, #c3c3c3);
+}
+
+.btn {
+  padding: 0.3em;
+}
+
+.btn-outline-primary {
+  background-color: #c06412;
+  --bs-btn-bg: #be5915;
+  --bs-btn-active-bg: #71350c;
+  --bs-btn-color: white;
+  color: white;
+}
+
+.btn-outline-primary:hover {
+  background-color: #71350c;
+}
+
+.form-floating>label {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+
+.form-floating>label {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+.form-floating>.form-control {
+  height: 20px;
+}
+
+.form-floating>.form-control:not(:placeholder-shown):focus~label::after {
+  background-color: $form-control-focus-background;
+}
+
+.form-floating>.form-control:placeholder-shown:focus~label::after {
+  background-color: $form-control-focus-background;
+}
+
+.form-floating>.form-control:not(:placeholder-shown)~label::after {
+  background-color: $form-control-background;
+}
+
+.form-control:focus {
+  background-color: $form-control-focus-background;
+  color: $form-control-color;
+}
+
+.form-control {
+  background-color: $form-control-background;
+  color: $form-control-color;
+}
+
+.form-control::placeholder {
+  color: $form-control-color;
+}
+
+// .xterm-screen-wrapper::-webkit-scrollbar-thumb {
+//   background: red !important;
+// }
+
+// .xterm-screen-wrapper::-webkit-scrollbar {
+//   width: 5px;
+//   height: 8px;
+//   background-color: green !important;
+//   /* or add it to the track */
+// }

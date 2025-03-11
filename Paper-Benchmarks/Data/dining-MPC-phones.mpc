@@ -1,0 +1,24 @@
+N = 3 # Number of parties
+
+for i in range(N):
+    print_ln_to(i, "** Welcome Party %s **", i)
+
+print_ln('Who is paying for dinner tonight?\n')
+
+inputs = []
+for i in range(N):
+    print_ln_to(i, f"Please enter your monthly income.")
+    input = sint.get_input_from(i)
+    inputs.append(input)
+    print_ln_to(i, f"My income is: %s€", input.reveal())
+
+richest = inputs[0]
+richest_party = 0
+for i in range(1, N):
+    is_richer = inputs[i] > richest
+    richest = sint.if_else(is_richer, inputs[i], richest)
+    richest_party = sint.if_else(is_richer, i, richest_party)
+
+print_ln('\n\n**********************************\n')
+print_ln('Party %s has to pay for dinner tonight!', richest_party.reveal())
+print_ln('\n**********************************\n')

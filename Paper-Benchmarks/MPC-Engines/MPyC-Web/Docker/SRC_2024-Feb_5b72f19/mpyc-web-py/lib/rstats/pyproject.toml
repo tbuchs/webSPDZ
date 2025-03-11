@@ -1,0 +1,27 @@
+
+[tool.pyright]
+reportMissingImports = false
+awaitNotInAsync = false
+reportAwaitNotInAsync = false
+reportTopLevelAwait = false
+reportUnusedVariable = false
+reportUnusedImport = false
+enableExperimentalFeatures = true
+reportAsyncNotInAsyncFunction = false
+
+
+[tool.poetry]
+name = "rstats"
+version = "0.6.0"
+description = "Decorators for runtime statistics and benchmarking"
+authors = ["Emil Nikolov <eenikolov@proton.me>"]
+
+    [tool.poetry.dependencies]
+    python = "^3.12"
+    rich = "^13.5.3"
+    pyyaml = "^6.0.1"
+    humanize = "^4.8.0"
+
+[build-system]
+requires = ["poetry-core", "setuptools", "wheel"]
+build-backend = "poetry.core.masonry.api"

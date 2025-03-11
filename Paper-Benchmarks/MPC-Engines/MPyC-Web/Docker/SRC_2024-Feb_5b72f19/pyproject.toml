@@ -1,0 +1,63 @@
+
+[tool.pyright]
+reportMissingImports = false
+awaitNotInAsync = false
+reportAwaitNotInAsync = false
+reportTopLevelAwait = false
+reportUnusedVariable = false
+reportUnusedImport = false
+enableExperimentalFeatures = true
+reportAsyncNotInAsyncFunction = false
+exclude = ["mpyc-web-py/lib/stats.py"]
+
+ignore = ["mpyc-web-py/lib/stats.py"]
+
+[tool.poetry]
+name = "mpyc-web"
+version = "0.7.0"
+description = "MPyC for Multiparty Computation in Python for the Web"
+authors = ["Emil Nikolov <eenikolov@proton.me>"]
+packages = [
+    { include = "./mpycweb", from = "./mpyc-web-py" },
+    { include = "./lib", from = "./mpyc-web-py" },
+    { include = "./rstats", from = "./mpyc-web-py/lib/rstats" },
+    { include = "./startup", from = "./mpyc-web-py" },
+    { include = "./mpyc", from = "./mpyc-web-py/mpyc" },
+    { include = "./*.py", from = "./mpyc-web-py/mpyc/demos" }
+]
+    [tool.poetry.extras]
+    dev_tools = ["gmpy2"]
+
+    [tool.poetry.dependencies]
+    python = "^3.12"
+    rich = "^13.5.3"
+    numpy = "^1.25.2"
+    pyyaml = "^6.0.1"
+    humanize = "^4.8.0"
+
+    [tool.poetry.group.dev.dependencies]
+    python = "^3.12"
+    # didcomm = "0.3.0"
+    # peerdid = "0.4.0"
+    # qrcode = "^7.3.1"
+    # numpy = "^1.23.4"
+    # gmpy2 = "^2.1.2"
+    gmpy2 = "^2.2.0a1"
+    packaging = "^23.0.0"
+    # uvloop = "^0.17.0"
+    # pyodide-pack = "^2.1.2"
+    # pyodide-pack = "^0.2.0"
+    # pyodide-pack = "^0.2.0"
+    pyodide-py = "^0.24.1"
+    rich = "^13.5.3"
+
+    mpyc = { path = "./mpyc-web-py/mpyc/", develop = true }
+    rstats = { path = "./mpyc-web-py/lib/rstats", develop = true }
+    # matplotlib = "^3.5.2"
+    # pandas = "1.5.3"
+    # scipy = "1.11.2"
+    # lifelines = "^0.27.8"
+
+[build-system]
+requires = ["poetry-core", "setuptools", "wheel"]
+build-backend = "poetry.core.masonry.api"

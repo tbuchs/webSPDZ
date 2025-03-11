@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+    document.title = "MPyC Web - Preload test" + (__BUILD_INFO__.deployment ? ` (${__BUILD_INFO__.deployment})` : "");
+  </script>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/src/scss/style.scss" />
+  <script defer type="module">
+    import * as bench from "./index.ts"
+    
+    
+    window.onload = bench.main
+    
+    document.querySelector("#out").innerHTML = `
+      bla0: ${sessionStorage.bla0}
+      <br />
+      bla1: ${sessionStorage.bla1}
+      <br />
+      bla2: ${sessionStorage.bla2}
+      <br />
+    `
+    setTimeout(() => {
+      document.querySelector("#out").innerHTML+= `
+        bla0: ${sessionStorage.bla0}
+        <br />
+        bla1: ${sessionStorage.bla1}
+        <br />
+        bla2: ${sessionStorage.bla2}
+        <br />
+      `
+    }, 1000)
+    setTimeout(() => {
+      document.querySelector("#out").innerHTML+= `
+        bla0: ${sessionStorage.bla0}
+        <br />
+        bla1: ${sessionStorage.bla1}
+        <br />
+        bla2: ${sessionStorage.bla2}
+        <br />
+      `
+    }, 2000)
+    
+    setTimeout(() => {
+      document.querySelector("#out").innerHTML+= `
+        bla0: ${sessionStorage.bla0}
+        <br />
+        bla1: ${sessionStorage.bla1}
+        <br />
+        bla2: ${sessionStorage.bla2}
+        <br />
+      `
+    }, 3000)
+  </script>
+</head>
+
+<body style="background: darkslategrey; color:white">
+  <div id="out"> </div>
+</body>
+
+</html>

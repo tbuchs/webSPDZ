@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    // "paths": {
+    //   "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.mjs": [
+    //     "./node_modules/pyodide"
+    //   ]
+    // },
+    // "composite": true,
+    "allowJs": true,
+    "useDefineForClassFields": true,
+    // "rootDir": "./lib",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "checkJs": false,
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker"
+    ],
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    // "moduleResolution": "NodeNext",
+    // "allowImportingTsExtensions": true,
+    // "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    /* Linting */
+    "strict": false,
+    "outDir": "./dist"
+  },
+  "include": [
+    "lib" // and your source files
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "node_modules"
+  ]
+}

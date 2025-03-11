@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+
+<body>
+    <div id="customSelect" class="custom-select">
+        <div class="selected-option">Select an option</div>
+        <div class="options-container">
+            <div class="option">Option 1</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <div class="option">Option 2</div>
+            <!-- Add more options here -->
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('customSelect').addEventListener('click', function() {
+        this.classList.toggle('active');
+    });
+</script>
+
+    <style>
+        .custom-select .options-container {
+            display: none;
+            /* Custom styles for options */
+        }
+
+        .custom-select.active .options-container {
+            display: block;
+        }
+
+        .custom-select .option:hover,
+        .custom-select .option.active {
+            background-color: green;
+            /* Custom highlight color */
+        }
+    </style>
+</body>
+
+</html>

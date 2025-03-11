@@ -1,0 +1,47 @@
+{
+  "name": "@mpyc-web/core",
+  "version": "0.10.0",
+  "type": "module",
+  "packageManager": "yarn@4.0.2",
+  "scripts": {
+    "build": "tsc && vite build",
+    "gen:dts": "dts-bundle-generator --config ./dts.config.ts"
+  },
+  "types": "./dist/mpyc-web-core.d.ts",
+  "main": "./dist/mpyc-web-core.umd.cjs",
+  "module": "./dist/mpyc-web-core.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/mpyc-web-core.mjs",
+      "types": "./dist/types/main.d.ts",
+      "require": "./dist/mpyc-web-core.umd.cjs"
+    },
+    "./lib": {
+      "import": "./lib/main.ts",
+      "types": "./dist/types/main.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "lib",
+    "./**/*.whl",
+    "./**/*.py"
+  ],
+  "devDependencies": {
+    "dts-bundle-generator": "^9.0.0",
+    "pyodide": "^0.25.0",
+    "rollup": "^4.6.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.2",
+    "vite": "^5.0.3",
+    "vite-plugin-dts": "^3.6.3"
+  },
+  "dependencies": {
+    "@types/node": "^20.10.0",
+    "coincident": "^1.0.1",
+    "emittery": "^1.0.1",
+    "peerjs": "^1.5.1",
+    "polyscript": "^0.7.1"
+  }
+}

@@ -1,0 +1,52 @@
+.xterm-wrapper {
+    height: 100%;
+    width: 100%;
+    background-color: #3a2f29 !important;
+    /* padding-top: 0.5rem; */
+    position: relative;
+    padding-right: 1rem;
+}
+
+.terminal {
+    width: 100%;
+    /* padding-right: 1rem;
+    height: 100%;
+    background-color: #3a2f29 !important; */
+    /* padding-top: 0.5rem; */
+    position: absolute !important;
+    bottom: 0 !important;
+    padding-right: 1rem;
+}
+
+.xterm-screen-wrapper {
+    /* padding-top: 0.5rem; */
+    background-color: #3a2f29 !important;
+
+    overflow-x: scroll;
+    overflow-y: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.xterm-viewport {
+    /* padding-top: 0.5rem; */
+    z-index: 30;
+    background-color: transparent !important;
+
+    overflow-x: hidden;
+    overflow-y: scroll;
+
+    cursor: text;
+    width: 20px;
+    height: 100%;
+    left: auto !important;
+}
+
+.cm-scroller,
+select,
+.xterm-screen-wrapper,
+.xterm-viewport {
+    /* scrollbar-color: rgb(33, 2, 2) transparent; */
+    scrollbar-color: #555 transparent;
+    scrollbar-width: thin;
+}

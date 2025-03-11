@@ -1,0 +1,38 @@
+.xterm-scroll-down-helper {
+    visibility: hidden;
+    position: absolute;
+    right: 2rem;
+    bottom: 2rem;
+    padding: .5rem;
+    font-size: 1.25em;
+    box-shadow: 0 2px 8px #000;
+    background-color: #252526;
+    z-index: 999;
+    cursor: pointer;
+}
+
+.xterm-scroll-down-helper::before {
+    font-size: 1.5em;
+    max-width: 24px;
+    display: block;
+    content: ' ';
+    background-size: 24px 24px;
+    height: 24px;
+    width: 24px;
+    filter: contrast(4) invert(1);
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgLTk2MCA5NjAgOTYwIiB3aWR0aD0iMjQiPjxwYXRoIGQ9Ik00NDAtODAwdjQ4N0wyMTYtNTM3bC01NiA1NyAzMjAgMzIwIDMyMC0zMjAtNTYtNTctMjI0IDIyNHYtNDg3aC04MFoiLz48L3N2Zz4K');
+}
+
+.xterm-scroll-checker-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.xterm-scroll-checker {
+    width: 100%;
+    height: 100px;
+    bottom: 0px;
+    position: absolute;
+    background-color: transparent;
+}

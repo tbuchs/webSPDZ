@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Camera Detection</title>
+    <link async rel="icon" href="/favicon.ico" />
+</head>
+
+<body>
+    <!-- Hidden button -->
+    <button id="cameraButton" style="display: none;">Open Camera</button>
+    <div id="output"></div>
+
+    <script>
+        let output = document.querySelector('#output');
+        // Check if navigator.mediaDevices is supported
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            console.log("navigator.mediaDevices supported");
+            output.innerText += "navigator.mediaDevices supported\n";
+            // List the devices
+            navigator.mediaDevices.enumerateDevices().then(devices => {
+                devices.forEach(device => {
+                    output.innerText += `devices ${device.kind} ${device.label} ${device.deviceId}\n`;
+                });
+                // Check if there are any videoinput devices (cameras)
+                const hasCamera = devices.some(device => device.kind === 'videoinput');
+
+                // If a camera is found, show the button
+                if (hasCamera) {
+                    document.getElementById('cameraButton').style.display = 'block';
+                }
+            }).catch(err => {
+            output.innerText += "Error listing devices\n";
+                console.error("Error listing devices: ", err);
+            });
+        } else {
+            output.innerText += "navigator.mediaDevices not supported\n";
+            console.error("navigator.mediaDevices not supported");
+        }
+    </script>
+</body>
+
+</html>

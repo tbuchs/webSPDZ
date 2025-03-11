@@ -1,0 +1,62 @@
+.symbols::before {
+  font-size: 1.5em;
+  max-width: 24px;
+  display: block;
+  content: ' ';
+  background-size: 24px 24px;
+  height: 24px;
+  width: 24px;
+
+  filter: contrast(4) invert(1);
+}
+
+.icon-arrow-downward:before {
+  background-image: url('../images/arrow_downward.svg');
+}
+
+.icon-content-paste:before {
+  background-image: url('../images/content_paste.svg');
+}
+
+.icon-send:before {
+  background-image: url('../images/send_filled.svg');
+}
+
+.icon-qr-code:before {
+  background-image: url('../images/qr_code.svg');
+}
+
+.icon-qr-code-scanner:before {
+  background-image: url('../images/qr_code_scanner.svg');
+}
+
+.icon-backspace:before {
+  background-image: url('../images/backspace.svg');
+  // background-image: url('../images/backspace_filled.svg');
+}
+
+.icon-stats:before {
+  background-image: url('../images/bar_chart_4.svg');
+  // background-image: url('../images/bar_chart.svg');
+  // background-image: url('../images/health_metrics.svg');
+}
+
+.icon-inventory:before {
+  background-image: url('../images/inventory.svg');
+}
+
+.icon-refresh:before {
+  background-image: url('../images/refresh.svg');
+}
+
+.icon-play:before {
+  background-image: url('../images/play_arrow_filled.svg');
+}
+
+.icon-monitoring:before {
+  background-image: url('../images/monitoring.svg');
+}
+
+.icon-person-add:before {
+  background-image: url('../images/person_add.svg');
+}

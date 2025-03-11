@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <script src="./coi-serviceworker.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MPyC Web - Starter</title>
+  <link async rel="icon" href="./favicon.ico" />
+  <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet" />
+  <script type="module">
+    import { MPCManager, PeerJSTransport, PyScriptWorkerRuntime } from 'https://cdn.jsdelivr.net/npm/@mpyc-web/core/+esm';
+    import { EditorState } from 'https://cdn.jsdelivr.net/npm/@codemirror/state@6.4.0/+esm';
+    import { python } from 'https://cdn.jsdelivr.net/npm/@codemirror/lang-python@6.1.3/+esm';
+    import { EditorView, basicSetup } from 'https://cdn.jsdelivr.net/npm/codemirror@6.0.1/+esm';
+    import { Terminal } from 'https://cdn.jsdelivr.net/npm/xterm@5.3.0/+esm';
+
+    self.mpyc = new MPCManager(
+      () => new PeerJSTransport(),
+      () => new PyScriptWorkerRuntime()
+    );
+
+    self.editor = new EditorView({
+      doc: `from mpyc.runtime import mpc
+import secretsanta
+async def main():
+  await secretsanta.main()
+mpc.run(main())`,
+      extensions: [basicSetup, python(),  ],
+      parent: document.querySelector("#editor"),
+    });
+
+    self.term = new Terminal();
+    term.open(document.querySelector("#terminal"));
+    
+    mpyc.on("transport:ready", async (peerID) => {
+      document.querySelector("#myPeerID").value = peerID;
+    });
+    mpyc.on("runtime:display", async (message) => {
+      term.writeln(message);
+    });
+    mpyc.on("runtime:display:error", async (message) => {
+      term.writeln(message);
+    });
+    mpyc.on("transport:conn:ready", async (peerID) => {
+      term.writeln("Connected to " + peerID);
+    });
+    mpyc.on("transport:conn:disconnected", async (peerID) => {
+      term.writeln("Disconnected from" + peerID);
+    });
+  </script>
+</head>
+
+<body>
+  <h3>MPyC Web - Starter</h3>
+  <input id="myPeerID" type="text" onClick="this.select();" readonly placeholder="My ID" />
+  <input id="hostPeerID" type="text" onClick="this.select();" placeholder="Party ID" />
+  <button id="connect" onclick="mpyc.transport.connect(document.querySelector('#hostPeerID').value);">Connect</button>
+  <button id="startButton" onclick="mpyc.runMPC(editor.state.doc.toString(), 'test.py', false);">Run</button>
+  <div id="editor" style="height: 310px;"></div>
+  <div id="terminal"></div>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Camera Detection</title>
+    <link async rel="icon" href="/favicon.ico" />
+</head>
+
+<body>
+    <!-- Hidden button -->
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <script>
+        function copyElementToClipboard(element) {
+            window.getSelection().removeAllRanges();
+            let range = document.createRange();
+            range.selectNode(typeof element === 'string' ? document.getElementById(elementName) : element);
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+        }
+        
+        copyElementToClipboard('')
+    </script>
+</body>
+
+</html>

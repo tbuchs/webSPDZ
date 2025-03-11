@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <script src="/coi-serviceworker.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+
+    document.title = "MPyC Web" + (__BUILD_INFO__.deployment ? ` (${__BUILD_INFO__.deployment})` : "");
+  </script>
+  <link async rel="icon" href="/favicon.ico" />
+  <!-- <link async rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" /> -->
+  <link async rel="preconnect" href="https://fonts.googleapis.com">
+  <link async rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link async href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <script type="module" src="https://polyfill.io/v3/polyfill.min.js?features=es2022%2CsetImmediate"></script>
+
+  <script type="module">
+      function makeVersion() {
+        let info = __BUILD_INFO__;
+
+        console.log("buildInfo", info);
+
+        let versionDiv = document.querySelector("#version");
+        versionDiv.innerText = `v${info.version}-${info.revision}`
+
+        if (info.dirty) {
+            versionDiv.innerText += "-dirty"
+        }
+
+        versionDiv.innerText += ` (${info.time})`
+      }
+      makeVersion();
+    </script>
+
+  <script defer type="module" src="/src/ts/main.ts"></script>
+
+</head>
+
+<body>
+  <div class="main-container container-fluid">
+    <div class="row">
+      <h3 class="d-flex align-items-center justify-content-center">MPyC Web</h3>
+    </div>
+    <div class="row h-95">
+      <div class="col-xl-2">
+        <!-- <div> -->
+        <div class="container-fluid">
+          <!-- * My Party ID -->
+          <div class="row">
+            <div class="col-8 col-xl-12  " style="padding: 0 !important">
+              <div class="input-group">
+                <div class="form-floating">
+                  <input type="text" class="form-control" onClick="this.select();" readonly id="myPeerID"
+                    placeholder="My ID">
+                  <label for="myPeerID">My ID</label>
+                </div>
+
+                <!-- * My Party ID - Buttons -->
+                <button id="copyPeerID" data-bs-toggle="tooltip" data-bs-title="Copy to clipboard"
+                  class="btn btn-primary">
+                  <!-- <span class="material-symbols-sharp content-paste"></span> -->
+                  <span class="symbols icon-content-paste"></span>
+                </button>
+                <button id="copyPeerID" data-bs-toggle="tooltip" data-bs-title="Copied!" class="btn btn-success"
+                  style="display: none;">
+
+                  <!-- <span class="material-symbols-sharp">inventory</span> -->
+                  <span class="symbols icon-inventory"></span>
+                </button>
+                <button id="show-qr" class="btn btn-primary">
+                  <span class="symbols icon-qr-code"></span>
+                </button>
+                <button id="resetPeerID" data-bs-toggle="tooltip" data-bs-title="Reset party ID"
+                  class="btn btn-primary">
+                  <span class="symbols icon-refresh"></span>
+                </button>
+              </div>
+              <!-- * Host Party ID -->
+              <!-- </div> -->
+
+              <!-- <div class="col-6 col-xl-12  "> -->
+              <div class="input-group  ">
+                <div class="form-floating">
+                  <input id="hostPeerID" type="text" onClick="this.select();" class="form-control"
+                    placeholder="Party ID" />
+                  <label for="hostPeerID">
+                    Party ID
+                    <!-- <strong>Party ID</strong> -->
+                  </label>
+                </div>
+
+                <!-- * Host Party ID - Buttons -->
+                <button id="scanQRCodeButton" data-bs-title="Scan QR code" data-bs-toggle="tooltip"
+                  class="btn btn-primary">
+                  <!-- <img class="material-symbolss2" src="/src/images/qr_code_scanner.svg" /> -->
+                  <span class="symbols icon-qr-code-scanner"> </span>
+                </button>
+                <button id="connect" data-bs-toggle="tooltip" data-bs-title="Connect to party" class="btn btn-primary">
+                  <span class="symbols icon-person-add"></span>
+                </button>
+              </div>
+            </div>
+            <div class="col-4 col-xl-12  " style="padding: 0px; padding-left: 5px;">
+
+              <div id="connectedPartiesLocationMobile">
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- * Demos -->
+        <div class="mb-3" id="mpc-demos">
+          <h5> MPC Demos: </h5>
+          <select size=0 id="select-demo" class=" form-select" aria-label="Select Demo">
+            <option value="./py/saved.py">Your Code</option>
+            <option selected value="./py/demo.py">Demo</option>
+            <option value="./py/demos/secretsanta.py">Secret Santa</option>
+            <option value="./py/demos/helloworld.py">Hello World</option>
+            <option value="./py/demos/oneliners.py">Oneliners</option>
+            <option value="./py/demos/bnnmnist.py">Binarized Neural Network MNIST classifier</option>
+            <option value="./py/demos/np_bnnmnist.py">NumPy Binarized Neural Network MNIST classifier</option>
+            <option value="./py/demos/cnnmnist.py">Convolutional Neural Network MNIST classifier</option>
+            <option value="./py/demos/np_cnnmnist.py">NumPy Convolutional Neural Network MNIST classifier</option>
+            <option value="./py/demos/dsa.py">Threshold DSA</option>
+            <option value="./py/demos/aes.py">Threshold AES cipher</option>
+            <option value="./py/demos/np_aes.py">NumPy Threshold AES cipher</option>
+            <option value="./py/demos/lpsolver.py">Linear Programming (LP) solver / Integers</option>
+            <option value="./py/demos/np_lpsolver.py">NumPy Linear Programming (LP) solver / Integers</option>
+            <option value="./py/demos/lpsolverfxp.py">Linear Programming (LP) solver / Fixed Points</option>
+            <option value="./py/demos/np_lpsolverfxp.py">NumPy Linear Programming (LP) solver / Fixed Points
+            </option>
+            <option value="./py/demos/kmsurvival.py">Kaplan-Meier surivival analysis</option>
+            <option value="./py/demos/elgamal.py">Threshold ElGamal cryptosystem</option>
+            <option value="./py/demos/id3gini.py">ID3 Decision tree learning</option>
+            <option value="./py/demos/np_id3gini.py">NumPy ID3 decision tree learning</option>
+            <option value="./py/demos/indextounitvector.py">Unit Vectors</option>
+            <option value="./py/demos/ridgeregression.py">Linear and ridge regression</option>
+            <option value="./py/demos/multilateration.py">Multilateration (MLAT) / Schmidt's localization</option>
+            <option value="./py/demos/ot.py">Oblivious transfer</option>
+            <option value="./py/demos/unanimous.py">Unanimous voting</option>
+            <option value="./py/benches/profile.py">Benchmarks - profile</option>
+            <option value="./py/benches/various.py">Benchmarks - various</option>
+            <option value="./py/benches/serializers.py">Benchmarks - serializers</option>
+            <option value="./py/benches/channels.py">Benchmarks - channels</option>
+            <option value="./py/benches/tasks.py">Benchmarks - tasks</option>
+            <option value="./py/benches/timeouts.py">Benchmarks - timeouts</option>
+            <option value="./py/benches/runtime.py">Benchmarks - runtime</option>
+            <option value="./py/benches/test.py">Benchmarks - test</option>
+            <option value="./py/benches/calls.py">Benchmarks - function calls</option>
+            <option value="./py/benches/timers.py">Benchmarks - timers</option>
+            <option value="./py/benches/stats.py">Benchmarks - stats</option>
+            <option value="./py/benches/proxies.py">Benchmarks - proxies</option>
+            <option value="./py/features/plots.py">Features - plots 1</option>
+            <option value="./py/features/plots2.py">Features - plots 2</option>
+          </select>
+        </div>
+
+        <div id="connectedPartiesLocationDesktop" class="connected-parties mt-1 mb-1">
+          <!-- * Connected Parties -->
+          <div id="connectedPartiesLabel">
+            <h5> Connected Parties: </h5>
+          </div>
+          <ol id="knownPeers" class="list-group card-columns" style="columns: 2" start="6">
+          </ol>
+        </div>
+
+        <!-- * Chat -->
+        <div id="chatSidebar">
+
+          <div class="input-group mb-1" id="chatInputGroup">
+            <textarea id="chatInput" type="text" class="form-control" placeholder="Message parties..."></textarea>
+            <button id="sendMessageButton" data-bs-toggle="tooltip" data-bs-title="Send" class="btn btn-primary">
+              <!-- <span class="material-symbols-sharp material-symbols-filled">send</span> -->
+              <i class="symbols icon-send"> </i>
+
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="col-xl-10">
+        <!-- * Editor - Buttons -->
+        <div class="btn-group w-100" style="padding-left: 1px;" role="group" id="editor-buttons">
+          <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC"
+            style="padding-left: 5px !important; " class="btn btn-primary">
+            <span class="symbols icon-play"></span>
+          </button>
+          <button id="stopButton" data-bs-toggle="tooltip" data-bs-title="Reset python runtime" class="btn btn-primary">
+            <span class="symbols icon-refresh"></span>
+          </button>
+          <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal" class="btn btn-primary">
+
+            <span class="symbols icon-backspace"></span>
+            <!-- <span class="material-symbols-sharp">cleaning_services</span> -->
+            <!-- <span class="material-symbols-sharp">mop</span> -->
+          </button>
+          <input type="checkbox" class="btn-check" id="toggleStatsEl" autocomplete="off">
+          <label id="toggleStatsLabel" data-bs-toggle="tooltip" data-bs-title="Enable runtime stats"
+            class="btn btn-outline-primary" for="toggleStatsEl">
+
+            <span class="symbols icon-stats"></span>
+          </label>
+          <div style="width: 100% !important; padding-right: 1px; padding-left: 5px;" class=" "
+            id="demoSelectorLocation2">
+
+          </div>
+        </div>
+        <div class="split">
+          <div class="split-panel-editor">
+            <!-- * Editor -->
+            <div id="editor" class="editor"></div>
+          </div>
+          <div class="terminal-split-pane">
+            <!-- * Terminal -->
+            <div id="terminal"></div>
+            <div id="terminal-container-scroll"></div>
+
+          </div>
+        </div>
+        <div id="chatFooter"></div>
+      </div>
+
+    </div>
+    <input type="file" id="qrCodeFileInput" accept="image/*" ; style="display: none;" />
+
+    <div id="version" style="font-size: 9px" class="float-sm-start"></div>
+  </div>
+  </div>
+</body>
+
+</html>

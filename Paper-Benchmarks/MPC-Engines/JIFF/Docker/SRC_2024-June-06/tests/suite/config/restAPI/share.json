@@ -1,0 +1,63 @@
+{
+  "tests": ["share2", "share3", "share4", "share5", "share10"],
+  "suiteConf": {
+    "port": 3001,
+    "extensions": ["restAPI"],
+    "generation": {
+      "file": "config/base/generation.js",
+      "function": "generateShareInputs"
+    },
+    "computation": {
+      "file": "./computations-share.js",
+      "function": "compute"
+    }
+  },
+
+  "testConf": {
+    "share2": {
+      "count": 50,
+      "parallel": 25,
+      "options": {
+        "Zp": 2039,
+        "party_count": 2,
+        "flushInterval": 50
+      }
+    },
+    "share3": {
+      "count": 50,
+      "parallel": 25,
+      "options": {
+        "Zp": 2039,
+        "party_count": 3,
+        "flushInterval": 50
+      }
+    },
+    "share4": {
+      "count": 40,
+      "parallel": 20,
+      "options": {
+        "Zp": 2039,
+        "party_count": 4,
+        "flushInterval": 50
+      }
+    },
+    "share5": {
+      "count": 30,
+      "parallel": 15,
+      "options": {
+        "Zp": 2039,
+        "party_count": 5,
+        "flushInterval": 50
+      }
+    },
+    "share10": {
+      "count": 15,
+      "parallel": 15,
+      "options": {
+        "Zp": 2039,
+        "party_count": 10,
+        "flushInterval": 50
+      }
+    }
+  }
+}

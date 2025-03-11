@@ -1,0 +1,15 @@
+
+[build]
+command = """
+"""
+ignore = "stat package.json"
+
+[context.production]
+publish = "."
+
+[[headers]]
+for = "/*"
+    [headers.values]
+    Cross-Origin-Embedder-Policy = "credentialless"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "cross-origin"

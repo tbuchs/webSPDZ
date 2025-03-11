@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+    document.title = "MPyC Web - Bench" + (__BUILD_INFO__.deployment ? ` (${__BUILD_INFO__.deployment})` : "");
+  </script>
+  <script src="/coi-serviceworker.js"></script>
+  <!-- <script src="/mini-coi.js"></script> -->
+  <link rel="stylesheet" href="/src/scss/style.scss" />
+  <link rel="icon" href="/favicon.ico" />
+
+</head>
+
+<body style="background: darkslategrey;">
+  <ul>
+    <li><a href="./all/">All Benches</a></li>
+    <li><a href="./serializers/">Serializers Bench</a></li>
+    <li><a href="./timeouts/">Timeouts Bench</a></li>
+    <li><a href="./channels/">Channels Bench</a></li>
+    <li><a href="./preload/">Preload test</a></li>
+</body>
+
+</html>

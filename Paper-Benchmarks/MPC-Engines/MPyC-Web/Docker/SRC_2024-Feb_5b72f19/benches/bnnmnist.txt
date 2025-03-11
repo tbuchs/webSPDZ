@@ -1,0 +1,63 @@
+Python 3.11
+
+╭────────────────────────────── stats ───────────────────────────────╮
+│ asyncio: tasks: 2 / 1 / 8 k / 29 k | loop: 599 / 152 k / 152 k     │
+│ data s/r: 4.6 MiB / 4.6 MiB                                        │
+│ latency: 2.00 ms / 745 ms / 1.81 s                                 │
+│ messages s/r: 41 k / 41 k                                          │
+│ on_runtime_message                                                 │
+│ └── time: 4.00 μs / 51.6 μs / 353 ms                               │
+│ send_runtime_message                                               │
+│ └── time: 14.0 μs / 52.4 μs / 35.1 ms                              │
+╰───────────────────────────── 00:01:14 ─────────────────────────────╯
+
+
+############################# bnnmnist/3 ##########################
+
+mswsl1/native												00:27
+
+mswin1/web/v0.9.2-312c118(wl10)/edge/stats	    			01:14
+mswin1/web/v0.9.2-312c118(wl10)/edge	            		01:14 
+
+mswin1/web/v0.6.0-c8b8d89/edge/stats     					02:25
+mswin1/web/v0.5.0-c8b8d89/edge/stats     					01:32
+mswin1/web/v0.4.0-76ca881/edge/stats  						01:32
+mswin1/web/v0.2.1-a51a93f/edge					   		    02:10
+
+mswin1/web/v0.6.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.5.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.4.0-76ca881/ffox/stats						??:??
+mswin1/web/v0.2.1-a51a93f/ffox								??:??
+
+
+############################# bnnmnist/1 #############################
+
+mswsl1/native												00:21
+
+mswin1/web/v0.9.2-312c118(wl10)/edge	            		00:44 
+
+mswin1/web/v0.6.0-c8b8d89/edge/stats     					00:55
+mswin1/web/v0.5.0-76ca881/edge/stats  						00:58
+mswin1/web/v0.4.0-76ca881/edge/stats  						00:58
+mswin1/web/v0.2.1-a51a93f/edge					   		    01:57 / 02:00
+
+mswin1/web/v0.6.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.5.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.4.0-76ca881/ffox/stats						??:??
+mswin1/web/v0.2.1-a51a93f/ffox								??:??
+
+############################# bnnmnist/0 #############################
+
+mswsl1/native												00:13
+
+mswin1/web/v0.9.2-312c118(wl10)/edge	            		00:32 
+
+mswin1/web/v0.6.0-c8b8d89/edge/stats     					00:37
+mswin1/web/v0.5.0-c8b8d89/edge/stats     					00:39
+mswin1/web/v0.4.0-76ca881/edge/stats  						00:39
+mswin1/web/v0.2.1-a51a93f/edge					   		    00:39
+
+mswin1/web/v0.6.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.5.0-c8b8d89/ffox/stats						??:??
+mswin1/web/v0.4.0-76ca881/ffox/stats						??:??
+mswin1/web/v0.2.1-a51a93f/ffox								??:??

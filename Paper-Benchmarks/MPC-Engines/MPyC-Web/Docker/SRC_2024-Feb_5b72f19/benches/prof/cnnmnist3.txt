@@ -1,0 +1,280 @@
+         206404632 function calls (193538974 primitive calls) in 753.123 seconds
+
+   Ordered by: internal time
+   List reduced from 825 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ 10372252   49.242    0.000   57.314    0.000 /lib/python3.11/site-packages/mpyc/finfields.py:374(__init__)
+   738326   39.418    0.000   56.506    0.000 /lib/python3.11/site-packages/lib/api/proxy.py:91(send)
+45605393/45605390   32.573    0.000   32.578    0.000 {built-in method builtins.isinstance}
+  2718168   27.701    0.000   71.431    0.000 /lib/python3.11/site-packages/lib/weblooperBench.py:55(call_soon)
+   759710   26.541    0.000   26.541    0.000 {built-in method gmpy2.gmpy2.powmod}
+   738322   26.089    0.000   45.604    0.000 /lib/python3.11/site-packages/lib/api/proxy.py:122(onmessage)
+6134367/536653   23.573    0.000   35.121    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:192(_add_callbacks)
+  2718483   23.385    0.000   43.765    0.000 /lib/python3.11/site-packages/lib/weblooperBench.py:67(call_later)
+6134367/536653   22.315    0.000   32.399    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:208(_get_results)
+   388496   18.523    0.000   23.377    0.000 /lib/python3.11/site-packages/mpyc/thresha.py:88(recombine)
+  4021753   16.542    0.000   37.835    0.000 /lib/python3.11/site-packages/mpyc/sectypes.py:516(__init__)
+  2718483   16.495    0.000   18.135    0.000 /lib/python311.zip/asyncio/events.py:31(__init__)
+   738326   15.369    0.000   15.369    0.000 {built-in method _pyodide_core.to_js}
+   728195   13.841    0.000  106.823    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:396(typed_asyncoro)
+   464016   13.296    0.000   25.636    0.000 /lib/python3.11/site-packages/mpyc/thresha.py:238(__call__)
+     1117   12.309    0.011  707.667    0.634 /lib/python3.11/site-packages/lib/weblooperBench.py:95(_run_once)
+   468799   11.329    0.000  190.989    0.000 /lib/python3.11/site-packages/mpyc/runtime.py:555(_reshare)
+   310208   11.074    0.000   88.008    0.000 /lib/python3.11/site-packages/mpyc/runtime.py:463(output)
+     2080   10.808    0.005   10.838    0.005 /lib/python3.11/site-packages/cnnmnist.py:86(inprod2D)
+  2718483   10.520    0.000  683.572    0.000 {method 'run' of '_contextvars.Context' objects}
+
+
+   Ordered by: internal time
+   List reduced from 825 to 20 due to restriction <20>
+
+Function                                                            was called by...
+                                                                        ncalls  tottime  cumtime
+/lib/python3.11/site-packages/mpyc/finfields.py:374(__init__)       <-  571785    1.487    1.869  /lib/python3.11/site-packages/mpyc/finfields.py:101(__add__)
+                                                                         77345    0.248    0.312  /lib/python3.11/site-packages/mpyc/finfields.py:129(__sub__)
+                                                                         38668    0.125    0.156  /lib/python3.11/site-packages/mpyc/finfields.py:139(__rsub__)
+                                                                        875735    4.313    4.956  /lib/python3.11/site-packages/mpyc/finfields.py:165(__mul__)
+                                                                        837057    4.925    5.756  /lib/python3.11/site-packages/mpyc/runtime.py:540(<listcomp>)
+                                                                        798385    5.901    6.877  /lib/python3.11/site-packages/mpyc/runtime.py:616(<listcomp>)
+                                                                        759710    7.286    7.936  /lib/python3.11/site-packages/mpyc/runtime.py:1339(sgn)
+                                                                          1034    0.033    0.035  /lib/python3.11/site-packages/mpyc/runtime.py:2241(matrix_prod)
+                                                                        759710    2.060    2.627  /lib/python3.11/site-packages/mpyc/runtime.py:3526(random_bits)
+                                                                        759710    4.947    5.485  /lib/python3.11/site-packages/mpyc/runtime.py:3585(<listcomp>)
+                                                                       3296316   12.736   14.892  /lib/python3.11/site-packages/mpyc/sectypes.py:516(__init__)
+                                                                            29    0.000    0.000  
+/lib/python3.11/site-packages/mpyc/thresha.py:67(_recombination_vector)
+                                                                            12    0.000    0.000  /lib/python3.11/site-packages/mpyc/thresha.py:74(<listcomp>)
+                                                                        837046    2.427    3.096  /lib/python3.11/site-packages/mpyc/thresha.py:144(pseudorandom_share)
+                                                                        759710    2.754    3.317  
+/lib/python3.11/site-packages/mpyc/thresha.py:176(pseudorandom_share_zero)
+/lib/python3.11/site-packages/lib/api/proxy.py:91(send)             <-       2    0.000    0.000  /lib/python3.11/site-packages/mpycweb/proxy.py:81(send_ready_message)
+                                                                        738324   39.418   56.506  
+/lib/python3.11/site-packages/mpycweb/proxy.py:103(send_runtime_message)
+{built-in method builtins.isinstance}                               <-    8336    0.005    0.005  /lib/python3.11/site-packages/cnnmnist.py:41(dim)
+                                                                      14324879    9.837    9.837  /lib/python3.11/site-packages/mpyc/asyncoro.py:192(_add_callbacks)
+                                                                      14324879    9.694    9.694  /lib/python3.11/site-packages/mpyc/asyncoro.py:208(_get_results)
+                                                                       1841968    1.940    1.940  /lib/python3.11/site-packages/mpyc/asyncoro.py:224(gather_shares)
+                                                                       1533726    1.198    1.198  /lib/python3.11/site-packages/mpyc/asyncoro.py:306(returnType)
+                                                                       2526966    1.746    1.746  /lib/python3.11/site-packages/mpyc/asyncoro.py:363(__reconcile)
+                                                                       1263483    1.003    1.003  /lib/python3.11/site-packages/mpyc/asyncoro.py:375(_ncopy)
+                                                                             2    0.000    0.000  /lib/python3.11/site-packages/mpyc/finfields.py:23(GF)
+                                                                       1114285    0.662    0.662  /lib/python3.11/site-packages/mpyc/finfields.py:101(__add__)
+                                                                         77345    0.047    0.047  /lib/python3.11/site-packages/mpyc/finfields.py:129(__sub__)
+                                                                         38668    0.026    0.026  /lib/python3.11/site-packages/mpyc/finfields.py:139(__rsub__)
+                                                                        953083    0.555    0.555  /lib/python3.11/site-packages/mpyc/finfields.py:165(__mul__)
+                                                                            72    0.000    0.000  /lib/python3.11/site-packages/mpyc/finfields.py:182(__imul__)
+                                                                         77348    0.052    0.052  /lib/python3.11/site-packages/mpyc/finfields.py:193(__truediv__)
+                                                                         38668    0.022    0.022  /lib/python3.11/site-packages/mpyc/finfields.py:235(__ilshift__)
+                                                                         77336    0.088    0.088  /lib/python3.11/site-packages/mpyc/finfields.py:285(__eq__)
+                                                                             4    0.000    0.000  /lib/python3.11/site-packages/mpyc/runtime.py:296(transfer)
+                                                                        464022    0.474    0.474  /lib/python3.11/site-packages/mpyc/runtime.py:463(output)
+                                                                        467640    0.401    0.401  /lib/python3.11/site-packages/mpyc/runtime.py:555(_reshare)
+                                                                         38677    0.022    0.022  /lib/python3.11/site-packages/mpyc/runtime.py:988(mul)
+                                                                            10    0.000    0.000  /lib/python3.11/site-packages/mpyc/runtime.py:1519(_argmax)
+                                                                         56484    0.036    0.036  /lib/python3.11/site-packages/mpyc/runtime.py:2153(if_else)
+                                                                             4    0.000    0.000  /lib/python3.11/site-packages/mpyc/runtime.py:2241(matrix_prod)
+                                                                         77336    0.068    0.068  /lib/python3.11/site-packages/mpyc/runtime.py:3434(_random)
+                                                                        686769    0.418    0.418  /lib/python3.11/site-packages/mpyc/sectypes.py:46(set_share)
+                                                                        211192    0.115    0.115  /lib/python3.11/site-packages/mpyc/sectypes.py:140(_coerce)
+                                                                         77354    0.039    0.039  /lib/python3.11/site-packages/mpyc/sectypes.py:154(_coerce2)
+                                                                         38677    0.026    0.026  /lib/python3.11/site-packages/mpyc/sectypes.py:207(__mul__)
+                                                                       3412320    1.793    1.793  /lib/python3.11/site-packages/mpyc/sectypes.py:516(__init__)
+                                                                        233820    0.311    0.311  /lib/python3.11/site-packages/mpyc/thresha.py:23(random_split)
+                                                                       1165488    1.533    1.533  /lib/python3.11/site-packages/mpyc/thresha.py:88(recombine)
+                                                                        464016    0.453    0.453  /lib/python3.11/site-packages/mpyc/thresha.py:238(__call__)
+                                                                             8    0.000    0.000  /lib/python3.11/site-packages/numpy/compat/py3k.py:49(isfileobj)
+                                                                             8    0.000    0.000  /lib/python3.11/site-packages/numpy/lib/format.py:282(descr_to_dtype)
+                                                                            24    0.000    0.000  
+/lib/python3.11/site-packages/numpy/lib/format.py:587(_read_array_header)
+                                                                            16    0.000    0.000  /lib/python3.11/site-packages/numpy/lib/format.py:652(<genexpr>)
+                                                                            13    0.000    0.000  
+/lib/python3.11/site-packages/numpy/lib/function_base.py:2285(__init__)
+                                                                            13    0.000    0.000  
+/lib/python3.11/site-packages/numpy/lib/function_base.py:2374(_get_ufunc_and_otypes)
+                                                                          2691    0.002    0.002  /lib/python3.11/site-packages/rich/console.py:170(update)
+                                                                          1984    0.001    0.001  /lib/python3.11/site-packages/rich/console.py:1287(render)
+                                                                          1625    0.001    0.001  /lib/python3.11/site-packages/rich/console.py:1456(get_style)
+                                                                           157    0.000    0.005  
+/lib/python3.11/site-packages/rich/console.py:1486(_collect_renderables)
+                                                                           106    0.000    0.000  /lib/python3.11/site-packages/rich/highlighter.py:20(__call__)
+                                                                            49    0.000    0.000  /lib/python3.11/site-packages/rich/logging.py:126(emit)
+                                                                           441    0.000    0.000  /lib/python3.11/site-packages/rich/measure.py:78(get)
+                                                                           441    0.000    0.000  /lib/python3.11/site-packages/rich/padding.py:60(unpack)
+                                                                            50    0.000    0.000  /lib/python3.11/site-packages/rich/pretty.py:154(_safe_isinstance)
+                                                                            26    0.000    0.000  /lib/python3.11/site-packages/rich/pretty.py:542(_is_namedtuple)
+                                                                           637    0.001    0.001  /lib/python3.11/site-packages/rich/protocol.py:10(is_renderable)
+                                                                            34    0.000    0.000  /lib/python3.11/site-packages/rich/style.py:146(_make_color)
+                                                                           108    0.000    0.000  /lib/python3.11/site-packages/rich/style.py:422(__eq__)
+                                                                            49    0.000    0.000  /lib/python3.11/site-packages/rich/text.py:185(__eq__)
+                                                                           229    0.000    0.000  /lib/python3.11/site-packages/rich/text.py:190(__contains__)
+                                                                           104    0.000    0.000  /lib/python3.11/site-packages/rich/text.py:962(append)
+                                                                             8    0.000    0.000  /lib/python311.zip/ast.py:33(parse)
+                                                                            16    0.000    0.000  /lib/python311.zip/ast.py:54(literal_eval)
+                                                                           120    0.000    0.000  /lib/python311.zip/ast.py:84(_convert)
+                                                                             1    0.000    0.000  /lib/python311.zip/collections/__init__.py:348(namedtuple)
+                                                                            13    0.000    0.000  /lib/python311.zip/dataclasses.py:1249(is_dataclass)
+                                                                             8    0.000    0.000  /lib/python311.zip/enum.py:1501(__and__)
+                                                                             2    0.000    0.000  /lib/python311.zip/gzip.py:25(open)
+                                                                           500    0.001    0.001  /lib/python311.zip/inspect.py:292(isclass)
+                                                                             2    0.000    0.000  /lib/python311.zip/logging/__init__.py:292(__init__)
+                                                                            98    0.000    0.000  /lib/python311.zip/pathlib.py:484(_parse_args)
+                                                                             1    0.000    0.000  /lib/python311.zip/pstats.py:137(load_stats)
+                                                                           393    0.000    0.000  /lib/python311.zip/re/__init__.py:253(escape)
+                                                                           273    0.001    0.001  /lib/python311.zip/re/__init__.py:272(_compile)
+                                                                             4    0.000    0.000  /lib/python311.zip/re/_compiler.py:568(isstring)
+                                                                            71    0.000    0.000  /lib/python311.zip/re/_parser.py:162(__getitem__)
+                                                                             2    0.000    0.000  /lib/python311.zip/re/_parser.py:222(__init__)
+                                                                             2    0.000    0.000  /lib/python311.zip/re/_parser.py:954(fix_flags)
+                                                                             8    0.000    0.000  /lib/python311.zip/typing.py:159(_type_convert)
+                                                                            15    0.000    0.000  /lib/python311.zip/typing.py:168(_type_check)
+                                                                             7    0.000    0.000  /lib/python311.zip/typing.py:245(_collect_parameters)
+                                                                             2    0.000    0.000  /lib/python311.zip/typing.py:308(_remove_dups_flatten)
+                                                                             1    0.000    0.000  /lib/python311.zip/typing.py:645(Union)
+                                                                             4    0.000    0.000  /lib/python311.zip/typing.py:1340(__init__)
+                                                                             9    0.000    0.000  /lib/python311.zip/typing.py:1352(__eq__)
+                                                                             3    0.000    0.000  /lib/python311.zip/typing.py:1550(__getitem__)
+                                                                            24    0.000    0.000  /lib/python311.zip/typing.py:1651(__eq__)
+                                                                             3    0.000    0.000  /lib/python311.zip/typing.py:2038(_proto_hook)
+                                                                             2    0.000    0.000  <frozen importlib._bootstrap_external>:1127(get_data)
+                                                                             1    0.000    0.000  <frozen importlib._bootstrap_external>:1464(_get_spec)
+                                                                             1    0.000    0.000  <frozen os>:200(makedirs)
+                                                                            80    0.000    0.000  <frozen posixpath>:41(_get_sep)
+                                                                            49    0.000    0.000  <frozen posixpath>:117(splitext)
+/lib/python3.11/site-packages/lib/weblooperBench.py:55(call_soon)   <-  728195   18.071   41.659  /lib/python3.11/site-packages/mpyc/asyncoro.py:396(typed_asyncoro)
+                                                                             2    0.000    0.000  /lib/python311.zip/pyodide/webloop.py:428(create_task)
+                                                                        728197    3.992   13.588  {method 'run' of '_contextvars.Context' objects}
+                                                                       1261774    5.638   16.184  {method 'set_result' of '_asyncio.Future' objects}
+{built-in method gmpy2.gmpy2.powmod}                                <-  759710   26.541   26.541  /lib/python3.11/site-packages/mpyc/finfields.py:436(_sqrt)
+/lib/python3.11/site-packages/lib/api/proxy.py:122(onmessage)       <- 
+/lib/python3.11/site-packages/mpyc/asyncoro.py:192(_add_callbacks)  <-  536653    4.363   35.121  /lib/python3.11/site-packages/mpyc/asyncoro.py:178(__init__)
+                                                                     5597714/1302509   19.209   29.312  
+/lib/python3.11/site-packages/mpyc/asyncoro.py:192(_add_callbacks)
+/lib/python3.11/site-packages/lib/weblooperBench.py:67(call_later)  <- 2718168   23.358   43.730  /lib/python3.11/site-packages/lib/weblooperBench.py:55(call_soon)
+                                                                           315    0.027    0.035  /lib/python311.zip/asyncio/tasks.py:627(sleep)
+/lib/python3.11/site-packages/mpyc/asyncoro.py:208(_get_results)    <-  435423    4.545   26.157  /lib/python3.11/site-packages/mpyc/asyncoro.py:178(__init__)
+                                                                        101230    0.615    6.241  /lib/python3.11/site-packages/mpyc/asyncoro.py:187(_decrement)
+                                                                     5597714/1302509   17.155   25.869  /lib/python3.11/site-packages/mpyc/asyncoro.py:208(_get_results)
+/lib/python3.11/site-packages/mpyc/thresha.py:88(recombine)         <-  154674    7.766    9.529  /lib/python3.11/site-packages/mpyc/runtime.py:463(output)
+                                                                        233820   10.757   13.848  /lib/python3.11/site-packages/mpyc/runtime.py:555(_reshare)
+                                                                             2    0.000    0.000  /lib/python3.11/site-packages/mpyc/thresha.py:135(_f_S_i)
+/lib/python3.11/site-packages/mpyc/sectypes.py:516(__init__)        <- 3275427   12.100   30.538  /lib/python3.11/site-packages/cnnmnist.py:27(<lambda>)
+                                                                        503828    2.428    4.201  /lib/python3.11/site-packages/mpyc/asyncoro.py:302(<listcomp>)
+                                                                        182941    1.689    2.341  /lib/python3.11/site-packages/mpyc/asyncoro.py:306(returnType)
+                                                                         38668    0.238    0.371  /lib/python3.11/site-packages/mpyc/runtime.py:1339(sgn)
+                                                                            10    0.000    0.000  /lib/python3.11/site-packages/mpyc/runtime.py:1519(_argmax)
+                                                                         20879    0.087    0.385  /lib/python3.11/site-packages/mpyc/sectypes.py:140(_coerce)
+/lib/python311.zip/asyncio/events.py:31(__init__)                   <- 2718483   16.495   18.135  /lib/python3.11/site-packages/lib/weblooperBench.py:67(call_later)
+{built-in method _pyodide_core.to_js}                               <-  738326   15.369   15.369  /lib/python3.11/site-packages/lib/api/proxy.py:91(send)
+/lib/python3.11/site-packages/mpyc/asyncoro.py:396(typed_asyncoro)  <-    3872    0.077    6.793  /lib/python3.11/site-packages/cnnmnist.py:52(convolvetensor)
+                                                                             4    0.000    0.635  /lib/python3.11/site-packages/cnnmnist.py:111(<listcomp>)
+                                                                             5    0.000    0.495  /lib/python3.11/site-packages/cnnmnist.py:129(main)
+                                                                         38668    0.606    5.211  /lib/python3.11/site-packages/mpyc/runtime.py:807(is_zero_public)
+                                                                         38677    1.728    4.547  /lib/python3.11/site-packages/mpyc/runtime.py:988(mul)
+                                                                         38668    0.589    4.237  /lib/python3.11/site-packages/mpyc/runtime.py:1281(lt)
+                                                                        193340    3.995   32.194  /lib/python3.11/site-packages/mpyc/runtime.py:1339(sgn)
+                                                                        193349    2.861   28.248  /lib/python3.11/site-packages/mpyc/runtime.py:1898(prod)
+                                                                             2    0.000    0.000  /lib/python3.11/site-packages/mpyc/runtime.py:2241(matrix_prod)
+                                                                         77336    2.154   11.139  /lib/python3.11/site-packages/mpyc/runtime.py:3526(random_bits)
+                                                                         28251    0.327    2.489  /lib/python3.11/site-packages/mpyc/sectypes.py:181(__add__)
+                                                                         66910    0.826    5.847  /lib/python3.11/site-packages/mpyc/sectypes.py:191(__sub__)
+                                                                         10435    0.127    1.005  /lib/python3.11/site-packages/mpyc/sectypes.py:199(__rsub__)
+                                                                         38677    0.552    3.982  /lib/python3.11/site-packages/mpyc/sectypes.py:207(__mul__)
+                                                                             1    0.000    0.000  /lib/python3.11/site-packages/mpycweb/patches.py:139(shutdown)
+/lib/python3.11/site-packages/mpyc/thresha.py:238(__call__)         <-  309344   10.865   17.744  /lib/python3.11/site-packages/mpyc/thresha.py:144(pseudorandom_share)
+                                                                        154672    2.431    7.892  
+/lib/python3.11/site-packages/mpyc/thresha.py:176(pseudorandom_share_zero)
+/lib/python3.11/site-packages/lib/weblooperBench.py:95(_run_once)   <- 
+/lib/python3.11/site-packages/mpyc/runtime.py:555(_reshare)         <-  468799   11.329  190.989  {method 'send' of 'coroutine' objects}
+/lib/python3.11/site-packages/mpyc/runtime.py:463(output)           <-  310208   11.074   88.008  {method 'send' of 'coroutine' objects}
+/lib/python3.11/site-packages/cnnmnist.py:86(inprod2D)              <-    2080   10.808   10.838  /lib/python3.11/site-packages/cnnmnist.py:52(convolvetensor)
+{method 'run' of '_contextvars.Context' objects}                    <- 2718483   10.520  683.572  /lib/python311.zip/asyncio/events.py:78(_run)
+
+
+         206404632 function calls (193538974 primitive calls) in 753.123 seconds
+
+   Ordered by: cumulative time
+   List reduced from 825 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     1117   12.309    0.011  707.667    0.634 /lib/python3.11/site-packages/lib/weblooperBench.py:95(_run_once)
+  2718483    7.467    0.000  691.039    0.000 /lib/python311.zip/asyncio/events.py:78(_run)
+  2718483   10.520    0.000  683.572    0.000 {method 'run' of '_contextvars.Context' objects}
+  1174440    3.288    0.000  531.741    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:282(_wrap_in_coro)
+1863965/1357389    9.340    0.000  530.503    0.000 {method 'send' of 'coroutine' objects}
+  1174440    6.820    0.000  528.453    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:266(__await__)
+   468799   11.329    0.000  190.989    0.000 /lib/python3.11/site-packages/mpyc/runtime.py:555(_reshare)
+   728195   13.841    0.000  106.823    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:396(typed_asyncoro)
+   232008    7.562    0.000   97.058    0.000 /lib/python3.11/site-packages/mpyc/runtime.py:3526(random_bits)
+   310208   11.074    0.000   88.008    0.000 /lib/python3.11/site-packages/mpyc/runtime.py:463(output)
+   613990    6.202    0.000   77.702    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:224(gather_shares)
+   738322    7.762    0.000   72.304    0.000 /lib/python3.11/site-packages/mpyc/asyncoro.py:67(send)
+  2718168   27.701    0.000   71.431    0.000 /lib/python3.11/site-packages/lib/weblooperBench.py:55(call_soon)
+      231    0.005    0.000   70.842    0.307 ./py/benches/profile.py:5(main)
+      231    0.550    0.002   70.837    0.307 /lib/python3.11/site-packages/cnnmnist.py:129(main)
+      230    0.001    0.000   70.758    0.308 /lib/python3.11/site-packages/lib/api/run.py:68(run_code)
+      230    0.000    0.000   70.758    0.308 /lib/python311.zip/_pyodide/_base.py:505(eval_code_async)
+      230    0.000    0.000   70.757    0.308 /lib/python311.zip/_pyodide/_base.py:350(run_async)
+      230    0.001    0.000   70.757    0.308 ./py/benches/profile.py:1(<module>)
+      230    0.001    0.000   70.756    0.308 /lib/python3.11/site-packages/lib/rstats/rstats/prof.py:19(_aprof)
+
+
+   Ordered by: cumulative time
+   List reduced from 825 to 20 due to restriction <20>
+
+Function                                                            was called by...
+                                                                        ncalls  tottime  cumtime
+/lib/python3.11/site-packages/lib/weblooperBench.py:95(_run_once)   <- 
+/lib/python311.zip/asyncio/events.py:78(_run)                       <-     315    0.001    0.014  /lib/python3.11/site-packages/lib/weblooperBench.py:88(<lambda>)
+                                                                       2718168    7.466  691.025  /lib/python3.11/site-packages/lib/weblooperBench.py:95(_run_once)
+{method 'run' of '_contextvars.Context' objects}                    <- 2718483   10.520  683.572  /lib/python311.zip/asyncio/events.py:78(_run)
+/lib/python3.11/site-packages/mpyc/asyncoro.py:282(_wrap_in_coro)   <- 1174440    3.288  531.741  {method 'run' of '_contextvars.Context' objects}
+{method 'send' of 'coroutine' objects}                              <- 1174440    4.884  521.633  /lib/python3.11/site-packages/mpyc/asyncoro.py:266(__await__)
+                                                                        689525    4.456   39.222  /lib/python3.11/site-packages/mpyc/asyncoro.py:396(typed_asyncoro)
+/lib/python3.11/site-packages/mpyc/asyncoro.py:266(__await__)       <- 1174440    6.820  528.453  /lib/python3.11/site-packages/mpyc/asyncoro.py:282(_wrap_in_coro)
+/lib/python3.11/site-packages/mpyc/runtime.py:555(_reshare)         <-  468799   11.329  190.989  {method 'send' of 'coroutine' objects}
+/lib/python3.11/site-packages/mpyc/asyncoro.py:396(typed_asyncoro)  <-    3872    0.077    6.793  /lib/python3.11/site-packages/cnnmnist.py:52(convolvetensor)
+                                                                             4    0.000    0.635  /lib/python3.11/site-packages/cnnmnist.py:111(<listcomp>)
+                                                                             5    0.000    0.495  /lib/python3.11/site-packages/cnnmnist.py:129(main)
+                                                                         38668    0.606    5.211  /lib/python3.11/site-packages/mpyc/runtime.py:807(is_zero_public)
+                                                                         38677    1.728    4.547  /lib/python3.11/site-packages/mpyc/runtime.py:988(mul)
+                                                                         38668    0.589    4.237  /lib/python3.11/site-packages/mpyc/runtime.py:1281(lt)
+                                                                        193340    3.995   32.194  /lib/python3.11/site-packages/mpyc/runtime.py:1339(sgn)
+                                                                        193349    2.861   28.248  /lib/python3.11/site-packages/mpyc/runtime.py:1898(prod)
+                                                                             2    0.000    0.000  /lib/python3.11/site-packages/mpyc/runtime.py:2241(matrix_prod)
+                                                                         77336    2.154   11.139  /lib/python3.11/site-packages/mpyc/runtime.py:3526(random_bits)
+                                                                         28251    0.327    2.489  /lib/python3.11/site-packages/mpyc/sectypes.py:181(__add__)
+                                                                         66910    0.826    5.847  /lib/python3.11/site-packages/mpyc/sectypes.py:191(__sub__)
+                                                                         10435    0.127    1.005  /lib/python3.11/site-packages/mpyc/sectypes.py:199(__rsub__)
+                                                                         38677    0.552    3.982  /lib/python3.11/site-packages/mpyc/sectypes.py:207(__mul__)
+                                                                             1    0.000    0.000  /lib/python3.11/site-packages/mpycweb/patches.py:139(shutdown)
+/lib/python3.11/site-packages/mpyc/runtime.py:3526(random_bits)     <-  232008    7.562   97.058  {method 'send' of 'coroutine' objects}
+/lib/python3.11/site-packages/mpyc/runtime.py:463(output)           <-  310208   11.074   88.008  {method 'send' of 'coroutine' objects}
+/lib/python3.11/site-packages/mpyc/asyncoro.py:224(gather_shares)   <-       6    0.000    1.331  /lib/python3.11/site-packages/cnnmnist.py:52(convolvetensor)
+                                                                             2    0.000    0.000  /lib/python3.11/site-packages/mpyc/runtime.py:296(transfer)
+                                                                        154676    1.673   11.859  /lib/python3.11/site-packages/mpyc/runtime.py:463(output)
+                                                                        235612    3.209   25.752  /lib/python3.11/site-packages/mpyc/runtime.py:555(_reshare)
+                                                                         38668    0.165    0.258  /lib/python3.11/site-packages/mpyc/runtime.py:807(is_zero_public)
+                                                                         28251    0.189    1.036  /lib/python3.11/site-packages/mpyc/runtime.py:938(add)
+                                                                         77345    0.526    3.771  /lib/python3.11/site-packages/mpyc/runtime.py:949(sub)
+                                                                         38677    0.263    1.495  /lib/python3.11/site-packages/mpyc/runtime.py:988(mul)
+                                                                         38668    0.165    0.263  /lib/python3.11/site-packages/mpyc/runtime.py:1339(sgn)
+                                                                             2    0.000    0.012  /lib/python3.11/site-packages/mpyc/runtime.py:2040(vector_add)
+                                                                          2080    0.014    7.719  /lib/python3.11/site-packages/mpyc/runtime.py:2082(matrix_add)
+                                                                             2    0.000   24.206  /lib/python3.11/site-packages/mpyc/runtime.py:2241(matrix_prod)
+                                                                             1    0.000    0.000  /lib/python3.11/site-packages/mpycweb/patches.py:139(shutdown)
+/lib/python3.11/site-packages/mpyc/asyncoro.py:67(send)             <-  270682    2.632   24.664  /lib/python3.11/site-packages/mpyc/runtime.py:119(_send_message)
+                                                                        467640    5.130   47.640  /lib/python3.11/site-packages/mpyc/runtime.py:127(_exchange_shares)
+/lib/python3.11/site-packages/lib/weblooperBench.py:55(call_soon)   <-  728195   18.071   41.659  /lib/python3.11/site-packages/mpyc/asyncoro.py:396(typed_asyncoro)
+                                                                             2    0.000    0.000  /lib/python311.zip/pyodide/webloop.py:428(create_task)
+                                                                        728197    3.992   13.588  {method 'run' of '_contextvars.Context' objects}
+                                                                       1261774    5.638   16.184  {method 'set_result' of '_asyncio.Future' objects}
+./py/benches/profile.py:5(main)                                     <-     230    0.005   70.755  /lib/python3.11/site-packages/lib/rstats/rstats/prof.py:19(_aprof)
+/lib/python3.11/site-packages/cnnmnist.py:129(main)                 <-     231    0.550   70.837  ./py/benches/profile.py:5(main)
+/lib/python3.11/site-packages/lib/api/run.py:68(run_code)           <-     230    0.001   70.758  {method 'run' of '_contextvars.Context' objects}
+/lib/python311.zip/_pyodide/_base.py:505(eval_code_async)           <-     230    0.000   70.758  /lib/python3.11/site-packages/lib/api/run.py:68(run_code)
+/lib/python311.zip/_pyodide/_base.py:350(run_async)                 <-     230    0.000   70.757  /lib/python311.zip/_pyodide/_base.py:505(eval_code_async)
+./py/benches/profile.py:1(<module>)                                 <-     230    0.001   70.757  /lib/python311.zip/_pyodide/_base.py:350(run_async)
+/lib/python3.11/site-packages/lib/rstats/rstats/prof.py:19(_aprof)  <-     230    0.001   70.756  ./py/benches/profile.py:1(<module>)
+
+

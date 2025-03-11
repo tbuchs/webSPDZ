@@ -1,0 +1,52 @@
+{
+  "tests": ["+", "-", "*", "*bgw", "|", "^", "!", "/", "%"],
+  "suiteConf": {
+    "port": 3001,
+    "extensions": ["bigNumber"],
+    "generation": {
+      "file": "config/bigNumber/generation.js",
+      "function": "generateArithmeticInputs"
+    },
+    "computation": {
+      "file": "config/bigNumber/computations.js",
+      "function": "compute"
+    }
+  },
+
+  "testConf": {
+    "default": {
+      "count": 100,
+      "parallel": 25,
+      "options": {
+        "Zp": "2425967623052370772757633156976982469681",
+        "party_count": 3,
+        "safemod": false
+      }
+    },
+    "*bgw": {
+      "count": 100,
+      "parallel": 25,
+      "options": {
+        "Zp": "2425967623052370772757633156976982469681",
+        "party_count": 4,
+        "safemod": false
+      }
+    },
+    "/": {
+      "count": 8,
+      "parallel": 3,
+      "options": {
+        "Zp": "31",
+        "party_count": 3
+      }
+    },
+    "%": {
+      "count": 3,
+      "parallel": 3,
+      "options": {
+        "Zp": "31",
+        "party_count": 3
+      }
+    }
+  }
+}

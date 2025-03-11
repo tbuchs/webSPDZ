@@ -1,0 +1,55 @@
+{
+  "plugins": ["plugins/markdown"],
+  "recurseDepth": 10,
+  "source": {
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_",
+    "include": [
+      "./lib/jiff-client.js",
+      "./lib/client/",
+      "./lib/jiff-server.js",
+      "./README.md"
+    ]
+  },
+  "sourceType": "module",
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc","closure"]
+  },
+  "templates": {
+    "cleverLinks": false,
+    "useShortNamesInLinks": true,
+    "monospaceLinks": false
+  },
+  "opts": {
+    "destination": "./docs/jsdoc/",
+    "template": "node_modules/docdash-with-dark-mode"
+  },
+  "docdash": {
+    "collalpse": true,
+    "search": true,
+    "menu":{
+      "Github Repo":{
+        "href":"https://github.com/multiparty/jiff",
+        "target":"_blank",
+        "class":"menu-item",
+        "id":"github_link"
+      },
+      "Tutorial":{
+        "href":"./intro.html",
+        "target":"_self",
+        "class":"menu-item",
+        "id":"github_link"
+      },
+      "Contributing to JIFF":{
+        "href":"./contributing.html",
+        "target":"_self",
+        "class":"menu-item",
+        "id":"github_link"
+      }
+    },
+    "meta": {
+      "title": "JIFF Library Documentation"
+    }
+  }
+}

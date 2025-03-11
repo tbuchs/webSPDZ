@@ -1,0 +1,31 @@
+
+# [build]
+# command = """
+# """
+# ignore = "stat package.json"
+
+# [context.production]
+# publish = "."
+
+# [[headers]]
+# for = "/*"
+#     [headers.values]
+#     Cross-Origin-Embedder-Policy = "credentialless"
+#     Cross-Origin-Opener-Policy = "same-origin"
+#     Cross-Origin-Resource-Policy = "cross-origin"
+
+[build]
+command = """
+    yarn build
+"""
+# ignore = "stat package.json"
+publish = "mpyc-web-demo/dist/"
+# [context.production]
+# publish = "."
+
+[[headers]]
+for = "/*"
+    [headers.values]
+    Cross-Origin-Embedder-Policy = "credentialless"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "cross-origin"
