@@ -4,7 +4,7 @@ webSPDZ's LICENSE file
 *) Copyright Notice:
 The Software "webSPDZ" is copyright (c) 2023--2025, Thomas Buchsteiner.
 
-Thomas grants you a licence to the Software on the terms of the BSD 3-Clause Licence.
+Thomas Buchsteiner grants you a licence to the Software on the terms of the BSD 3-Clause Licence.
 
 *) List of usage conditions:
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
