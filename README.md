@@ -42,7 +42,9 @@ ___
 ### 🪵 Prerequisites for Building & Running
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
 - [Node.js](https://nodejs.org/en/download/)
-- [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports (i) WebAssembly and Memory64 (available since Firefox 134 and Chrome 133: [webassembly.org/features](https://webassembly.org/features/)), and (ii) [WebRTC](https://webrtc.org)
+- [Firefox](https://www.mozilla.org/firefox/new/), [Chrome](https://www.google.com/intl/en_uk/chrome/) or any browser that supports:
+  1.  [WebAssembly](https://webassembly.org) and [Memory64](https://webassembly.org/features/) (available since Firefox 134 and Chrome 133) and
+  2.  [WebRTC](https://webrtc.org)
 - [Python 3](https://www.python.org/downloads/)
 
 These are webSPDZ's main prerequisites.
