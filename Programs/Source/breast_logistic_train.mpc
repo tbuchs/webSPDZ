@@ -23,17 +23,22 @@ y_test = sint.input_tensor_via(0, y_test)
 
 log = ml.SGDLogistic(20, 2, program)
 
-log.fit(X_train, y_train)
-print_ln('%s', (log.predict(X_test) - y_test.get_vector()).reveal())
-
 stop_timer(2)
 start_timer(3)
 
-log.fit_with_testing(X_train, y_train, X_test, y_test)
-print_ln('%s', (log.predict_proba(X_test) - y_test.get_vector()).reveal())
+# training
+log.fit(X_train, y_train)
+print_ln('%s', (log.predict(X_test) - y_test.get_vector()).reveal())
 
 stop_timer(3)
-stop_timer(1)
+
+# sanity check
+correct, loss = log.opt.reveal_correctness(X_test, y_test, 2, running=False)
+print_ln('Secure accuracy: %s/%s', correct, len(y_test))
+
+
+# log.fit_with_testing(X_train, y_train, X_test, y_test)
+# print_ln('%s', (log.predict_proba(X_test) - y_test.get_vector()).reveal())
 
 # # write model to file
 # for var in log.opt.trainable_variables:
@@ -41,3 +46,5 @@ stop_timer(1)
 
 # # store secret model for further use
 # log.opt.reveal_model_to_binary()
+
+stop_timer(1)
