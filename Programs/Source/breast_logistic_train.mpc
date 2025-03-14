@@ -2,8 +2,11 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from Compiler import ml
 
-#program.use_split(2)
-program.use_trunc_pr = True
+start_timer(1)
+start_timer(2)
+
+#program.use_split(4)
+#program.use_trunc_pr = True
 #ml.set_threads(8)
 
 X, y = load_breast_cancer(return_X_y=True)
@@ -23,8 +26,14 @@ log = ml.SGDLogistic(20, 2, program)
 log.fit(X_train, y_train)
 print_ln('%s', (log.predict(X_test) - y_test.get_vector()).reveal())
 
+stop_timer(2)
+start_timer(3)
+
 log.fit_with_testing(X_train, y_train, X_test, y_test)
 print_ln('%s', (log.predict_proba(X_test) - y_test.get_vector()).reveal())
+
+stop_timer(3)
+stop_timer(1)
 
 # # write model to file
 # for var in log.opt.trainable_variables:

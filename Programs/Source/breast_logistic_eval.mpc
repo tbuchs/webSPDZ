@@ -2,6 +2,9 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from Compiler import ml
 
+start_timer(1)
+start_timer(2)
+
 # Load the dataset
 X, y = load_breast_cancer(return_X_y=True)
 # normalize column-wise
@@ -20,16 +23,23 @@ sgd.init(data)
 for var in sgd.opt.trainable_variables:
     var.input_from(0, binary=True)
 
-# Prepare test data
-X_test = sfix.input_tensor_via(1, X_test)
-y_test = sint.input_tensor_via(1, y_test)
+stop_timer(2)
+start_timer(3)
 
-# evaluate one batch of test data
+# Prepare test data
+sfix.input_tensor_via(1, X_test)
+sint.input_tensor_via(1, y_test)
+
+# evaluate test data
 res = sgd.opt.eval(X_test)
 
 print_ln('%s', res.reveal())
 print_ln('%s', y_test.get_vector().reveal())
 
-# evaluate one batch of test data
+stop_timer(3)
+
+# sanity check
 correct, loss = log.opt.reveal_correctness(X_test, y_test, 2, running=False)
 print_ln('Secure accuracy: %s/%s', correct, len(y_test))
+
+stop_timer(1)
