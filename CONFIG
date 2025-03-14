@@ -3,8 +3,8 @@ ROOT = .
 # compile for web usage
 WEB = 1
 USE_WASM32 = 0
-DEBUGGING = 0 # set to 1 to enable less optimizations and more debugging information
-SINGLE_THREADED_WEBSOCKET = 0 # set to 1 to use Websockets only on main thread for communication
+DEBUGGING = 1# set to 1 to enable less optimizations and more debugging information
+SINGLE_THREADED_WEBSOCKET = 1# set to 1 to use Websockets only on main thread for communication
 
 OPTIM= -O3
 #PROF = -pg
@@ -33,7 +33,7 @@ USE_GF2N_LONG = 1
 # BMI2 is used to optimize multiplication modulo a prime
 # ADX is used to optimize big integer additions
 # delete the second line to compile for a platform that supports everything
-ifeq ($(WEB),1)
+ifeq ($(WEB), 1)
 ARCH = -msse -msse2 -msse4.1 -msse4.2 -mavx -msimd128
 else
 ARCH = -mtune=native -msse4.1 -msse4.2 -maes -mpclmul -mavx -mavx2 -mbmi2 -madx
