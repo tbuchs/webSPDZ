@@ -1,0 +1,35 @@
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from Compiler import ml
+
+# Load the dataset
+X, y = load_breast_cancer(return_X_y=True)
+# normalize column-wise
+X /= X.max(axis=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+batch_size = 2
+# dimensionality of breast cancer dataset is 30, +bias
+n_vars = 30 + 1
+
+data = sfix.Matrix(batch_size, n_vars)
+sgd = ml.SGDLogistic(20, batch_size)
+sgd.init(data)
+
+# Load the model
+for var in sgd.opt.trainable_variables:
+    var.input_from(0, binary=True)
+
+# Prepare test data
+X_test = sfix.input_tensor_via(1, X_test)
+y_test = sint.input_tensor_via(1, y_test)
+
+# evaluate one batch of test data
+res = sgd.opt.eval(X_test)
+
+print_ln('%s', res.reveal())
+print_ln('%s', y_test.get_vector().reveal())
+
+# evaluate one batch of test data
+correct, loss = log.opt.reveal_correctness(X_test, y_test, 2, running=False)
+print_ln('Secure accuracy: %s/%s', correct, len(y_test))
