@@ -19,19 +19,20 @@ data = sfix.Matrix(batch_size, n_vars)
 sgd = ml.SGDLogistic(20, batch_size)
 sgd.init(data)
 
+start = 0
 # Load the model
 for var in sgd.opt.trainable_variables:
-    var.input_from(0, binary=True)
+    start = var.read_from_file(start)
+
+# Prepare test data
+X_test = sfix.input_tensor_via(1, X_test)
+y_test = sint.input_tensor_via(1, y_test)
 
 stop_timer(2)
 start_timer(3)
 
-# Prepare test data
-sfix.input_tensor_via(1, X_test)
-sint.input_tensor_via(1, y_test)
-
 # evaluate test data
-res = sgd.opt.eval(X_test)
+res = sgd.opt.eval(X_test, batch_size)
 
 print_ln('%s', res.reveal())
 print_ln('%s', y_test.get_vector().reveal())
@@ -39,7 +40,7 @@ print_ln('%s', y_test.get_vector().reveal())
 stop_timer(3)
 
 # sanity check
-correct, loss = log.opt.reveal_correctness(X_test, y_test, 2, running=False)
+correct, loss = sgd.opt.reveal_correctness(X_test, y_test, batch_size, running=False)
 print_ln('Secure accuracy: %s/%s', correct, len(y_test))
 
 stop_timer(1)
