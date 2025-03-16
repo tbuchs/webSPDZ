@@ -5,6 +5,8 @@ from Compiler import ml
 start_timer(1)
 start_timer(2)
 
+program.use_edabit(True)
+
 #program.use_split(4)
 #program.use_trunc_pr = True
 #ml.set_threads(8)

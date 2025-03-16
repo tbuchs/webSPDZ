@@ -2,6 +2,8 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from Compiler import ml
 
+program.use_edabit(True)
+
 start_timer(1)
 start_timer(2)
 
@@ -11,18 +13,18 @@ X, y = load_breast_cancer(return_X_y=True)
 X /= X.max(axis=0)
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
-batch_size = 2
-# dimensionality of breast cancer dataset is 30, +bias
-n_vars = 30 + 1
+batch_size = 64
+# dimensionality of breast cancer dataset is 30
+n_vars = 30
 
 data = sfix.Matrix(batch_size, n_vars)
-sgd = ml.SGDLogistic(20, batch_size)
+sgd = ml.SGDLogistic(20, batch_size, program)
 sgd.init(data)
 
 start = 0
 # Load the model
 for var in sgd.opt.trainable_variables:
-    start = var.read_from_file(start)
+    var.input_from(0, binary=2)
 
 # Prepare test data
 X_test = sfix.input_tensor_via(1, X_test)
