@@ -123,6 +123,7 @@ semi-he: hemi-party.x soho-party.x temi-party.x
 
 rep-field: malicious-rep-field-party.x replicated-field-party.x ps-rep-field-party.x
 
+rep4-ring: rep4-ring-party.x
 rep-ring: replicated-ring-party.x rep4-ring-party.x #brain-party.x malicious-rep-ring-party.x ps-rep-ring-party.x 
 
 rep-bin: replicated-bin-party.x malicious-rep-bin-party.x ps-rep-bin-party.x Fake-Offline.x
