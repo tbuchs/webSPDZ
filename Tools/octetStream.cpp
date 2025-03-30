@@ -19,6 +19,7 @@ void octetStream::reset()
 {
     data = 0;
     len = mxlen = ptr = 0;
+    chunked = 0;
 }
 
 void octetStream::clear()
@@ -42,13 +43,15 @@ void octetStream::assign(const octetStream& os)
   memcpy(data,os.data,len*sizeof(octet));
   ptr=os.ptr;
   bits = os.bits;
+  chunked = os.chunked;
 }
 
 
-octetStream::octetStream(size_t maxlen)
+octetStream::octetStream(size_t maxlen, int chunked)
 {
   mxlen=maxlen; len=0; ptr=0;
   data=new octet[mxlen];
+  this->chunked = chunked;
 }
 
 octetStream::octetStream(size_t len, const octet* source) :
@@ -70,6 +73,7 @@ octetStream::octetStream(const octetStream& os)
   memcpy(data,os.data,len*sizeof(octet));
   ptr=os.ptr;
   bits = os.bits;
+  chunked = os.chunked;
 }
 
 octetStream::octetStream(FlexBuffer& buffer)

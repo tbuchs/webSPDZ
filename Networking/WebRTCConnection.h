@@ -95,7 +95,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
         if(msg.substr(0, START_SEQUENCE.size()) == START_SEQUENCE) {
           string num_chunks = msg.substr(START_SEQUENCE.size());
           int num_chunks_int = stoi(num_chunks);
-          player->add_message(next_player_id, nullptr, num_chunks_int);
+          player->add_message(next_player_id, nullptr, num_chunks_int, true);
         } else {
           error("Received string message in binary message handler");
         }
@@ -138,7 +138,7 @@ void init_peer_connection(WebPlayer* player, int next_player_id, string offer) {
           if(msg.substr(0, START_SEQUENCE.size()) == START_SEQUENCE) {
             string num_chunks = msg.substr(START_SEQUENCE.size());
             int num_chunks_int = stoi(num_chunks);
-            player->add_message(next_player_id, nullptr, num_chunks_int);
+            player->add_message(next_player_id, nullptr, num_chunks_int, true);
           } else
             error("Received string message in binary message handler");
         } else {

@@ -568,13 +568,14 @@ public:
     pthread_cond_signal(&start_cond);
   }
 
-  inline void add_message(int sender, octet *msg, size_t msg_length)
+  inline void add_message(int sender, octet *msg, size_t msg_length, bool chunked = false)
   {
     pthread_mutex_lock(&message_locks.at(sender));
-    if (msg == nullptr)
-      message_queue.at(sender).emplace_back(octetStream(msg_length));
+    if(chunked)
+      message_queue.at(sender).push_back(octetStream(msg_length, msg_length));
     else
-      message_queue.at(sender).emplace_back(octetStream(msg_length, msg));
+      message_queue.at(sender).push_back(octetStream(msg_length, msg));
+
     pthread_cond_signal(&message_conds.at(sender));
     pthread_mutex_unlock(&message_locks.at(sender));
   }

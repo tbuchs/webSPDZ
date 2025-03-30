@@ -531,9 +531,9 @@ void WebPlayer::receive_player_no_stats(int sender, octetStream &o)
   o = message_queue.at(sender).front();
   message_queue.at(sender).pop_front();
 
-  if (o.get_length() == 0 && o.get_max_length() != 0)
+  if (o.get_chunked())
   {
-    size_t chunks = o.get_max_length();
+    size_t chunks = o.get_chunked();
     octetStream msg_chunks = octetStream(chunks * RTC_MAX_MESSAGE_SIZE);
 
     for (size_t i = 0; i < chunks; i++)
@@ -542,11 +542,12 @@ void WebPlayer::receive_player_no_stats(int sender, octetStream &o)
         pthread_cond_wait(&message_conds.at(sender), &message_locks.at(sender));
 
       octetStream chunk = message_queue.at(sender).front();
-      if (i != chunks - 1)
+      if (i != (chunks - 1))
       {
         if (chunk.get_length() != RTC_MAX_MESSAGE_SIZE)
         {
           cout << "Length of chunk number " << i << "/" << chunks << " is " << chunk.get_length() << endl;
+          error("Invalid chunk size received");
         }
       }
       msg_chunks.concat(chunk);

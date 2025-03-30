@@ -47,6 +47,7 @@ class octetStream
 
   size_t len,mxlen,ptr;  // len is the "write head", ptr is the "read head"
   octet *data;
+  int chunked = 0;
 
   class BitBuffer
   {
@@ -76,7 +77,7 @@ class octetStream
 
   octetStream() : len(0), mxlen(0), ptr(0), data(0) {}
   /// Initial allocation
-  octetStream(size_t maxlen);
+  octetStream(size_t maxlen, int chunked = 0);
   /// Initial buffer
   octetStream(size_t len, const octet* source);
   /// Initial buffer
@@ -256,6 +257,10 @@ class octetStream
 
   friend ostream& operator<<(ostream& s,const octetStream& o);
   friend class PRNG;
+
+  // For webRTC communication if messages is split into chunks
+  void set_chunked(int chunked) { this->chunked = chunked; }
+  int get_chunked() const { return this->chunked; }
 };
 
 class Player;
