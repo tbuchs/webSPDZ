@@ -138,15 +138,15 @@ Please note that the used certificates for the `https-server` and `websocket` se
 ___
 ## 📑 Paper and Citation
 
-webSPDZ's design rationale is described [in this paper](https://eprint.iacr.org/).
+webSPDZ's design rationale is described [in this paper](https://eprint.iacr.org/2025/487).
 If you use it in one of your projects, please cite it as:
 ```
-@article{webSPDZ,
-    author 	= {Thomas Buchsteiner, Karl W. Koch, Dragos Rotaru, Christian Rechberger},
-    title 	= {{webSPDZ}: Versatile MPC on the Web},
-    journal     = {{IACR} Cryptol. ePrint Arch.},
-    year 	= {2025},
-    pages	= {...},
+@misc{cryptoeprint:2025/487,
+      author = {Thomas Buchsteiner and Karl W. Koch and Dragos Rotaru and Christian Rechberger},
+      title = {{webSPDZ}: Versatile {MPC} on the Web},
+      howpublished = {Cryptology {ePrint} Archive, Paper 2025/487},
+      year = {2025},
+      url = {https://eprint.iacr.org/2025/487}
 }
 ```
 
