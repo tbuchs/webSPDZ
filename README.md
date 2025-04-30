@@ -78,9 +78,9 @@ For further information on MPC's security models, check, e.g., [Nigel Smart's _C
 
 ___
 ### ⚙️ Building
-To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datachannel-wasm) library upon first compilation and install the needed websocket package for nodejs, run:
-```make setup```
-
+Install the needed websocket package nodejs by running ```npm install websocket```
+<!---To initialize the [WebRTC-datachannel](https://github.com/paullouisageneau/datachannel-wasm) library upon first compilation and install the needed websocket package for nodejs, run:
+```make setup```> -->
 See [Programs/Source/](Programs/Source/) for some example MPC programs. To run the [tutorial.mpc](Programs/Source/tutorial.mpc) in default mode run:
 ```./compile.py Programs/Source/tutorial.mpc```
 
